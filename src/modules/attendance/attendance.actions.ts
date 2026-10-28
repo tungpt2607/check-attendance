@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { toDataURL } from "qrcode";
-import { createCheckInToken, currentWindowEndsAt } from "@/lib/checkin-token";
+import { createCheckInToken, currentWindowEndsAt, encodeShortCode } from "@/lib/checkin-token";
 import { parseDateInput } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 import { getOwnedGroup } from "@/modules/groups/group.service";
@@ -141,10 +141,10 @@ export async function getQrStateAction(sessionId: string): Promise<QrState> {
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const url = `${proto}://${host}/checkin/${sessionId}?t=${createCheckInToken(sessionId, secret)}`;
+  const url = `${proto}://${host}/c/${encodeShortCode(sessionId, createCheckInToken(sessionId, secret))}`;
 
   const [qrDataUrl, checkedIn, members] = await Promise.all([
-    toDataURL(url, { margin: 1, width: 640, errorCorrectionLevel: "M" }),
+    toDataURL(url, { margin: 2, width: 640, errorCorrectionLevel: "L" }),
     countCheckedIn(sessionId),
     listMembers(session.groupId),
   ]);

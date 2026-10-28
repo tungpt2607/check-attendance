@@ -24,32 +24,34 @@ export default async function QrPage({ params }: Props) {
   const back = `/groups/${group.id}/sessions/${session.id}`;
 
   return (
-    <div className="mx-auto max-w-lg space-y-5">
-      <div className="text-center">
-        <p className="text-sm text-slate-500">{group.name}</p>
-        <h1 className="text-2xl font-semibold">{session.title}</h1>
-        <p className={ui.muted}>{formatDate(session.date)}</p>
-      </div>
+    // Lớp phủ toàn màn hình: che thanh tiêu đề, mọi thứ vừa trong một màn hình điện thoại
+    <div className="fixed inset-0 z-50 flex h-dvh flex-col bg-slate-50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <div className="mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col gap-3">
+        <div className="text-center leading-tight">
+          <p className="truncate font-semibold">
+            {group.name} · {session.title}
+          </p>
+          <p className="text-xs text-slate-500">
+            {formatDate(session.date)} · Quét mã và chọn tên mình để điểm danh
+          </p>
+        </div>
 
-      <p className="rounded-lg bg-indigo-50 px-4 py-2 text-center text-sm text-indigo-800">
-        Mở camera điện thoại, quét mã và chọn tên mình để điểm danh.
-      </p>
+        <QrPresenter sessionId={session.id} />
 
-      <QrPresenter sessionId={session.id} />
-
-      <div className="flex gap-2">
-        <Link href={back} className={`${ui.btnGhost} flex-1`}>Xem danh sách</Link>
-        <form action={closeSelfCheckInAction} className="flex-1">
-          <input type="hidden" name="sessionId" value={session.id} />
-          <SubmitButton
-            variant="danger"
-            className="w-full py-2"
-            pendingText="Đang đóng..."
-            confirm="Đóng tự điểm danh? Sau khi đóng, quét mã sẽ không điểm danh được nữa."
-          >
-            Đóng điểm danh
-          </SubmitButton>
-        </form>
+        <div className="flex gap-2">
+          <Link href={back} className={`${ui.btnGhost} flex-1`}>Xem danh sách</Link>
+          <form action={closeSelfCheckInAction} className="flex-1">
+            <input type="hidden" name="sessionId" value={session.id} />
+            <SubmitButton
+              variant="danger"
+              className="w-full py-2"
+              pendingText="Đang đóng..."
+              confirm="Đóng tự điểm danh? Sau khi đóng, quét mã sẽ không điểm danh được nữa."
+            >
+              Đóng điểm danh
+            </SubmitButton>
+          </form>
+        </div>
       </div>
     </div>
   );

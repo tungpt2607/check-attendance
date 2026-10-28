@@ -59,10 +59,10 @@ export function QrPresenter({ sessionId }: { sessionId: string }) {
   }, [load]);
 
   if (!state) {
-    return <div className="grid aspect-square w-full place-items-center rounded-2xl bg-slate-100 text-slate-500">Đang tạo mã QR...</div>;
+    return <div className="grid min-h-0 flex-1 place-items-center rounded-2xl bg-slate-100 text-slate-500">Đang tạo mã QR...</div>;
   }
   if (!state.open) {
-    return <p className="rounded-lg bg-slate-100 p-6 text-center text-slate-600">Tự điểm danh đã đóng.</p>;
+    return <p className="flex-1 rounded-lg bg-slate-100 p-6 text-center text-slate-600">Tự điểm danh đã đóng.</p>;
   }
 
   const seconds = Math.ceil(remainingMs / 1000);
@@ -70,34 +70,32 @@ export function QrPresenter({ sessionId }: { sessionId: string }) {
   const urgent = seconds <= 5;
 
   return (
-    <div className="space-y-4">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={state.qrDataUrl}
-        alt="Mã QR tự điểm danh"
-        className="mx-auto aspect-square w-full max-w-md rounded-2xl border border-slate-200 bg-white p-3"
-      />
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {/* QR tự co theo phần chiều cao còn lại của màn hình */}
+      <div className="relative min-h-0 flex-1">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={state.qrDataUrl} alt="Mã QR tự điểm danh" className="absolute inset-0 h-full w-full object-contain" />
+      </div>
 
-      <div className="mx-auto max-w-md space-y-1.5">
+      <div className="space-y-2">
         <div className="h-2 overflow-hidden rounded-full bg-slate-200">
           <div
             className={`h-full rounded-full transition-[width] duration-200 ease-linear ${urgent ? "bg-amber-500" : "bg-indigo-600"}`}
             style={{ width: `${percent}%` }}
           />
         </div>
-        <p className={`text-center text-sm font-medium tabular-nums ${urgent ? "text-amber-600" : "text-slate-600"}`}>
-          {seconds > 0 ? `Mã mới sau ${seconds}s` : "Đang đổi mã..."}
-        </p>
+        <div className="flex items-end justify-between gap-3">
+          <p className={`text-sm font-medium tabular-nums ${urgent ? "text-amber-600" : "text-slate-600"}`}>
+            {seconds > 0 ? `Mã mới sau ${seconds}s` : "Đang đổi mã..."}
+            {error && <span className="block text-xs text-amber-600">Mất kết nối, đang thử lại...</span>}
+          </p>
+          <p className="text-right leading-none">
+            <span className="text-3xl font-bold tabular-nums text-indigo-600">{state.checkedIn}</span>
+            <span className="text-lg font-medium text-slate-400">/{state.total}</span>
+            <span className="block pt-1 text-xs text-slate-500">đã điểm danh</span>
+          </p>
+        </div>
       </div>
-
-      <div className="text-center">
-        <p className="text-4xl font-bold text-indigo-600">
-          {state.checkedIn}
-          <span className="text-2xl font-medium text-slate-400"> / {state.total}</span>
-        </p>
-        <p className="text-sm text-slate-500">người đã điểm danh</p>
-      </div>
-      {error && <p className="text-center text-xs text-amber-600">Mất kết nối, đang thử lại...</p>}
     </div>
   );
 }
