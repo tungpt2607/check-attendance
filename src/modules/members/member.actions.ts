@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { getOwnedGroup } from "@/modules/groups/group.service";
 import { addMembersFromText, deleteMember, getMember, updateMember } from "./member.service";
@@ -44,4 +45,6 @@ export async function deleteMemberAction(formData: FormData) {
   await deleteMember(memberId);
   revalidatePath(`/groups/${member.groupId}`);
   revalidatePath("/groups");
+  // Xóa từ trang thống kê của chính thành viên: quay về danh sách thành viên của nhóm
+  if (formData.get("back") === "group") redirect(`/groups/${member.groupId}?tab=members`);
 }

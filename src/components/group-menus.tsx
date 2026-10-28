@@ -23,6 +23,7 @@ import { DialogForm, EditMemberDialog, EditSessionDialog, RenameGroupDialog } fr
 import { GroupInviteDialog } from "./group-invite-dialog";
 import { MemberInviteDialog } from "./member-invite";
 import { PageHeader } from "./page-header";
+import { RateBadge } from "./rate";
 import { brand } from "@/theme/brand";
 
 /**
@@ -35,6 +36,7 @@ export function GroupPageHeader({
   subtitle,
   canDelete,
   inviteLink,
+  branchRate,
 }: {
   groupId: string;
   groupName: string;
@@ -42,6 +44,8 @@ export function GroupPageHeader({
   /** Chỉ xóa được khi không còn nhóm con */
   canDelete: boolean;
   inviteLink: ShareLink | null;
+  /** Chuyên cần chung của nhóm này và mọi nhóm con (undefined: không hiện, khi nhóm không có nhóm con) */
+  branchRate?: number | null;
 }) {
   const [open, setOpen] = useState<"rename" | "invite" | "delete" | null>(null);
   const [link, setLink] = useState<ShareLink | null>(inviteLink);
@@ -53,6 +57,11 @@ export function GroupPageHeader({
         subtitle={
           <>
             {subtitle}
+            {branchRate !== undefined && (
+              <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.5 }}>
+                Chuyên cần cả nhánh (gồm nhóm con): <RateBadge rate={branchRate} inline />
+              </Box>
+            )}
             {link && (
               <Box component="span" sx={{ display: "block", mt: 1 }}>
                 <Chip
@@ -139,6 +148,7 @@ export function MemberRowMenu({
   code,
   groupName,
   linkedEmail,
+  onDetailPage = false,
 }: {
   memberId: string;
   name: string;
@@ -146,6 +156,8 @@ export function MemberRowMenu({
   groupName: string;
   /** null: chưa liên kết tài khoản */
   linkedEmail: string | null;
+  /** Đang ở trang thống kê của thành viên: xóa xong thì quay về nhóm */
+  onDetailPage?: boolean;
 }) {
   const [open, setOpen] = useState<"invite" | "unlink" | "edit" | "delete" | null>(null);
   const close = () => setOpen(null);
@@ -181,7 +193,8 @@ export function MemberRowMenu({
         onClose={close}
         danger
         action={deleteMemberAction}
-        fields={{ memberId }}
+        redirects={onDetailPage}
+        fields={onDetailPage ? { memberId, back: "group" } : { memberId }}
         confirmLabel="Xóa"
         pendingText="Đang xóa..."
         successMessage="Đã xóa thành viên"

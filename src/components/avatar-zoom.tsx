@@ -60,21 +60,38 @@ export function ZoomableAvatar({
   version,
   size = 28,
   caption,
+  insideLink = false,
 }: {
   userId: string;
   name: string;
   version: number | null;
   size?: number;
   caption?: string;
+  /** Ảnh nằm trong một dòng bấm được (link): bấm ảnh chỉ xem ảnh, không mở link */
+  insideLink?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   if (!version) return <Avatar userId={userId} name={name} version={null} size={size} />;
-  return (
+  const content = (
     <>
       <ButtonBase onClick={() => setOpen(true)} aria-label={`Xem ảnh của ${name}`} sx={{ borderRadius: "50%", flexShrink: 0 }}>
         <Avatar userId={userId} name={name} version={version} size={size} />
       </ButtonBase>
       <AvatarPhotoDialog open={open} onClose={() => setOpen(false)} userId={userId} version={version} name={name} caption={caption} />
     </>
+  );
+  if (!insideLink) return content;
+  return (
+    <Box
+      component="span"
+      sx={{ display: "inline-flex" }}
+      onClick={(e) => {
+        // Chặn cú bấm (kể cả trong hộp xem ảnh) lan ra link của dòng
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
+      {content}
+    </Box>
   );
 }

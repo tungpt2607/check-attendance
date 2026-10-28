@@ -22,6 +22,8 @@ import { Fragment } from "react";
 import { ZoomableAvatar } from "@/components/avatar-zoom";
 import { AddMembersButton, CreateSubgroupButton, GroupPageHeader, MemberRowMenu } from "@/components/group-menus";
 import { GroupTabs } from "@/components/group-tabs";
+import { MemberSortToggle, type MemberSort } from "@/components/member-sort";
+import { RateBadge } from "@/components/rate";
 import { AppLink, ListLink } from "@/components/links";
 import { PagedList } from "@/components/paged-list";
 import { PageHeader, SectionTitle } from "@/components/page-header";
@@ -34,6 +36,7 @@ import { createSessionAction } from "@/modules/attendance/attendance.actions";
 import { listSessionsWithCounts } from "@/modules/attendance/attendance.service";
 import { getAncestors, getChildGroups, getOwnedGroup } from "@/modules/groups/group.service";
 import { listMembers } from "@/modules/members/member.service";
+import { getBranchStats, getMemberRates } from "@/modules/attendance/stats.service";
 import { approveRequestAction, rejectRequestAction } from "@/modules/invites/invite.actions";
 import { getActiveGroupInvite, listPendingRequests } from "@/modules/invites/invite.service";
 import { buildShareLink } from "@/modules/invites/share";
@@ -42,11 +45,12 @@ import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ tab?: string }> };
+type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ tab?: string; sort?: string }> };
 
 export default async function GroupDetailPage({ params, searchParams }: Props) {
   const { groupId } = await params;
-  const { tab } = await searchParams;
+  const { tab, sort: sortParam } = await searchParams;
+  const sort: MemberSort = sortParam === "rate" ? "rate" : "name";
   const user = await requireUser();
   const group = await getOwnedGroup(groupId, user.userId);
   if (!group) notFound();
@@ -63,6 +67,23 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const [activeInvite, requests] = await Promise.all([getActiveGroupInvite(group.id), listPendingRequests(group.id)]);
   const groupLink = activeInvite ? await buildShareLink(`/join/${activeInvite.token}`, null) : null;
   const requestAccounts = await getAccountsByIds(requests.map((r) => String(r.userId)));
+  // Thống kê: % từng thành viên; % chung của nhóm này (cả nhánh) và của từng nhóm con (gồm nhóm con bên trong)
+  const [memberRates, branchStats] = await Promise.all([
+    getMemberRates(group.id),
+    getBranchStats([group.id, ...children.map((c) => c.id)]),
+  ]);
+  const rateOf = (id: string) => memberRates.get(id)?.rate ?? null;
+  // Xếp theo chuyên cần thấp → cao; người chưa có kết quả nằm cuối; cùng tỷ lệ thì giữ thứ tự tên
+  const sortedMembers =
+    sort === "rate"
+      ? [...members].sort((a, b) => {
+          const ra = rateOf(a.id);
+          const rb = rateOf(b.id);
+          if (ra === null || rb === null) return ra === rb ? 0 : ra === null ? 1 : -1;
+          return ra - rb;
+        })
+      : members;
+  const branch = branchStats.get(group.id);
 
   // ---------- Tab "Điểm danh" ----------
   const sessionsTab = (
@@ -181,63 +202,78 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
               Chưa có thành viên.
             </Typography>
           ) : (
-            <PagedList searchable={members.length > 5}>
-              <List dense disablePadding sx={{ mt: 1 }}>
-                {members.map((m, i) => {
-                  const acc = m.linkedUserId ? accounts.get(m.linkedUserId) : undefined;
-                  return (
-                    <ListItem
-                      key={m.id}
-                      data-search={normalizeSearch(`${m.name} ${m.code}`)}
-                      disableGutters
-                      divider={i < members.length - 1}
-                      secondaryAction={
-                        <MemberRowMenu
-                          memberId={m.id}
-                          name={m.name}
-                          code={m.code}
-                          groupName={group.name}
-                          linkedEmail={m.linkedUserId ? (acc?.email ?? "") : null}
-                        />
-                      }
-                      sx={{ pr: 5 }}
-                    >
-                      <ListItemText
-                        primary={
-                          <>
-                            <Typography component="span" variant="caption" color="text.disabled" sx={{ mr: 1 }}>
-                              {i + 1}.
-                            </Typography>
-                            {m.code && (
-                              <Typography component="span" variant="caption" color="text.secondary" sx={{ mr: 1 }}>
-                                {m.code}
-                              </Typography>
-                            )}
-                            {m.name}
-                            {m.linkedUserId && (
-                              <Box
-                                component="span"
-                                title={`Đã liên kết: ${acc?.email ?? ""}`}
-                                sx={{ display: "inline-flex", verticalAlign: "middle", ml: 1 }}
-                              >
-                                <ZoomableAvatar
-                                  userId={m.linkedUserId}
-                                  name={acc?.name ?? m.name}
-                                  version={acc?.avatarVersion ?? null}
-                                  caption={acc?.email}
-                                  size={28}
-                                />
-                              </Box>
-                            )}
-                          </>
+            <>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+                <MemberSortToggle value={sort} />
+              </Box>
+              <PagedList searchable={members.length > 5}>
+                <List dense disablePadding sx={{ mt: 1 }}>
+                  {sortedMembers.map((m, i) => {
+                    const acc = m.linkedUserId ? accounts.get(m.linkedUserId) : undefined;
+                    const r = memberRates.get(m.id);
+                    return (
+                      <ListItem
+                        key={m.id}
+                        data-search={normalizeSearch(`${m.name} ${m.code}`)}
+                        disablePadding
+                        divider={i < sortedMembers.length - 1}
+                        secondaryAction={
+                          <Stack direction="row" sx={{ alignItems: "center", gap: 0.25 }}>
+                            <RateBadge
+                              rate={r?.rate ?? null}
+                              title={r ? `Có mặt/muộn ${(r.counts.present ?? 0) + (r.counts.late ?? 0)}/${r.recorded} buổi` : "Chưa có kết quả"}
+                            />
+                            <MemberRowMenu
+                              memberId={m.id}
+                              name={m.name}
+                              code={m.code}
+                              groupName={group.name}
+                              linkedEmail={m.linkedUserId ? (acc?.email ?? "") : null}
+                            />
+                          </Stack>
                         }
-                        slotProps={{ primary: { noWrap: true } }}
-                      />
-                    </ListItem>
-                  );
-                })}
-              </List>
-            </PagedList>
+                        sx={{ "& .MuiListItemButton-root": { pr: 11 } }}
+                      >
+                        <ListLink href={`/groups/${group.id}/members/${m.id}`} sx={{ borderRadius: 2, px: 0.5, py: 0.75 }}>
+                          <ListItemText
+                            primary={
+                              <>
+                                <Typography component="span" variant="caption" color="text.disabled" sx={{ mr: 1 }}>
+                                  {i + 1}.
+                                </Typography>
+                                {m.code && (
+                                  <Typography component="span" variant="caption" color="text.secondary" sx={{ mr: 1 }}>
+                                    {m.code}
+                                  </Typography>
+                                )}
+                                {m.name}
+                                {m.linkedUserId && (
+                                  <Box
+                                    component="span"
+                                    title={`Đã liên kết: ${acc?.email ?? ""}`}
+                                    sx={{ display: "inline-flex", verticalAlign: "middle", ml: 1 }}
+                                  >
+                                    <ZoomableAvatar
+                                      userId={m.linkedUserId}
+                                      name={acc?.name ?? m.name}
+                                      version={acc?.avatarVersion ?? null}
+                                      caption={acc?.email}
+                                      size={28}
+                                      insideLink
+                                    />
+                                  </Box>
+                                )}
+                              </>
+                            }
+                            slotProps={{ primary: { noWrap: true } }}
+                          />
+                        </ListLink>
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              </PagedList>
+            </>
           )}
         </CardContent>
       </Card>
@@ -255,13 +291,21 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
           </Typography>
         ) : (
           <List disablePadding sx={{ mx: -1 }}>
-            {children.map((c) => (
-              <ListLink key={c.id} href={`/groups/${c.id}`} sx={{ borderRadius: 2, px: 1 }}>
-                <SubdirectoryArrowRightRounded fontSize="small" sx={{ color: "text.disabled", mr: 1 }} />
-                <ListItemText primary={c.name} slotProps={{ primary: { fontWeight: 500 } }} />
-                <ChevronRightRounded sx={{ color: "text.disabled" }} />
-              </ListLink>
-            ))}
+            {children.map((c) => {
+              const st = branchStats.get(c.id);
+              return (
+                <ListLink key={c.id} href={`/groups/${c.id}`} sx={{ borderRadius: 2, px: 1 }}>
+                  <SubdirectoryArrowRightRounded fontSize="small" sx={{ color: "text.disabled", mr: 1 }} />
+                  <ListItemText
+                    primary={c.name}
+                    secondary={st ? `${st.memberCount} thành viên · ${st.sessionCount} buổi` : undefined}
+                    slotProps={{ primary: { fontWeight: 500 } }}
+                  />
+                  <RateBadge rate={st?.rate ?? null} title="Chuyên cần chung của nhóm con này" />
+                  <ChevronRightRounded sx={{ color: "text.disabled", ml: 0.5 }} />
+                </ListLink>
+              );
+            })}
           </List>
         )}
       </CardContent>
@@ -307,6 +351,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
         groupId={group.id}
         groupName={group.name}
         subtitle={`${members.length} thành viên · ${children.length} nhóm con · ${sessions.length} buổi điểm danh`}
+        branchRate={children.length > 0 ? (branch?.rate ?? null) : undefined}
         canDelete={children.length === 0}
         inviteLink={groupLink}
       />
