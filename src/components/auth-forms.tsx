@@ -1,36 +1,39 @@
 "use client";
 
-import Link from "next/link";
+import Alert from "@mui/material/Alert";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useActionState } from "react";
 import { loginAction, registerAction } from "@/modules/auth/auth.actions";
-import type { AuthFormState } from "@/modules/auth/auth.types";
+import { AppLink } from "./links";
 import { PasswordInput } from "./password-input";
 import { SubmitButton } from "./submit-button";
-import { ui } from "./ui";
-
-function ErrorBox({ state }: { state: AuthFormState }) {
-  if (!state?.error) return null;
-  return <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">{state.error}</p>;
-}
 
 export function LoginForm() {
   const [state, action] = useActionState(loginAction, undefined);
   return (
-    <form action={action} className="space-y-4">
-      <ErrorBox state={state} />
-      <div>
-        <label className={ui.label} htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" required autoComplete="email" className={ui.input} />
-      </div>
-      <div>
-        <label className={ui.label} htmlFor="password">Mật khẩu</label>
-        <PasswordInput id="password" name="password" required autoComplete="current-password" />
-      </div>
-      <SubmitButton className="w-full" pendingText="Đang đăng nhập...">Đăng nhập</SubmitButton>
-      <p className="text-center text-sm text-slate-600">
-        Chưa có tài khoản?{" "}
-        <Link href="/register" className="font-medium text-brand-600 hover:underline">Đăng ký</Link>
-      </p>
+    // key: dựng lại form để giữ email đã gõ khi đăng nhập lỗi
+    <form action={action} key={state?.error ?? "login"}>
+      <Stack spacing={2}>
+      {state?.error && <Alert severity="error">{state.error}</Alert>}
+      <TextField
+        id="email"
+        name="email"
+        type="email"
+        label="Email"
+        required
+        autoComplete="email"
+        defaultValue={state?.email ?? ""}
+      />
+      <PasswordInput id="password" name="password" label="Mật khẩu" required autoComplete="current-password" />
+      <SubmitButton fullWidth size="large" pendingText="Đang đăng nhập...">
+        Đăng nhập
+      </SubmitButton>
+      <Typography variant="body2" color="text.secondary" textAlign="center">
+        Chưa có tài khoản? <AppLink href="/register" fontWeight={600}>Đăng ký</AppLink>
+      </Typography>
+      </Stack>
     </form>
   );
 }
@@ -38,29 +41,28 @@ export function LoginForm() {
 export function RegisterForm() {
   const [state, action] = useActionState(registerAction, undefined);
   return (
-    <form action={action} className="space-y-4">
-      <ErrorBox state={state} />
-      <div>
-        <label className={ui.label} htmlFor="name">Họ tên</label>
-        <input id="name" name="name" required autoComplete="name" className={ui.input} />
-      </div>
-      <div>
-        <label className={ui.label} htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" required autoComplete="email" className={ui.input} />
-      </div>
-      <div>
-        <label className={ui.label} htmlFor="password">Mật khẩu</label>
-        <PasswordInput id="password" name="password" required minLength={6} autoComplete="new-password" />
-      </div>
-      <div>
-        <label className={ui.label} htmlFor="confirm">Nhập lại mật khẩu</label>
-        <PasswordInput id="confirm" name="confirm" required minLength={6} autoComplete="new-password" />
-      </div>
-      <SubmitButton className="w-full" pendingText="Đang tạo tài khoản...">Đăng ký</SubmitButton>
-      <p className="text-center text-sm text-slate-600">
-        Đã có tài khoản?{" "}
-        <Link href="/login" className="font-medium text-brand-600 hover:underline">Đăng nhập</Link>
-      </p>
+    <form action={action} key={state?.error ?? "register"}>
+      <Stack spacing={2}>
+      {state?.error && <Alert severity="error">{state.error}</Alert>}
+      <TextField id="name" name="name" label="Họ tên" required autoComplete="name" defaultValue={state?.name ?? ""} />
+      <TextField
+        id="email"
+        name="email"
+        type="email"
+        label="Email"
+        required
+        autoComplete="email"
+        defaultValue={state?.email ?? ""}
+      />
+      <PasswordInput id="password" name="password" label="Mật khẩu" required minLength={6} autoComplete="new-password" />
+      <PasswordInput id="confirm" name="confirm" label="Nhập lại mật khẩu" required minLength={6} autoComplete="new-password" />
+      <SubmitButton fullWidth size="large" pendingText="Đang tạo tài khoản...">
+        Đăng ký
+      </SubmitButton>
+      <Typography variant="body2" color="text.secondary" textAlign="center">
+        Đã có tài khoản? <AppLink href="/login" fontWeight={600}>Đăng nhập</AppLink>
+      </Typography>
+      </Stack>
     </form>
   );
 }

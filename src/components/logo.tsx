@@ -6,13 +6,13 @@ const SEGMENTS = [
   { d: "M51.7 96.0 L62.33 96.0 L83.67 83.67 L96.0 62.33 L96.0 51.7 L83.5 51.7 L83.5 58.98 L74.52 74.52 L58.98 83.5 L51.7 83.5Z", color: "#54B6B9" },
 ];
 
-export function Logo({ size = 28, className = "" }: { size?: number; className?: string }) {
+export function Logo({ size = 28 }: { size?: number }) {
   return (
     <svg
       viewBox="0 0 100 100"
       width={size}
       height={size}
-      className={`shrink-0 ${className}`}
+      style={{ flexShrink: 0, display: "block" }}
       role="img"
       aria-label="Logo"
     >

@@ -1,5 +1,18 @@
 "use client";
 
+import CloseRounded from "@mui/icons-material/CloseRounded";
+import DeleteOutline from "@mui/icons-material/DeleteOutline";
+import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import ButtonBase from "@mui/material/ButtonBase";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import {
   changePasswordAction,
@@ -9,15 +22,15 @@ import {
   type FormState,
 } from "@/modules/users/account.actions";
 import { Avatar } from "./avatar";
-import { Spinner } from "./spinner";
 import { PasswordInput } from "./password-input";
 import { SubmitButton } from "./submit-button";
-import { ui } from "./ui";
+import { toast } from "./toaster";
 
-function Message({ state }: { state: FormState }) {
-  if (state?.error) return <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">{state.error}</p>;
-  if (state?.ok) return <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{state.ok}</p>;
-  return null;
+/** Thành công: báo bằng thông báo nhỏ; lỗi: hiện ngay trong form */
+function useResultToast(state: FormState) {
+  useEffect(() => {
+    if (state?.ok) toast(state.ok);
+  }, [state]);
 }
 
 // ---------- Ảnh đại diện ----------
@@ -55,17 +68,18 @@ async function shrinkToSquare(file: File): Promise<File> {
 
 export function AvatarForm({ userId, name, version }: { userId: string; name: string; version: number | null }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [state, setState] = useState<FormState>(undefined);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [zoomed, setZoomed] = useState(false);
+  const [askRemove, setAskRemove] = useState(false);
 
-  // Đóng ảnh phóng to bằng phím Esc (trên máy tính)
-  useEffect(() => {
-    if (!zoomed) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setZoomed(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [zoomed]);
+  const handle = (result: FormState) => {
+    if (result?.error) setError(result.error);
+    else {
+      setError(null);
+      if (result?.ok) toast(result.ok);
+    }
+  };
 
   const onPick = (file: File | undefined) => {
     if (!file) return;
@@ -74,9 +88,9 @@ export function AvatarForm({ userId, name, version }: { userId: string; name: st
         const small = await shrinkToSquare(file);
         const fd = new FormData();
         fd.append("avatar", small);
-        setState(await uploadAvatarAction(fd));
+        handle(await uploadAvatarAction(fd));
       } catch (e) {
-        setState({ error: e instanceof Error ? e.message : "Không tải được ảnh." });
+        setError(e instanceof Error ? e.message : "Không tải được ảnh.");
       } finally {
         if (inputRef.current) inputRef.current.value = "";
       }
@@ -84,71 +98,93 @@ export function AvatarForm({ userId, name, version }: { userId: string; name: st
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-4">
-        {version ? (
-          <button type="button" onClick={() => setZoomed(true)} aria-label="Xem ảnh lớn" className="rounded-full">
-            <Avatar userId={userId} name={name} version={version} size={72} />
-          </button>
-        ) : (
+    <Stack spacing={2}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+        <ButtonBase
+          onClick={() => version && setZoomed(true)}
+          disabled={!version}
+          aria-label="Xem ảnh lớn"
+          sx={{ borderRadius: "50%" }}
+        >
           <Avatar userId={userId} name={name} version={version} size={72} />
-        )}
-        <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={pending} onClick={() => inputRef.current?.click()} className={ui.btn}>
-            {pending && <Spinner />}
+        </ButtonBase>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
+          <Button
+            variant="contained"
+            disabled={pending}
+            onClick={() => inputRef.current?.click()}
+            startIcon={pending ? <CircularProgress size={16} color="inherit" /> : <PhotoCameraOutlined />}
+          >
             {pending ? "Đang xử lý..." : version ? "Đổi ảnh" : "Chọn ảnh"}
-          </button>
+          </Button>
           {version && (
-            <button
-              type="button"
+            <Button
+              variant="outlined"
+              color="inherit"
               disabled={pending}
-              onClick={() =>
-                startTransition(async () => {
-                  if (window.confirm("Xóa ảnh đại diện?")) setState(await removeAvatarAction());
-                })
-              }
-              className={ui.btnGhost}
+              startIcon={<DeleteOutline />}
+              onClick={() => setAskRemove(true)}
             >
               Xóa ảnh
-            </button>
+            </Button>
           )}
-        </div>
+        </Stack>
         <input
           ref={inputRef}
           type="file"
           accept="image/*"
-          className="hidden"
+          hidden
           onChange={(e) => onPick(e.target.files?.[0])}
         />
-      </div>
-      <Message state={state} />
+      </Stack>
+      {error && <Alert severity="error">{error}</Alert>}
 
-      {zoomed && version && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Ảnh đại diện"
-          onClick={() => setZoomed(false)}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/85 p-6"
-        >
+      {/* Xem ảnh phóng to */}
+      <Dialog
+        open={zoomed && !!version}
+        onClose={() => setZoomed(false)}
+        maxWidth="sm"
+        slotProps={{ paper: { sx: { bgcolor: "transparent", boxShadow: "none", m: 2, overflow: "visible" } } }}
+      >
+        <Box sx={{ position: "relative" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`/api/avatar/${userId}?v=${version}`}
             alt={name}
-            onClick={(e) => e.stopPropagation()}
-            className="aspect-square w-full max-w-sm rounded-2xl object-cover shadow-2xl sm:max-w-md"
+            style={{ display: "block", width: "min(85vw, 440px)", aspectRatio: "1", objectFit: "cover", borderRadius: 16 }}
           />
-          <p className="text-sm text-white/80">{name}</p>
-          <button
-            type="button"
+          <IconButton
             onClick={() => setZoomed(false)}
-            className="rounded-full bg-white/15 px-5 py-2 text-sm font-medium text-white hover:bg-white/25"
+            aria-label="Đóng"
+            sx={{ position: "absolute", top: 8, right: 8, bgcolor: "rgba(0,0,0,0.45)", color: "#fff", "&:hover": { bgcolor: "rgba(0,0,0,0.6)" } }}
           >
-            Đóng
-          </button>
-        </div>
-      )}
-    </div>
+            <CloseRounded />
+          </IconButton>
+          <Typography sx={{ color: "#fff", textAlign: "center", mt: 1.5, fontWeight: 500 }}>{name}</Typography>
+        </Box>
+      </Dialog>
+
+      {/* Xác nhận xóa ảnh */}
+      <Dialog open={askRemove} onClose={() => setAskRemove(false)} maxWidth="xs" fullWidth>
+        <Box sx={{ p: 3 }}>
+          <Typography sx={{ fontWeight: 600, mb: 1 }}>Xóa ảnh đại diện?</Typography>
+          <Typography color="text.secondary" variant="body2">Ảnh sẽ được thay bằng chữ cái đầu của tên bạn.</Typography>
+          <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", mt: 3 }}>
+            <Button color="inherit" onClick={() => setAskRemove(false)}>Hủy</Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => {
+                setAskRemove(false);
+                startTransition(async () => handle(await removeAvatarAction()));
+              }}
+            >
+              Xóa ảnh
+            </Button>
+          </Stack>
+        </Box>
+      </Dialog>
+    </Stack>
   );
 }
 
@@ -156,14 +192,18 @@ export function AvatarForm({ userId, name, version }: { userId: string; name: st
 
 export function NameForm({ name }: { name: string }) {
   const [state, action] = useActionState(updateNameAction, undefined);
+  useResultToast(state);
   return (
-    <form action={action} className="space-y-2">
-      <label className={ui.label} htmlFor="name">Họ tên</label>
-      <div className="flex gap-2">
-        <input id="name" name="name" defaultValue={name} required maxLength={80} className={ui.input} />
-        <SubmitButton pendingText="Đang lưu..." className="shrink-0">Lưu</SubmitButton>
-      </div>
-      <Message state={state} />
+    <form action={action}>
+      <Stack spacing={1.5}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
+          <TextField id="name" name="name" label="Họ tên" defaultValue={name} required slotProps={{ htmlInput: { maxLength: 80 } }} />
+          <SubmitButton pendingText="Đang lưu..." sx={{ flexShrink: 0, height: 40 }}>
+            Lưu
+          </SubmitButton>
+        </Stack>
+        {state?.error && <Alert severity="error">{state.error}</Alert>}
+      </Stack>
     </form>
   );
 }
@@ -172,22 +212,19 @@ export function NameForm({ name }: { name: string }) {
 
 export function PasswordForm() {
   const [state, action] = useActionState(changePasswordAction, undefined);
+  useResultToast(state);
   return (
-    <form action={action} className="space-y-3">
-      <div>
-        <label className={ui.label} htmlFor="current">Mật khẩu hiện tại</label>
-        <PasswordInput id="current" name="current" required autoComplete="current-password" />
-      </div>
-      <div>
-        <label className={ui.label} htmlFor="next">Mật khẩu mới</label>
-        <PasswordInput id="next" name="next" required minLength={6} autoComplete="new-password" />
-      </div>
-      <div>
-        <label className={ui.label} htmlFor="confirm">Nhập lại mật khẩu mới</label>
-        <PasswordInput id="confirm" name="confirm" required minLength={6} autoComplete="new-password" />
-      </div>
-      <Message state={state} />
-      <SubmitButton pendingText="Đang đổi...">Đổi mật khẩu</SubmitButton>
+    <form action={action}>
+      <Stack spacing={2}>
+        <PasswordInput id="current" name="current" label="Mật khẩu hiện tại" required autoComplete="current-password" />
+        <PasswordInput id="next" name="next" label="Mật khẩu mới" required minLength={6} autoComplete="new-password" />
+        <PasswordInput id="confirm" name="confirm" label="Nhập lại mật khẩu mới" required minLength={6} autoComplete="new-password" />
+        {state?.error && <Alert severity="error">{state.error}</Alert>}
+        {state?.ok && <Alert severity="success">{state.ok}</Alert>}
+        <Box>
+          <SubmitButton pendingText="Đang đổi...">Đổi mật khẩu</SubmitButton>
+        </Box>
+      </Stack>
     </form>
   );
 }
