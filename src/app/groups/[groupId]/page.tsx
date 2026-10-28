@@ -1,18 +1,40 @@
-import Link from "next/link";
+import AddRounded from "@mui/icons-material/AddRounded";
+import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import DeleteOutline from "@mui/icons-material/DeleteOutline";
+import EventAvailableRounded from "@mui/icons-material/EventAvailableRounded";
+import GroupAddOutlined from "@mui/icons-material/GroupAddOutlined";
+import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
+import SubdirectoryArrowRightRounded from "@mui/icons-material/SubdirectoryArrowRightRounded";
+import Box from "@mui/material/Box";
+import Breadcrumbs from "@mui/material/Breadcrumbs";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
+import { Fragment } from "react";
+import { EditMemberButton, RenameGroupButton } from "@/components/edit-dialogs";
+import { AppLink, ListLink } from "@/components/links";
 import { ListSearch } from "@/components/list-search";
+import { PageHeader, SectionTitle } from "@/components/page-header";
+import { StatusCounts } from "@/components/status-chip";
 import { SubmitButton } from "@/components/submit-button";
-import { ui } from "@/components/ui";
 import { formatDate, todayInputValue } from "@/lib/format";
 import { normalizeSearch } from "@/lib/search";
 import { requireUser } from "@/lib/session";
 import { createSessionAction } from "@/modules/attendance/attendance.actions";
 import { listSessionsWithCounts } from "@/modules/attendance/attendance.service";
-import { ATTENDANCE_STATUSES } from "@/modules/attendance/attendance.statuses";
-import { createGroupAction, deleteGroupAction, renameGroupAction } from "@/modules/groups/group.actions";
+import { createGroupAction, deleteGroupAction } from "@/modules/groups/group.actions";
 import { getAncestors, getChildGroups, getOwnedGroup } from "@/modules/groups/group.service";
-import { addMembersAction, deleteMemberAction, updateMemberAction } from "@/modules/members/member.actions";
+import { addMembersAction, deleteMemberAction } from "@/modules/members/member.actions";
 import { listMembers } from "@/modules/members/member.service";
+import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -32,175 +54,209 @@ export default async function GroupDetailPage({ params }: Props) {
   ]);
 
   return (
-    <div className="space-y-6">
+    <>
       {/* Đường dẫn nhóm */}
-      <nav className="flex flex-wrap items-center gap-1 text-sm text-slate-500">
-        <Link href="/groups" className="hover:text-brand-600">Nhóm của tôi</Link>
+      <Breadcrumbs sx={{ mb: 1, fontSize: 14 }}>
+        <AppLink href="/groups" color="text.secondary">
+          Nhóm của tôi
+        </AppLink>
         {ancestors.map((a) => (
-          <span key={a.id} className="flex items-center gap-1">
-            <span>/</span>
-            <Link href={`/groups/${a.id}`} className="hover:text-brand-600">{a.name}</Link>
-          </span>
+          <AppLink key={a.id} href={`/groups/${a.id}`} color="text.secondary">
+            {a.name}
+          </AppLink>
         ))}
-      </nav>
+      </Breadcrumbs>
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{group.name}</h1>
-          <p className={ui.muted}>
-            {members.length} thành viên · {children.length} nhóm con · {sessions.length} buổi điểm danh
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <details key={group.name} className="relative">
-            <summary className={`${ui.btnGhost} cursor-pointer list-none`}>Đổi tên</summary>
-            <form action={renameGroupAction} className="absolute left-0 z-10 mt-2 flex w-[min(18rem,calc(100vw-2rem))] gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
-              <input type="hidden" name="groupId" value={group.id} />
-              <input name="name" defaultValue={group.name} required className={ui.input} />
-              <SubmitButton pendingText="Đang lưu..." successMessage="Đã đổi tên nhóm">Lưu</SubmitButton>
-            </form>
-          </details>
-          {children.length === 0 && (
-            <form action={deleteGroupAction}>
-              <input type="hidden" name="groupId" value={group.id} />
-              <SubmitButton
-                variant="danger"
-                pendingText="Đang xóa..."
-                successMessage="Đã xóa nhóm"
-                confirm={`Xóa nhóm "${group.name}" cùng toàn bộ thành viên và dữ liệu điểm danh?`}
-              >
-                Xóa nhóm
-              </SubmitButton>
-            </form>
-          )}
-        </div>
-      </div>
-
-      {/* Điểm danh */}
-      <section className={ui.card}>
-        <h2 className={`${ui.h2} mb-3`}>Điểm danh</h2>
-        {members.length === 0 ? (
-          <p className={ui.muted}>Thêm thành viên trước khi điểm danh.</p>
-        ) : (
-          <form action={createSessionAction} className="flex flex-col gap-2 sm:flex-row">
-            <input type="hidden" name="groupId" value={group.id} />
-            <input name="title" placeholder="Tên buổi (vd: Buổi sáng, Tiết 1...)" className={ui.input} />
-            <input name="date" type="date" required defaultValue={todayInputValue()} className={`${ui.input} min-w-0 appearance-none sm:w-44`} />
-            <SubmitButton pendingText="Đang tạo..." className="shrink-0">Bắt đầu điểm danh</SubmitButton>
-          </form>
-        )}
-
-        {sessions.length > 0 && (
-          <ul className="mt-4 divide-y divide-slate-100">
-            {sessions.map((s) => (
-              <li key={s.id}>
-                <Link
-                  href={`/groups/${group.id}/sessions/${s.id}`}
-                  className="flex flex-col gap-1.5 py-2.5 hover:text-brand-600"
+      <PageHeader
+        title={group.name}
+        subtitle={`${members.length} thành viên · ${children.length} nhóm con · ${sessions.length} buổi điểm danh`}
+        actions={
+          <>
+            <RenameGroupButton key={group.name} groupId={group.id} name={group.name} />
+            {children.length === 0 && (
+              <form action={deleteGroupAction}>
+                <input type="hidden" name="groupId" value={group.id} />
+                <SubmitButton
+                  variant="danger"
+                  pendingText="Đang xóa..."
+                  startIcon={<DeleteOutline />}
+                  successMessage="Đã xóa nhóm"
+                  confirmLabel="Xóa nhóm"
+                  confirm={`Xóa nhóm "${group.name}" cùng toàn bộ thành viên và dữ liệu điểm danh? Không thể khôi phục.`}
                 >
-                  <span>
-                    <span className="font-medium">{s.title}</span>
-                    <span className="ml-2 text-sm text-slate-500">{formatDate(s.date)}</span>
-                    {s.selfCheckInOpen && (
-                      <span className="ml-2 rounded bg-brand-50 px-1.5 py-0.5 text-xs font-medium text-brand-700">QR đang mở</span>
-                    )}
-                  </span>
-                  <span className="flex flex-wrap justify-end gap-1.5">
-                    {ATTENDANCE_STATUSES.map((st) => (
-                      <span key={st.value} className={`rounded-md px-2 py-0.5 text-xs font-medium ${st.className}`}>
-                        {st.short} {s.counts[st.value] ?? 0}
-                      </span>
-                    ))}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  Xóa nhóm
+                </SubmitButton>
+              </form>
+            )}
+          </>
+        }
+      />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Thành viên */}
-        <section className={ui.card}>
-          <h2 className={`${ui.h2} mb-3`}>Thành viên ({members.length})</h2>
-          {members.length > 5 && <ListSearch listId="member-list" />}
-          {members.length > 0 && (
-            <ul id="member-list" className="mb-4 divide-y divide-slate-100">
-              {members.map((m, i) => (
-                <li
-                  key={m.id}
-                  data-search={normalizeSearch(`${m.name} ${m.code}`)}
-                  className="flex items-center justify-between gap-2 py-2"
-                >
-                  <span className="min-w-0 truncate">
-                    <span className="mr-2 text-xs text-slate-400">{i + 1}.</span>
-                    {m.code && <span className="mr-2 text-xs text-slate-500">{m.code}</span>}
-                    {m.name}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-1">
-                    <details key={`${m.name}|${m.code}`} className="relative">
-                      <summary className="cursor-pointer list-none rounded-md px-2.5 py-1.5 text-sm text-slate-500 hover:bg-slate-100">Sửa</summary>
-                      <form action={updateMemberAction} className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
-                        <input type="hidden" name="memberId" value={m.id} />
-                        <input name="name" defaultValue={m.name} required placeholder="Họ tên" className={ui.input} />
-                        <input name="code" defaultValue={m.code} placeholder="Mã số (tùy chọn)" className={ui.input} />
-                        <SubmitButton pendingText="Đang lưu..." className="w-full" successMessage="Đã lưu thông tin thành viên">Lưu</SubmitButton>
-                      </form>
-                    </details>
-                    <form action={deleteMemberAction}>
-                      <input type="hidden" name="memberId" value={m.id} />
-                      <SubmitButton
-                        variant="plain"
-                        pendingText="Đang xóa"
-                        successMessage="Đã xóa thành viên"
-                        className="rounded-md px-2.5 py-1.5 text-sm text-danger-500 hover:bg-danger-50"
-                        confirm={`Xóa "${m.name}" khỏi nhóm? Toàn bộ lịch sử điểm danh của người này cũng sẽ bị xóa và không khôi phục được.`}
-                      >
-                        Xóa
-                      </SubmitButton>
-                    </form>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <form action={addMembersAction} className="space-y-2">
-            <input type="hidden" name="groupId" value={group.id} />
-            <label className={ui.label} htmlFor="members">Thêm thành viên</label>
-            <textarea
-              id="members"
-              name="members"
-              rows={4}
-              required
-              placeholder={"Mỗi dòng một người, ví dụ:\nNguyễn Văn An\nHS002, Trần Thị Bình"}
-              className={ui.input}
-            />
-            <p className="text-xs text-slate-500">Có thể dán từ Excel: cột Mã và cột Tên.</p>
-            <SubmitButton pendingText="Đang thêm..." successMessage="Đã thêm thành viên">Thêm</SubmitButton>
-          </form>
-        </section>
+      <Stack spacing={2}>
+        {/* Điểm danh */}
+        <Card>
+          <CardContent sx={{ p: 2.5 }}>
+            <SectionTitle>Điểm danh</SectionTitle>
+            {members.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                Thêm thành viên trước khi điểm danh.
+              </Typography>
+            ) : (
+              <form action={createSessionAction}>
+                <input type="hidden" name="groupId" value={group.id} />
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                  <TextField name="title" label="Tên buổi" placeholder="Buổi sáng, Tiết 1..." />
+                  <TextField
+                    name="date"
+                    label="Ngày"
+                    type="date"
+                    required
+                    defaultValue={todayInputValue()}
+                    sx={{ width: { sm: 200 }, flexShrink: 0 }}
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                  <SubmitButton pendingText="Đang tạo..." startIcon={<EventAvailableRounded />} sx={{ flexShrink: 0, height: 40 }}>
+                    Bắt đầu điểm danh
+                  </SubmitButton>
+                </Stack>
+              </form>
+            )}
 
-        {/* Nhóm con */}
-        <section className={ui.card}>
-          <h2 className={`${ui.h2} mb-3`}>Nhóm con ({children.length})</h2>
-          {children.length > 0 && (
-            <ul className="mb-4 divide-y divide-slate-100">
-              {children.map((c) => (
-                <li key={c.id}>
-                  <Link href={`/groups/${c.id}`} className="block py-2 font-medium hover:text-brand-600">
-                    ↳ {c.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-          <form action={createGroupAction} className="flex gap-2">
-            <input type="hidden" name="parentId" value={group.id} />
-            <input name="name" required placeholder="Tên nhóm con" className={ui.input} />
-            <SubmitButton pendingText="Đang tạo..." className="shrink-0" successMessage="Đã tạo nhóm con">Tạo</SubmitButton>
-          </form>
-        </section>
-      </div>
-    </div>
+            {sessions.length > 0 && (
+              <List disablePadding sx={{ mt: 2, mx: -1 }}>
+                {sessions.map((s, i) => (
+                  <Fragment key={s.id}>
+                    {i > 0 && <Divider component="li" />}
+                    <ListLink href={`/groups/${group.id}/sessions/${s.id}`} sx={{ borderRadius: 2, py: 1.25, px: 1, display: "block" }}>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+                        <Typography sx={{ fontWeight: 600 }}>{s.title}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {formatDate(s.date)}
+                        </Typography>
+                        {s.selfCheckInOpen && (
+                          <Chip
+                            size="small"
+                            icon={<QrCode2Rounded />}
+                            label="QR đang mở"
+                            sx={{ bgcolor: brand.tealLighter, color: brand.tealDarker, "& .MuiChip-icon": { color: brand.tealDark } }}
+                          />
+                        )}
+                      </Stack>
+                      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+                        <StatusCounts counts={s.counts} />
+                      </Box>
+                    </ListLink>
+                  </Fragment>
+                ))}
+              </List>
+            )}
+          </CardContent>
+        </Card>
+
+        <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, alignItems: "start" }}>
+          {/* Thành viên */}
+          <Card>
+            <CardContent sx={{ p: 2.5 }}>
+              <SectionTitle>Thành viên ({members.length})</SectionTitle>
+              {members.length > 5 && <ListSearch listId="member-list" />}
+              {members.length > 0 && (
+                <List id="member-list" dense disablePadding sx={{ mt: 1, mb: 2 }}>
+                  {members.map((m, i) => (
+                    <ListItem
+                      key={m.id}
+                      data-search={normalizeSearch(`${m.name} ${m.code}`)}
+                      disableGutters
+                      divider={i < members.length - 1}
+                      secondaryAction={
+                        <Stack direction="row" spacing={0.25}>
+                          <EditMemberButton key={`${m.name}|${m.code}`} memberId={m.id} name={m.name} code={m.code} />
+                          <form action={deleteMemberAction}>
+                            <input type="hidden" name="memberId" value={m.id} />
+                            <SubmitButton
+                              variant="plain"
+                              pendingText=""
+                              successMessage="Đã xóa thành viên"
+                              confirmLabel="Xóa"
+                              sx={{ minWidth: 0, px: 1, color: brand.red }}
+                              confirm={`Xóa "${m.name}" khỏi nhóm? Toàn bộ lịch sử điểm danh của người này cũng sẽ bị xóa và không khôi phục được.`}
+                            >
+                              <DeleteOutline fontSize="small" aria-label={`Xóa ${m.name}`} />
+                            </SubmitButton>
+                          </form>
+                        </Stack>
+                      }
+                      sx={{ pr: 11 }}
+                    >
+                      <ListItemText
+                        primary={
+                          <>
+                            <Typography component="span" variant="caption" color="text.disabled" sx={{ mr: 1 }}>
+                              {i + 1}.
+                            </Typography>
+                            {m.code && (
+                              <Typography component="span" variant="caption" color="text.secondary" sx={{ mr: 1 }}>
+                                {m.code}
+                              </Typography>
+                            )}
+                            {m.name}
+                          </>
+                        }
+                        slotProps={{ primary: { noWrap: true } }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+              <form action={addMembersAction}>
+                <input type="hidden" name="groupId" value={group.id} />
+                <Stack spacing={1.5} sx={{ mt: members.length > 0 ? 0 : 1 }}>
+                  <TextField
+                    name="members"
+                    label="Thêm thành viên"
+                    multiline
+                    minRows={3}
+                    required
+                    placeholder={"Mỗi dòng một người, ví dụ:\nNguyễn Văn An\nHS002, Trần Thị Bình"}
+                    helperText="Có thể dán từ Excel: cột Mã và cột Tên."
+                  />
+                  <Box>
+                    <SubmitButton pendingText="Đang thêm..." startIcon={<GroupAddOutlined />} successMessage="Đã thêm thành viên">
+                      Thêm
+                    </SubmitButton>
+                  </Box>
+                </Stack>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Nhóm con */}
+          <Card>
+            <CardContent sx={{ p: 2.5 }}>
+              <SectionTitle>Nhóm con ({children.length})</SectionTitle>
+              {children.length > 0 && (
+                <List disablePadding sx={{ mb: 2, mx: -1 }}>
+                  {children.map((c) => (
+                    <ListLink key={c.id} href={`/groups/${c.id}`} sx={{ borderRadius: 2, px: 1 }}>
+                      <SubdirectoryArrowRightRounded fontSize="small" sx={{ color: "text.disabled", mr: 1 }} />
+                      <ListItemText primary={c.name} slotProps={{ primary: { fontWeight: 500 } }} />
+                      <ChevronRightRounded sx={{ color: "text.disabled" }} />
+                    </ListLink>
+                  ))}
+                </List>
+              )}
+              <form action={createGroupAction}>
+                <input type="hidden" name="parentId" value={group.id} />
+                <Stack direction="row" spacing={1}>
+                  <TextField name="name" label="Tên nhóm con" required />
+                  <SubmitButton pendingText="..." startIcon={<AddRounded />} successMessage="Đã tạo nhóm con" sx={{ flexShrink: 0, height: 40 }}>
+                    Tạo
+                  </SubmitButton>
+                </Stack>
+              </form>
+            </CardContent>
+          </Card>
+        </Box>
+      </Stack>
+    </>
   );
 }

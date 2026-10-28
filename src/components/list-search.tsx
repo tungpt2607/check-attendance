@@ -1,8 +1,11 @@
 "use client";
 
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { normalizeSearch } from "@/lib/search";
-import { SearchIcon } from "./search-icon";
 
 type Props = {
   /** id của danh sách; mỗi dòng cần data-search (chuỗi đã chuẩn hóa) */
@@ -22,25 +25,34 @@ export function ListSearch({ listId, placeholder = "Tìm theo tên hoặc mã...
     let n = 0;
     for (const row of Array.from(list.querySelectorAll<HTMLElement>("[data-search]"))) {
       const show = !q || (row.dataset.search ?? "").includes(q);
-      row.hidden = !show;
+      row.style.display = show ? "" : "none";
       if (show) n++;
     }
     setShown(q ? n : null);
   }, [listId, query]);
 
   return (
-    <div className="mb-2 space-y-1">
-      <div className="relative">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={placeholder}
-          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-base outline-none sm:text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-        />
-        <SearchIcon />
-      </div>
-      {shown !== null && <p className="text-xs text-slate-500">Tìm thấy {shown} người</p>}
-    </div>
+    <>
+      <TextField
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={placeholder}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchRounded fontSize="small" />
+              </InputAdornment>
+            ),
+          },
+        }}
+      />
+      {shown !== null && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+          Tìm thấy {shown} người
+        </Typography>
+      )}
+    </>
   );
 }
