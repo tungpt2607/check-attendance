@@ -2,6 +2,8 @@
 
 Web điểm danh theo nhóm nhiều cấp. Next.js (App Router) + MongoDB, deploy tự động trên Vercel.
 
+**Địa chỉ:** https://check-attendance-pi.vercel.app
+
 ## Chức năng (v0.1)
 
 - Đăng ký, đăng nhập (email + mật khẩu)
