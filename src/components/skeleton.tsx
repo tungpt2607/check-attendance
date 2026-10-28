@@ -82,11 +82,29 @@ export function CenteredListSkeleton({ rows = 6, logo = true }: { rows?: number;
   );
 }
 
-/** Trang có thanh tab (trang nhóm): tiêu đề + thanh tab + các thẻ của tab đầu */
-export function TabbedPageSkeleton({ tabs = 3, cards = [4] }: { tabs?: number; cards?: number[] }) {
+/** Trang có thanh tab (trang nhóm, nhóm tham gia): tiêu đề + thẻ phía trên (nếu có) + thanh tab + các thẻ của tab đầu */
+export function TabbedPageSkeleton({
+  tabs = 3,
+  cards = [4],
+  before = [],
+  narrow = false,
+}: {
+  tabs?: number;
+  cards?: number[];
+  /** Các thẻ nằm trên thanh tab (vd. thẻ Chuyên cần) */
+  before?: number[];
+  narrow?: boolean;
+}) {
   return (
-    <Box aria-busy="true" aria-label="Đang tải">
+    <Box sx={{ maxWidth: narrow ? 640 : undefined, mx: "auto" }} aria-busy="true" aria-label="Đang tải">
       <TitleSkeleton />
+      {before.length > 0 && (
+        <Stack spacing={2} sx={{ mb: 2 }}>
+          {before.map((n, i) => (
+            <CardSkeleton key={i} lines={n} />
+          ))}
+        </Stack>
+      )}
       <Box sx={{ display: "flex", gap: 2, mb: 2, pb: 1.5, borderBottom: 1, borderColor: "divider" }}>
         {Array.from({ length: tabs }, (_, i) => (
           <Box key={i} sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
