@@ -1,4 +1,5 @@
 import AddRounded from "@mui/icons-material/AddRounded";
+import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
@@ -72,12 +73,19 @@ export default async function GroupDetailPage({ params }: Props) {
   return (
     <>
       {/* Đường dẫn nhóm */}
-      <Breadcrumbs sx={{ mb: 1, fontSize: 14 }}>
-        <AppLink href="/groups" color="text.secondary">
+      {/* Đường dẫn cùng kiểu với nút quay lại "← …" ở các trang khác */}
+      <Breadcrumbs sx={{ mb: 1, typography: "body2", color: "text.secondary" }}>
+        <AppLink
+          href="/groups"
+          color="text.secondary"
+          variant="body2"
+          sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+        >
+          <ArrowBackRounded sx={{ fontSize: 16 }} />
           Nhóm của tôi
         </AppLink>
         {ancestors.map((a) => (
-          <AppLink key={a.id} href={`/groups/${a.id}`} color="text.secondary">
+          <AppLink key={a.id} href={`/groups/${a.id}`} color="text.secondary" variant="body2">
             {a.name}
           </AppLink>
         ))}
