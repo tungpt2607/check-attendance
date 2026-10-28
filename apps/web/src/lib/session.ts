@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { getAccount } from "@/modules/users/user.service";
-import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifySession, type SessionPayload } from "./auth-token";
+import { api, ApiError } from "./api";
+import { SESSION_COOKIE, SESSION_MAX_AGE, verifySession } from "./auth-token";
 
 export type CurrentUser = {
   userId: string;
@@ -12,8 +12,8 @@ export type CurrentUser = {
   tv: number;
 };
 
-export async function createSession(payload: SessionPayload) {
-  const token = await signSession(payload);
+/** Ghi token API trả về (đăng nhập, đăng ký, đổi mật khẩu) vào cookie phiên */
+export async function setSessionCookie(token: string) {
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -41,24 +41,27 @@ const checkSession = cache(async (): Promise<SessionCheck> => {
   const payload = await verifySession(store.get(SESSION_COOKIE)?.value);
   if (!payload) return { status: "none" };
 
-  const account = await getAccount(payload.userId);
-  if (!account || account.tokenVersion !== payload.tv) return { status: "invalid" };
-
-  return {
-    status: "ok",
-    user: {
-      userId: account.id,
-      name: account.name,
-      email: account.email,
-      avatarVersion: account.avatarVersion,
-      tv: account.tokenVersion,
-    },
-  };
+  // Đối chiếu với tài khoản qua API (tài khoản còn tồn tại, chưa đổi mật khẩu sau khi phiên được tạo)
+  try {
+    const me = await api<{ id: string; name: string; email: string; avatarVersion: number | null }>("/v1/me");
+    return {
+      status: "ok",
+      user: { userId: me.id, name: me.name, email: me.email, avatarVersion: me.avatarVersion, tv: payload.tv },
+    };
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) return { status: "invalid" };
+    throw err;
+  }
 });
 
 export async function getSession(): Promise<CurrentUser | null> {
-  const result = await checkSession();
-  return result.status === "ok" ? result.user : null;
+  try {
+    const result = await checkSession();
+    return result.status === "ok" ? result.user : null;
+  } catch {
+    // API tạm lỗi: coi như chưa đăng nhập ở chỗ chỉ cần "có thì dùng" (thanh tiêu đề, trang tự điểm danh)
+    return null;
+  }
 }
 
 /** Dùng trong trang/action cần đăng nhập. Chưa đăng nhập thì chuyển về /login. */

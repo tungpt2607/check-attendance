@@ -8,6 +8,7 @@ import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { Avatar } from "./avatar";
+import { avatarUrl } from "@/lib/api-url";
 
 type PhotoProps = {
   open: boolean;
@@ -31,7 +32,7 @@ export function AvatarPhotoDialog({ open, onClose, userId, version, name, captio
       <Box sx={{ position: "relative" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`/api/avatar/${userId}?v=${version}`}
+          src={avatarUrl(userId, version)}
           alt={name}
           style={{ display: "block", width: "min(85vw, 440px)", aspectRatio: "1", objectFit: "cover", borderRadius: 16 }}
         />

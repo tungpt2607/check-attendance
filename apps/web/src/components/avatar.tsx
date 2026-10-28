@@ -1,5 +1,6 @@
 import MuiAvatar from "@mui/material/Avatar";
 import { brand } from "@/theme/brand";
+import { avatarUrl } from "@/lib/api-url";
 
 type Props = {
   userId: string;
@@ -18,7 +19,7 @@ export function initialOf(name: string): string {
 export function Avatar({ userId, name, version, size = 32 }: Props) {
   return (
     <MuiAvatar
-      src={version ? `/api/avatar/${userId}?v=${version}` : undefined}
+      src={version ? avatarUrl(userId, version) : undefined}
       alt={name}
       sx={{
         width: size,

@@ -1,9 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createSession, deleteSession } from "@/lib/session";
+import { api, ApiError } from "@/lib/api";
+import { deleteSession, setSessionCookie } from "@/lib/session";
 import { safeNext } from "@/lib/url";
-import { createUser, findUserByEmail, verifyPassword } from "@/modules/users/user.service";
 import type { AuthFormState } from "./auth.types";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,10 +19,17 @@ export async function registerAction(_prev: AuthFormState, formData: FormData): 
   if (password.length < 6) return { error: "Mật khẩu phải có ít nhất 6 ký tự.", name, email };
   if (password !== confirm) return { error: "Mật khẩu nhập lại không khớp.", name, email };
 
-  if (await findUserByEmail(email)) return { error: "Email này đã được đăng ký.", name, email };
-
-  const user = await createUser({ name, email, password });
-  await createSession({ userId: user.id, name: user.name, tv: user.tokenVersion });
+  try {
+    const { token } = await api<{ token: string }>("/v1/auth/register", {
+      method: "POST",
+      body: { name, email, password },
+      auth: false,
+    });
+    await setSessionCookie(token);
+  } catch (err) {
+    if (err instanceof ApiError) return { error: err.message, name, email };
+    throw err;
+  }
   redirect(safeNext(formData.get("next")));
 }
 
@@ -32,12 +39,13 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
 
   if (!email || !password) return { error: "Vui lòng nhập email và mật khẩu.", email };
 
-  const user = await findUserByEmail(email);
-  if (!user || !(await verifyPassword(user, password))) {
-    return { error: "Email hoặc mật khẩu không đúng.", email };
+  try {
+    const { token } = await api<{ token: string }>("/v1/auth/login", { method: "POST", body: { email, password }, auth: false });
+    await setSessionCookie(token);
+  } catch (err) {
+    if (err instanceof ApiError) return { error: err.message, email };
+    throw err;
   }
-
-  await createSession({ userId: String(user._id), name: user.name, tv: user.tokenVersion ?? 0 });
   redirect(safeNext(formData.get("next")));
 }
 

@@ -1,0 +1,56 @@
+// Gọi backend API (apps/api) từ phía máy chủ của web.
+// Token gửi kèm chính là cookie phiên đăng nhập của web (cùng một JWT, ký bằng AUTH_SECRET).
+import { cookies } from "next/headers";
+import { API_URL } from "./api-url";
+import { SESSION_COOKIE } from "./auth-token";
+
+/** Lỗi API trả về: status HTTP, mã lỗi máy đọc được, câu báo lỗi tiếng Việt để hiện cho người dùng */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+type Options = {
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  /** Object → gửi JSON; FormData → gửi multipart */
+  body?: unknown;
+  /** Token dùng thay cho cookie (vd. vừa đăng nhập xong, cookie chưa kịp ghi) */
+  token?: string | null;
+  /** false: không gửi token (API công khai) */
+  auth?: boolean;
+};
+
+/** Gọi API, trả về JSON (hoặc null khi 204). Lỗi thì ném ApiError. */
+export async function api<T = unknown>(path: string, opts: Options = {}): Promise<T> {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (opts.auth !== false) {
+    const token = opts.token !== undefined ? opts.token : (await cookies()).get(SESSION_COOKIE)?.value;
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+  let body: BodyInit | undefined;
+  if (opts.body instanceof FormData) body = opts.body;
+  else if (opts.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(opts.body);
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { method: opts.method ?? "GET", headers, body, cache: "no-store" });
+  } catch {
+    throw new ApiError(503, "api_unreachable", "Không kết nối được máy chủ. Vui lòng thử lại.");
+  }
+
+  if (res.status === 204) return null as T;
+  const data = (await res.json().catch(() => null)) as unknown;
+  if (!res.ok) {
+    const err = (data as { error?: { code?: string; message?: string } } | null)?.error;
+    throw new ApiError(res.status, err?.code ?? "unknown", err?.message ?? "Có lỗi xảy ra. Vui lòng thử lại.");
+  }
+  return data as T;
+}
