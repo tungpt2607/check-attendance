@@ -93,13 +93,13 @@ export default async function GroupDetailPage({ params }: Props) {
               <li key={s.id}>
                 <Link
                   href={`/groups/${group.id}/sessions/${s.id}`}
-                  className="flex flex-col items-start gap-1.5 py-2.5 hover:text-indigo-600"
+                  className="flex flex-col gap-1.5 py-2.5 hover:text-indigo-600"
                 >
                   <span>
                     <span className="font-medium">{s.title}</span>
                     <span className="ml-2 text-sm text-slate-500">{formatDate(s.date)}</span>
                   </span>
-                  <span className="flex flex-wrap gap-1.5">
+                  <span className="flex flex-wrap justify-end gap-1.5">
                     {ATTENDANCE_STATUSES.map((st) => (
                       <span key={st.value} className={`rounded-md px-2 py-0.5 text-xs font-medium ${st.className}`}>
                         {st.short} {s.counts[st.value] ?? 0}
