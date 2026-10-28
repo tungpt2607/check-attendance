@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createSession, deleteSession } from "@/lib/session";
+import { safeNext } from "@/lib/url";
 import { createUser, findUserByEmail, verifyPassword } from "@/modules/users/user.service";
 import type { AuthFormState } from "./auth.types";
 
@@ -22,7 +23,7 @@ export async function registerAction(_prev: AuthFormState, formData: FormData): 
 
   const user = await createUser({ name, email, password });
   await createSession({ userId: user.id, name: user.name, tv: user.tokenVersion });
-  redirect("/groups");
+  redirect(safeNext(formData.get("next")));
 }
 
 export async function loginAction(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -37,7 +38,7 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
   }
 
   await createSession({ userId: String(user._id), name: user.name, tv: user.tokenVersion ?? 0 });
-  redirect("/groups");
+  redirect(safeNext(formData.get("next")));
 }
 
 export async function logoutAction() {

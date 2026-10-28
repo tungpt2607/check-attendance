@@ -1,6 +1,7 @@
 import AddRounded from "@mui/icons-material/AddRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import DeleteOutline from "@mui/icons-material/DeleteOutline";
+import LinkOffRounded from "@mui/icons-material/LinkOffRounded";
 import EventAvailableRounded from "@mui/icons-material/EventAvailableRounded";
 import GroupAddOutlined from "@mui/icons-material/GroupAddOutlined";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
@@ -19,7 +20,9 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { Fragment } from "react";
+import { Avatar } from "@/components/avatar";
 import { EditMemberButton, RenameGroupButton } from "@/components/edit-dialogs";
+import { MemberInviteButton } from "@/components/member-invite";
 import { AppLink, ListLink } from "@/components/links";
 import { ListSearch } from "@/components/list-search";
 import { PageHeader, SectionTitle } from "@/components/page-header";
@@ -34,6 +37,8 @@ import { createGroupAction, deleteGroupAction } from "@/modules/groups/group.act
 import { getAncestors, getChildGroups, getOwnedGroup } from "@/modules/groups/group.service";
 import { addMembersAction, deleteMemberAction } from "@/modules/members/member.actions";
 import { listMembers } from "@/modules/members/member.service";
+import { unlinkMemberAction } from "@/modules/invites/invite.actions";
+import { getAccountsByIds } from "@/modules/users/user.service";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +57,8 @@ export default async function GroupDetailPage({ params }: Props) {
     listMembers(group.id),
     listSessionsWithCounts(group.id),
   ]);
+  // Tài khoản đã liên kết với thành viên (tên, ảnh đại diện)
+  const accounts = await getAccountsByIds(members.map((m) => m.linkedUserId).filter((id): id is string => !!id));
 
   return (
     <>
@@ -169,6 +176,23 @@ export default async function GroupDetailPage({ params }: Props) {
                       divider={i < members.length - 1}
                       secondaryAction={
                         <Stack direction="row" spacing={0.25}>
+                          {m.linkedUserId ? (
+                            <form action={unlinkMemberAction}>
+                              <input type="hidden" name="memberId" value={m.id} />
+                              <SubmitButton
+                                variant="plain"
+                                pendingText=""
+                                successMessage="Đã hủy liên kết"
+                                confirmLabel="Hủy liên kết"
+                                sx={{ minWidth: 0, px: 1, color: "text.secondary" }}
+                                confirm={`Hủy liên kết tài khoản ${accounts.get(m.linkedUserId)?.email ?? ""} khỏi "${m.name}"? Lịch sử điểm danh vẫn giữ nguyên.`}
+                              >
+                                <LinkOffRounded fontSize="small" aria-label={`Hủy liên kết ${m.name}`} />
+                              </SubmitButton>
+                            </form>
+                          ) : (
+                            <MemberInviteButton memberId={m.id} name={m.name} groupName={group.name} />
+                          )}
                           <EditMemberButton key={`${m.name}|${m.code}`} memberId={m.id} name={m.name} code={m.code} />
                           <form action={deleteMemberAction}>
                             <input type="hidden" name="memberId" value={m.id} />
@@ -185,7 +209,7 @@ export default async function GroupDetailPage({ params }: Props) {
                           </form>
                         </Stack>
                       }
-                      sx={{ pr: 11 }}
+                      sx={{ pr: 15 }}
                     >
                       <ListItemText
                         primary={
@@ -199,6 +223,20 @@ export default async function GroupDetailPage({ params }: Props) {
                               </Typography>
                             )}
                             {m.name}
+                            {m.linkedUserId && (
+                              <Box
+                                component="span"
+                                title={`Đã liên kết: ${accounts.get(m.linkedUserId)?.email ?? ""}`}
+                                sx={{ display: "inline-flex", verticalAlign: "middle", ml: 1 }}
+                              >
+                                <Avatar
+                                  userId={m.linkedUserId}
+                                  name={accounts.get(m.linkedUserId)?.name ?? m.name}
+                                  version={accounts.get(m.linkedUserId)?.avatarVersion ?? null}
+                                  size={20}
+                                />
+                              </Box>
+                            )}
                           </>
                         }
                         slotProps={{ primary: { noWrap: true } }}

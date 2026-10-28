@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import { VI_COLLATION, connectDB, isValidId } from "@/lib/db";
+import { Invite, LinkRequest } from "@/modules/invites/invite.model";
 import { Member } from "@/modules/members/member.model";
 import { AttendanceRecord, AttendanceSession } from "@/modules/attendance/attendance.model";
 import { Group, type GroupRecord } from "./group.model";
@@ -121,6 +122,8 @@ export async function deleteGroup(groupId: string, userId: string): Promise<bool
   const sessionIds = await AttendanceSession.find({ groupId }).distinct("_id");
   await AttendanceRecord.deleteMany({ sessionId: { $in: sessionIds } });
   await AttendanceSession.deleteMany({ groupId });
+  await Invite.deleteMany({ groupId });
+  await LinkRequest.deleteMany({ groupId });
   await Member.deleteMany({ groupId });
   await Group.deleteOne({ _id: groupId });
   return true;

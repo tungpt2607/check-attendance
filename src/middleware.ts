@@ -14,10 +14,15 @@ export async function middleware(req: NextRequest) {
   const isAuthPage = AUTH_PAGES.includes(pathname);
 
   if (!session && !isAuthPage) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const login = new URL("/login", req.url);
+    // Đăng nhập xong quay lại đúng trang (vd. link mời)
+    if (pathname !== "/" && pathname !== "/groups") login.searchParams.set("next", pathname + req.nextUrl.search);
+    return NextResponse.redirect(login);
   }
   if (session && isAuthPage) {
-    return NextResponse.redirect(new URL("/groups", req.url));
+    const next = req.nextUrl.searchParams.get("next");
+    const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/groups";
+    return NextResponse.redirect(new URL(target, req.url));
   }
   return NextResponse.next();
 }

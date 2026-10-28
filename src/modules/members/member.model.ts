@@ -22,5 +22,10 @@ const memberSchema = new Schema<MemberRecord>(
   { timestamps: true },
 );
 
+memberSchema.index(
+  { groupId: 1, userId: 1 },
+  { unique: true, partialFilterExpression: { userId: { $type: "objectId" } } },
+);
+
 export const Member: Model<MemberRecord> =
   (models.Member as Model<MemberRecord>) || model<MemberRecord>("Member", memberSchema);

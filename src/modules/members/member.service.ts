@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { VI_COLLATION, connectDB, isValidId } from "@/lib/db";
 import { AttendanceRecord } from "@/modules/attendance/attendance.model";
+import { Invite, LinkRequest } from "@/modules/invites/invite.model";
 import { Member, type MemberRecord } from "./member.model";
 
 export type MemberDTO = {
@@ -71,5 +72,7 @@ export async function updateMember(memberId: string, data: { name: string; code:
 export async function deleteMember(memberId: string) {
   await connectDB();
   await AttendanceRecord.deleteMany({ memberId });
+  await Invite.deleteMany({ memberId });
+  await LinkRequest.deleteMany({ memberId });
   await Member.deleteOne({ _id: memberId });
 }

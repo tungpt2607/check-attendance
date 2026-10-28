@@ -89,3 +89,23 @@ export async function changePassword(userId: string, current: string, next: stri
   ).lean<UserRecord>();
   return updated?.tokenVersion ?? 1;
 }
+
+export type PublicAccount = { id: string; name: string; email: string; avatarVersion: number | null };
+
+export async function getAccountsByIds(ids: string[]): Promise<Map<string, PublicAccount>> {
+  const valid = [...new Set(ids)].filter((id) => isValidId(id));
+  if (valid.length === 0) return new Map();
+  await connectDB();
+  const list = await User.find({ _id: { $in: valid } }).select(WITHOUT_AVATAR_DATA).lean<UserRecord[]>();
+  return new Map(
+    list.map((u) => [
+      String(u._id),
+      {
+        id: String(u._id),
+        name: u.name,
+        email: u.email,
+        avatarVersion: u.avatar?.updatedAt ? new Date(u.avatar.updatedAt).getTime() : null,
+      },
+    ]),
+  );
+}
