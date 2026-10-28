@@ -11,7 +11,23 @@ Web điểm danh theo nhóm nhiều cấp. Next.js (App Router) + Material UI + 
 - Nhóm ở cấp nào cũng có thể có thành viên; thêm nhanh nhiều người (mỗi dòng một người, dán được từ Excel)
 - Tạo buổi điểm danh, chấm Có mặt / Muộn / Vắng kèm ghi chú, xem lại lịch sử
 
-## Cấu trúc
+## Cấu trúc (monorepo)
+
+Repo chứa nhiều dự án dùng npm workspaces. Mục tiêu: một **backend API** duy nhất nối DB, các giao diện (web người dùng, CMS quản trị, app điện thoại) đều gọi qua API.
+
+```
+apps/
+  web/                 Web người dùng (Next.js) — dự án Vercel đặt Root Directory = apps/web
+  api/                 (giai đoạn 2) Backend API (Hono) — dự án Vercel riêng
+  cms/                 (sau này) Trang quản trị
+  mobile/              (sau này) App điện thoại
+packages/
+  shared/              (giai đoạn 2) Kiểu dữ liệu và quy tắc kiểm tra dùng chung
+```
+
+Lộ trình tách API: (1) chuyển sang monorepo, (2) dựng `apps/api` + tài liệu API, (3) chuyển web sang gọi API từng phần, (4) gỡ kết nối DB khỏi web.
+
+Bên trong `apps/web`:
 
 ```
 src/
@@ -24,7 +40,8 @@ src/
     auth/              Đăng ký / đăng nhập / đăng xuất
     groups/            Nhóm nhiều cấp
     members/           Thành viên của nhóm
-    attendance/        Buổi điểm danh và kết quả
+    attendance/        Buổi điểm danh, kết quả, thống kê
+    invites/           Liên kết tài khoản với thành viên
 ```
 
 Mỗi module gồm `*.model.ts` (dữ liệu), `*.service.ts` (nghiệp vụ) và `*.actions.ts` (server actions gọi từ giao diện, có kiểm tra quyền).
@@ -58,7 +75,7 @@ Xem `.env.example`: `MONGODB_URI`, `AUTH_SECRET`.
 ## Chạy trên máy
 
 ```bash
-npm install
-cp .env.example .env.local   # điền giá trị thật
-npm run dev
+npm install                                        # cài cho cả repo (workspaces)
+cp apps/web/.env.example apps/web/.env.local       # điền giá trị thật
+npm run dev:web
 ```
