@@ -17,7 +17,8 @@ import { StatusChip, StatusCounts } from "@/components/status-chip";
 import { formatDate } from "@/lib/format";
 import { normalizeSearch } from "@/lib/search";
 import { requireUser } from "@/lib/session";
-import { getMyHistory, getRosterForMember } from "@/modules/members/membership.service";
+import { apiOrNull } from "@/lib/api-fetch";
+import type { MyMembership } from "@/lib/api-types";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
@@ -31,12 +32,11 @@ type Props = {
 export default async function MyHistoryPage({ params, searchParams }: Props) {
   const { memberId } = await params;
   const { linked, tab } = await searchParams;
-  const user = await requireUser();
-  const [history, roster] = await Promise.all([
-    getMyHistory(memberId, user.userId),
-    getRosterForMember(memberId, user.userId),
-  ]);
-  if (!history || !roster) notFound();
+  await requireUser();
+  // Chuyên cần, lịch sử của tôi và danh sách thành viên nhóm: lấy qua API
+  const history = await apiOrNull<MyMembership>(`/v1/memberships/${encodeURIComponent(memberId)}`);
+  if (!history) notFound();
+  const roster = history.roster;
 
   const percent = history.rate === null ? null : Math.round(history.rate * 100);
 

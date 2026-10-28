@@ -58,13 +58,15 @@ export const members = new Hono<AppEnv>()
   .get("/members/:id", async (c) => {
     const user = requireUser(c);
     const m = await ownedMemberOr404(idParam(c, "id", "thành viên"), user.userId);
-    const [{ items, rate }, accounts] = await Promise.all([
+    const [{ items, rate }, accounts, groupName] = await Promise.all([
       getMemberHistory(m.id, m.groupId),
       getAccountsByIds(m.linkedUserId ? [m.linkedUserId] : []),
+      getGroupName(m.groupId),
     ]);
     return c.json({
       id: m.id,
       groupId: m.groupId,
+      groupName: groupName ?? "",
       name: m.name,
       code: m.code,
       linkedAccount: m.linkedUserId ? (accounts.get(m.linkedUserId) ?? null) : null,
@@ -119,12 +121,16 @@ export const members = new Hono<AppEnv>()
     if (!m) return fail(410, "invite_not_found", INVITE_ERRORS.not_found);
     const mine = await findLinkedMember(m.groupId, user.userId);
     return c.json({
+      memberId: m.id,
       memberName: m.name,
+      memberCode: m.code,
       groupName: (await getGroupName(m.groupId)) ?? "",
       expiresAt: invite.expiresAt,
+      /** Tên này đã liên kết (với tôi hoặc người khác) */
       memberAlreadyLinked: !!m.linkedUserId,
-      /** Tài khoản này đã liên kết một tên khác trong nhóm */
+      /** Tên tôi đang liên kết trong nhóm này (có thể chính là tên này) */
       myMemberId: mine ? String(mine._id) : null,
+      myMemberName: mine ? mine.name : null,
     });
   })
 
@@ -156,6 +162,7 @@ export const members = new Hono<AppEnv>()
     return c.json({
       groupName: groupName ?? "",
       myMemberId: mine ? String(mine._id) : null,
+      myMemberName: mine ? mine.name : null,
       pendingRequest: pending ? { memberId: String(pending.memberId), memberName: pendingName } : null,
       members: list.filter((m) => !m.linkedUserId).map((m) => ({ id: m.id, name: m.name, code: m.code })),
     });

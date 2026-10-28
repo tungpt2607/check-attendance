@@ -13,11 +13,10 @@ import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { dateInputValue, formatDate, formatTime } from "@/lib/format";
 import { requireUser } from "@/lib/session";
+import { apiOrNull } from "@/lib/api-fetch";
+import type { SessionDetail } from "@/lib/api-types";
 import { closeSelfCheckInAction, openSelfCheckInAction } from "@/modules/attendance/attendance.actions";
-import { getAttendanceSession, getSessionRecords } from "@/modules/attendance/attendance.service";
 import { DEFAULT_STATUS } from "@/modules/attendance/attendance.statuses";
-import { getOwnedGroup } from "@/modules/groups/group.service";
-import { listMembers } from "@/modules/members/member.service";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
@@ -28,28 +27,24 @@ type Props = {
 
 export default async function AttendanceSessionPage({ params }: Props) {
   const { groupId, sessionId } = await params;
-  const user = await requireUser();
+  await requireUser();
+  // Buổi điểm danh kèm thành viên và kết quả từng người: lấy qua API
+  const session = await apiOrNull<SessionDetail>(`/v1/sessions/${encodeURIComponent(sessionId)}`);
+  if (!session || session.groupId !== groupId) notFound();
+  const group = { id: session.groupId, name: session.groupName };
+  const members = session.rows;
+  const isNew = members.every((r) => r.status === null);
 
-  const group = await getOwnedGroup(groupId, user.userId);
-  const session = group ? await getAttendanceSession(sessionId) : null;
-  if (!group || !session || session.groupId !== group.id) notFound();
-
-  const [members, records] = await Promise.all([listMembers(group.id), getSessionRecords(session.id)]);
-  const isNew = records.size === 0;
-
-  const rows: SheetRow[] = members.map((m) => {
-    const r = records.get(m.id);
-    return {
-      id: m.id,
-      name: m.name,
-      code: m.code,
-      status: r?.status ?? DEFAULT_STATUS,
-      note: r?.note ?? "",
-      origStatus: r?.status ?? "",
-      origNote: r?.note ?? "",
-      selfCheckInTime: r?.source === "self" && r.checkedInAt ? formatTime(r.checkedInAt) : null,
-    };
-  });
+  const rows: SheetRow[] = members.map((r) => ({
+    id: r.memberId,
+    name: r.name,
+    code: r.code,
+    status: r.status ?? DEFAULT_STATUS,
+    note: r.note,
+    origStatus: r.status ?? "",
+    origNote: r.note,
+    selfCheckInTime: r.source === "self" && r.checkedInAt ? formatTime(r.checkedInAt) : null,
+  }));
   // Dữ liệu đã lưu thay đổi (sau khi Lưu hoặc có người tự điểm danh) thì dựng lại bảng theo dữ liệu mới
   const sheetKey = rows.map((r) => `${r.id}:${r.origStatus}:${r.origNote}`).join("|");
 

@@ -39,9 +39,14 @@ export const sessions = new Hono<AppEnv>()
   .get("/sessions/:id", async (c) => {
     const user = requireUser(c);
     const session = await ownedSessionOr404(idParam(c, "id", "buổi điểm danh"), user.userId);
-    const [members, records] = await Promise.all([listMembers(session.groupId), getSessionRecords(session.id)]);
+    const [members, records, groupName] = await Promise.all([
+      listMembers(session.groupId),
+      getSessionRecords(session.id),
+      getGroupName(session.groupId),
+    ]);
     return c.json({
       ...session,
+      groupName: groupName ?? "",
       defaultStatus: DEFAULT_STATUS,
       rows: members.map((m) => {
         const r = records.get(m.id);

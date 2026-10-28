@@ -3,47 +3,41 @@
 // Hành động công khai: thành viên tự điểm danh bằng QR.
 // - Tên CHƯA liên kết tài khoản: không cần đăng nhập
 // - Tên ĐÃ liên kết tài khoản: bắt buộc đăng nhập đúng tài khoản đó
-// Mọi kiểm tra (buổi đang mở, mã QR còn hạn, mỗi điện thoại 1 người, đúng tài khoản) nằm ở đây.
+// API kiểm tra buổi đang mở, mã QR còn hạn, đúng tài khoản; web giữ thêm giới hạn "mỗi điện thoại 1 người/buổi" bằng cookie.
 import { cookies } from "next/headers";
-import { deviceCookieName, verifyCheckInToken } from "@/lib/checkin-token";
-import { isValidId } from "@/lib/db";
-import { getSession } from "@/lib/session";
-import { getMember } from "@/modules/members/member.service";
-import { getAttendanceSession, getCheckInSecret, recordSelfCheckIn } from "./attendance.service";
+import { api, ApiError } from "@/lib/api";
+import type { CheckInInfo } from "@/lib/api-types";
+import { deviceCookieName } from "@/lib/checkin-token";
 
 export type CheckInResult = { ok: true; name: string } | { ok: false; error: string };
 
-export async function selfCheckInAction(sessionId: string, token: string, memberId: string): Promise<CheckInResult> {
-  if (!isValidId(sessionId) || !isValidId(memberId)) return { ok: false, error: "Dữ liệu không hợp lệ." };
+const OBJECT_ID = /^[a-f0-9]{24}$/i;
 
-  const session = await getAttendanceSession(sessionId);
-  const secret = session ? await getCheckInSecret(sessionId) : null;
-  if (!session || !secret) return { ok: false, error: "Buổi điểm danh đã đóng." };
-  if (!verifyCheckInToken(sessionId, secret, token)) {
-    return { ok: false, error: "Mã QR đã hết hạn. Hãy quét lại mã trên màn hình." };
-  }
+export async function selfCheckInAction(sessionId: string, token: string, memberId: string): Promise<CheckInResult> {
+  if (!OBJECT_ID.test(sessionId) || !OBJECT_ID.test(memberId)) return { ok: false, error: "Dữ liệu không hợp lệ." };
+  const path = `/v1/checkin/${encodeURIComponent(sessionId)}`;
 
   const store = await cookies();
   const cookieName = deviceCookieName(sessionId);
   const already = store.get(cookieName)?.value;
   if (already) {
-    const m = isValidId(already) ? await getMember(already) : null;
-    return { ok: false, error: `Điện thoại này đã điểm danh cho ${m?.name ?? "một người khác"} trong buổi này.` };
-  }
-
-  const member = await getMember(memberId);
-  if (!member || member.groupId !== session.groupId) return { ok: false, error: "Không tìm thấy tên này trong nhóm." };
-  if (member.linkedUserId) {
-    const user = await getSession();
-    if (!user) return { ok: false, error: `${member.name} đã liên kết tài khoản. Hãy đăng nhập để điểm danh.` };
-    if (user.userId !== member.linkedUserId) {
-      return { ok: false, error: `${member.name} đã liên kết với một tài khoản khác. Bạn chỉ điểm danh được cho chính mình.` };
+    let name = "một người khác";
+    try {
+      const info = await api<CheckInInfo>(`${path}?t=${encodeURIComponent(token)}`);
+      name = info.members.find((m) => m.id === already)?.name ?? name;
+    } catch {
+      // Không lấy được tên thì vẫn báo chung
     }
+    return { ok: false, error: `Điện thoại này đã điểm danh cho ${name} trong buổi này.` };
   }
 
-  const result = await recordSelfCheckIn(sessionId, memberId);
-  if (result === "already") {
-    return { ok: false, error: `${member.name} đã được điểm danh rồi. Nếu không phải bạn, hãy báo người quản lý.` };
+  let name: string;
+  try {
+    // Gửi kèm phiên đăng nhập (nếu có) để API kiểm tra tên đã liên kết
+    name = (await api<{ name: string }>(path, { method: "POST", body: { token, memberId } })).name;
+  } catch (err) {
+    if (err instanceof ApiError && err.status < 500) return { ok: false, error: err.message };
+    throw err;
   }
 
   store.set(cookieName, memberId, {
@@ -53,5 +47,5 @@ export async function selfCheckInAction(sessionId: string, token: string, member
     path: "/",
     maxAge: 60 * 60 * 12,
   });
-  return { ok: true, name: member.name };
+  return { ok: true, name };
 }

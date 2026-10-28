@@ -15,9 +15,10 @@ import { ListLink } from "@/components/links";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/session";
+import { api } from "@/lib/api";
+import type { Membership } from "@/lib/api-types";
 import { createGroupAction } from "@/modules/groups/group.actions";
 import { fetchGroupTree, type GroupTreeItem } from "@/modules/groups/group.api";
-import { listMembershipsOfUser } from "@/modules/members/membership.service";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
@@ -66,9 +67,9 @@ function GroupTree({ nodes, depth = 0 }: { nodes: GroupTreeItem[]; depth?: numbe
 }
 
 export default async function GroupsPage() {
-  const user = await requireUser();
+  await requireUser();
   // Cây nhóm tôi quản lý (kèm trạng thái link tham gia) lấy qua API
-  const [tree, memberships] = await Promise.all([fetchGroupTree(), listMembershipsOfUser(user.userId)]);
+  const [tree, { memberships }] = await Promise.all([fetchGroupTree(), api<{ memberships: Membership[] }>("/v1/memberships")]);
 
   return (
     <>

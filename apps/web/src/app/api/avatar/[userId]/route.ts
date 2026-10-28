@@ -1,16 +1,9 @@
-import { getUserAvatar } from "@/modules/users/user.service";
+import { NextResponse, type NextRequest } from "next/server";
+import { avatarUrl } from "@/lib/api-url";
 
-export const dynamic = "force-dynamic";
-
-/** Trả ảnh đại diện. Link luôn kèm ?v=<phiên bản> nên trình duyệt được lưu đệm lâu dài. */
-export async function GET(_req: Request, { params }: { params: Promise<{ userId: string }> }) {
+/** Đường dẫn ảnh cũ: chuyển sang ảnh đại diện trên API (ảnh giờ do API phục vụ) */
+export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   const { userId } = await params;
-  const avatar = await getUserAvatar(userId);
-  if (!avatar) return new Response("Not found", { status: 404 });
-  return new Response(new Uint8Array(avatar.data), {
-    headers: {
-      "Content-Type": avatar.contentType,
-      "Cache-Control": "public, max-age=31536000, immutable",
-    },
-  });
+  const v = Number(req.nextUrl.searchParams.get("v")) || 1;
+  return NextResponse.redirect(avatarUrl(userId, v), 308);
 }

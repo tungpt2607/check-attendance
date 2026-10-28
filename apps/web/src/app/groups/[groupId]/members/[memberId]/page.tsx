@@ -18,10 +18,8 @@ import { RateSummary } from "@/components/rate";
 import { StatusChip } from "@/components/status-chip";
 import { formatDate, formatTime } from "@/lib/format";
 import { requireUser } from "@/lib/session";
-import { getMemberHistory } from "@/modules/attendance/stats.service";
-import { getOwnedGroup } from "@/modules/groups/group.service";
-import { getMember } from "@/modules/members/member.service";
-import { getAccountsByIds } from "@/modules/users/user.service";
+import { apiOrNull } from "@/lib/api-fetch";
+import type { MemberDetail } from "@/lib/api-types";
 
 export const dynamic = "force-dynamic";
 
@@ -30,16 +28,13 @@ type Props = { params: Promise<{ groupId: string; memberId: string }> };
 /** Thống kê chuyên cần của một thành viên, chủ nhóm xem */
 export default async function MemberStatsPage({ params }: Props) {
   const { groupId, memberId } = await params;
-  const user = await requireUser();
-  const group = await getOwnedGroup(groupId, user.userId);
-  const member = group ? await getMember(memberId) : null;
-  if (!group || !member || member.groupId !== group.id) notFound();
-
-  const [{ items, rate }, accounts] = await Promise.all([
-    getMemberHistory(member.id, group.id),
-    getAccountsByIds(member.linkedUserId ? [member.linkedUserId] : []),
-  ]);
-  const acc = member.linkedUserId ? accounts.get(member.linkedUserId) : undefined;
+  await requireUser();
+  const member = await apiOrNull<MemberDetail>(`/v1/members/${encodeURIComponent(memberId)}`);
+  if (!member || member.groupId !== groupId) notFound();
+  const group = { id: member.groupId, name: member.groupName };
+  const items = member.history;
+  const rate = member.stats;
+  const acc = member.linkedAccount;
 
   return (
     <Box sx={{ maxWidth: 640, mx: "auto" }}>
@@ -63,7 +58,7 @@ export default async function MemberStatsPage({ params }: Props) {
             name={member.name}
             code={member.code}
             groupName={group.name}
-            linkedEmail={member.linkedUserId ? (acc?.email ?? "") : null}
+            linkedEmail={acc ? acc.email : null}
             onDetailPage
           />
         }

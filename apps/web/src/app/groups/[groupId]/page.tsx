@@ -33,14 +33,10 @@ import { formatDate, todayInputValue } from "@/lib/format";
 import { normalizeSearch } from "@/lib/search";
 import { requireUser } from "@/lib/session";
 import { createSessionAction } from "@/modules/attendance/attendance.actions";
-import { listSessionsWithCounts } from "@/modules/attendance/attendance.service";
 import { fetchGroup } from "@/modules/groups/group.api";
-import { listMembers } from "@/modules/members/member.service";
-import { getMemberRates } from "@/modules/attendance/stats.service";
+import { api } from "@/lib/api";
+import type { LinkRequestRow, MemberRow, SessionSummary, ShareLink } from "@/lib/api-types";
 import { approveRequestAction, rejectRequestAction } from "@/modules/invites/invite.actions";
-import { getActiveGroupInvite, listPendingRequests } from "@/modules/invites/invite.service";
-import { buildShareLink } from "@/modules/invites/share";
-import { getAccountsByIds } from "@/modules/users/user.service";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
@@ -57,26 +53,15 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   if (!group) notFound();
   const { ancestors, children } = group;
 
-  const [members, sessions] = await Promise.all([listMembers(group.id), listSessionsWithCounts(group.id)]);
-  // Tài khoản đã liên kết với thành viên (tên, ảnh đại diện)
-  const accounts = await getAccountsByIds(members.map((m) => m.linkedUserId).filter((id): id is string => !!id));
-  // Link chung và các yêu cầu chờ duyệt
-  const [activeInvite, requests] = await Promise.all([getActiveGroupInvite(group.id), listPendingRequests(group.id)]);
-  const groupLink = activeInvite ? await buildShareLink(`/join/${activeInvite.token}`, null) : null;
-  const requestAccounts = await getAccountsByIds(requests.map((r) => String(r.userId)));
-  // Thống kê: % từng thành viên; % chung của nhóm này (cả nhánh) và của từng nhóm con (gồm nhóm con bên trong)
-  const memberRates = await getMemberRates(group.id);
-  const rateOf = (id: string) => memberRates.get(id)?.rate ?? null;
-  // Xếp theo chuyên cần thấp → cao; người chưa có kết quả nằm cuối; cùng tỷ lệ thì giữ thứ tự tên
-  const sortedMembers =
-    sort === "rate"
-      ? [...members].sort((a, b) => {
-          const ra = rateOf(a.id);
-          const rb = rateOf(b.id);
-          if (ra === null || rb === null) return ra === rb ? 0 : ra === null ? 1 : -1;
-          return ra - rb;
-        })
-      : members;
+  // Thành viên (kèm tài khoản liên kết, % chuyên cần), buổi điểm danh, yêu cầu chờ duyệt, link tham gia: lấy qua API
+  const gid = encodeURIComponent(group.id);
+  const [{ members: sortedMembers }, { sessions }, { requests }, { link: groupLink }] = await Promise.all([
+    api<{ members: MemberRow[] }>(`/v1/groups/${gid}/members${sort === "rate" ? "?sort=rate" : ""}`),
+    api<{ sessions: SessionSummary[] }>(`/v1/groups/${gid}/sessions`),
+    api<{ requests: LinkRequestRow[] }>(`/v1/groups/${gid}/requests`),
+    api<{ link: ShareLink | null }>(`/v1/groups/${gid}/invite`),
+  ]);
+  const members = sortedMembers;
   const branch = group.branchStats;
 
   // ---------- Tab "Điểm danh" ----------
@@ -151,30 +136,29 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <SectionTitle>Yêu cầu chờ duyệt ({requests.length})</SectionTitle>
             <List disablePadding>
               {requests.map((r, i) => {
-                const acc = requestAccounts.get(String(r.userId));
-                const mem = members.find((m) => m.id === String(r.memberId));
+                const acc = r.account;
                 return (
-                  <ListItem key={String(r._id)} disableGutters divider={i < requests.length - 1} sx={{ py: 1.25, flexWrap: "wrap", gap: 1.5 }}>
+                  <ListItem key={r.id} disableGutters divider={i < requests.length - 1} sx={{ py: 1.25, flexWrap: "wrap", gap: 1.5 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: "1 1 220px", minWidth: 0 }}>
-                      <ZoomableAvatar userId={String(r.userId)} name={acc?.name ?? "?"} version={acc?.avatarVersion ?? null} caption={acc?.email} size={36} />
+                      <ZoomableAvatar userId={acc?.id ?? ""} name={acc?.name ?? "?"} version={acc?.avatarVersion ?? null} caption={acc?.email} size={36} />
                       <Box sx={{ minWidth: 0 }}>
                         <Typography noWrap sx={{ fontWeight: 600 }}>
                           {acc?.name ?? "Tài khoản"} <Typography component="span" variant="body2" color="text.secondary">({acc?.email ?? ""})</Typography>
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          Xin nhận tên <b>{mem?.name ?? "(đã xóa)"}</b>
+                          Xin nhận tên <b>{r.memberName ?? "(đã xóa)"}</b>
                         </Typography>
                       </Box>
                     </Box>
                     <Stack direction="row" spacing={1}>
                       <form action={rejectRequestAction}>
-                        <input type="hidden" name="requestId" value={String(r._id)} />
+                        <input type="hidden" name="requestId" value={r.id} />
                         <SubmitButton variant="ghost" pendingText="..." startIcon={<CloseRounded />} successMessage="Đã từ chối">
                           Từ chối
                         </SubmitButton>
                       </form>
                       <form action={approveRequestAction}>
-                        <input type="hidden" name="requestId" value={String(r._id)} />
+                        <input type="hidden" name="requestId" value={r.id} />
                         <SubmitButton pendingText="..." startIcon={<CheckRounded />} successMessage="Đã duyệt">
                           Duyệt
                         </SubmitButton>
@@ -203,8 +187,8 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
               <PagedList searchable={members.length > 5}>
                 <List dense disablePadding sx={{ mt: 1 }}>
                   {sortedMembers.map((m, i) => {
-                    const acc = m.linkedUserId ? accounts.get(m.linkedUserId) : undefined;
-                    const r = memberRates.get(m.id);
+                    const acc = m.linkedAccount;
+                    const r = m.stats;
                     return (
                       <ListItem
                         key={m.id}
@@ -214,15 +198,15 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                         secondaryAction={
                           <Stack direction="row" sx={{ alignItems: "center", gap: 0.25 }}>
                             <RateBadge
-                              rate={r?.rate ?? null}
-                              title={r ? `Có mặt/muộn ${(r.counts.present ?? 0) + (r.counts.late ?? 0)}/${r.recorded} buổi` : "Chưa có kết quả"}
+                              rate={r.rate}
+                              title={r.recorded > 0 ? `Có mặt/muộn ${(r.counts.present ?? 0) + (r.counts.late ?? 0)}/${r.recorded} buổi` : "Chưa có kết quả"}
                             />
                             <MemberRowMenu
                               memberId={m.id}
                               name={m.name}
                               code={m.code}
                               groupName={group.name}
-                              linkedEmail={m.linkedUserId ? (acc?.email ?? "") : null}
+                              linkedEmail={acc ? acc.email : null}
                             />
                           </Stack>
                         }
@@ -241,14 +225,14 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                                   </Typography>
                                 )}
                                 {m.name}
-                                {m.linkedUserId && (
+                                {acc && (
                                   <Box
                                     component="span"
                                     title={`Đã liên kết: ${acc?.email ?? ""}`}
                                     sx={{ display: "inline-flex", verticalAlign: "middle", ml: 1 }}
                                   >
                                     <ZoomableAvatar
-                                      userId={m.linkedUserId}
+                                      userId={acc.id}
                                       name={acc?.name ?? m.name}
                                       version={acc?.avatarVersion ?? null}
                                       caption={acc?.email}

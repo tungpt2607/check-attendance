@@ -8,9 +8,9 @@ import { QrPresenter } from "@/components/qr-presenter";
 import { SubmitButton } from "@/components/submit-button";
 import { formatDate } from "@/lib/format";
 import { requireUser } from "@/lib/session";
+import { apiOrNull } from "@/lib/api-fetch";
+import type { SessionDetail } from "@/lib/api-types";
 import { closeSelfCheckInAction } from "@/modules/attendance/attendance.actions";
-import { getAttendanceSession } from "@/modules/attendance/attendance.service";
-import { getOwnedGroup } from "@/modules/groups/group.service";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +19,10 @@ type Props = { params: Promise<{ groupId: string; sessionId: string }> };
 
 export default async function QrPage({ params }: Props) {
   const { groupId, sessionId } = await params;
-  const user = await requireUser();
-  const group = await getOwnedGroup(groupId, user.userId);
-  const session = group ? await getAttendanceSession(sessionId) : null;
-  if (!group || !session || session.groupId !== group.id) notFound();
+  await requireUser();
+  const session = await apiOrNull<SessionDetail>(`/v1/sessions/${encodeURIComponent(sessionId)}`);
+  if (!session || session.groupId !== groupId) notFound();
+  const group = { id: session.groupId, name: session.groupName };
   if (!session.selfCheckInOpen) redirect(`/groups/${group.id}/sessions/${session.id}`);
 
   const back = `/groups/${group.id}/sessions/${session.id}`;

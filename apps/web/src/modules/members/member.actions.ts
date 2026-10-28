@@ -1,50 +1,63 @@
 "use server";
 
+// Thành viên: gọi backend API (API kiểm tra quyền chủ nhóm).
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { api, ApiError } from "@/lib/api";
 import { requireUser } from "@/lib/session";
-import { getOwnedGroup } from "@/modules/groups/group.service";
-import { addMembersFromText, deleteMember, getMember, updateMember } from "./member.service";
+
+const enc = (id: string) => encodeURIComponent(id);
+
+/** Lỗi nghiệp vụ (không tìm thấy, dữ liệu sai...) thì bỏ qua như trước; lỗi máy chủ ném tiếp */
+function ignoreApiError(err: unknown) {
+  if (!(err instanceof ApiError) || err.status >= 500) throw err;
+}
 
 export async function addMembersAction(formData: FormData) {
-  const user = await requireUser();
+  await requireUser();
   const groupId = String(formData.get("groupId") ?? "");
   const text = String(formData.get("members") ?? "");
-  if (!(await getOwnedGroup(groupId, user.userId))) return;
+  if (!groupId || !text.trim()) return;
 
-  await addMembersFromText(groupId, text);
+  try {
+    await api(`/v1/groups/${enc(groupId)}/members`, { method: "POST", body: { text } });
+  } catch (err) {
+    return ignoreApiError(err);
+  }
   revalidatePath(`/groups/${groupId}`);
   revalidatePath("/groups");
 }
 
-/** Kiểm tra thành viên thuộc một nhóm của người dùng hiện tại. */
-async function getOwnedMember(memberId: string, userId: string) {
-  const member = await getMember(memberId);
-  if (!member) return null;
-  return (await getOwnedGroup(member.groupId, userId)) ? member : null;
-}
-
 export async function updateMemberAction(formData: FormData) {
-  const user = await requireUser();
+  await requireUser();
   const memberId = String(formData.get("memberId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const code = String(formData.get("code") ?? "");
-  const member = await getOwnedMember(memberId, user.userId);
-  if (!member || !name) return;
+  if (!memberId || !name) return;
 
-  await updateMember(memberId, { name, code });
-  revalidatePath(`/groups/${member.groupId}`);
+  let groupId: string;
+  try {
+    groupId = (await api<{ groupId: string }>(`/v1/members/${enc(memberId)}`, { method: "PATCH", body: { name, code } })).groupId;
+  } catch (err) {
+    return ignoreApiError(err);
+  }
+  revalidatePath(`/groups/${groupId}`, "layout");
 }
 
 export async function deleteMemberAction(formData: FormData) {
-  const user = await requireUser();
+  await requireUser();
   const memberId = String(formData.get("memberId") ?? "");
-  const member = await getOwnedMember(memberId, user.userId);
-  if (!member) return;
+  if (!memberId) return;
 
-  await deleteMember(memberId);
-  revalidatePath(`/groups/${member.groupId}`);
+  let groupId: string;
+  try {
+    groupId = (await api<{ groupId: string }>(`/v1/members/${enc(memberId)}`)).groupId;
+    await api(`/v1/members/${enc(memberId)}`, { method: "DELETE" });
+  } catch (err) {
+    return ignoreApiError(err);
+  }
+  revalidatePath(`/groups/${groupId}`);
   revalidatePath("/groups");
   // Xóa từ trang thống kê của chính thành viên: quay về danh sách thành viên của nhóm
-  if (formData.get("back") === "group") redirect(`/groups/${member.groupId}?tab=members`);
+  if (formData.get("back") === "group") redirect(`/groups/${groupId}?tab=members`);
 }

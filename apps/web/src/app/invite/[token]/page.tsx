@@ -10,10 +10,9 @@ import { LinkButton } from "@/components/links";
 import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/session";
-import { getGroupName } from "@/modules/groups/group.service";
+import { api, ApiError } from "@/lib/api";
+import type { InviteInfo } from "@/lib/api-types";
 import { acceptInviteAction } from "@/modules/invites/invite.actions";
-import { checkInvite, findLinkedMember } from "@/modules/invites/invite.service";
-import { getMember } from "@/modules/members/member.service";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Lời mời · Điểm danh" };
@@ -65,12 +64,17 @@ export default async function InvitePage({ params, searchParams }: Props) {
   const { error } = await searchParams;
   const user = await requireUser();
 
-  const check = await checkInvite(token, "member");
-  if (!check.ok || !check.invite.memberId) return <Problem message={REASONS[check.ok ? "not_found" : check.reason]} />;
-
-  const member = await getMember(String(check.invite.memberId));
-  if (!member) return <Problem message={REASONS.not_found} />;
-  if (member.linkedUserId === user.userId) {
+  let info: InviteInfo;
+  try {
+    info = await api<InviteInfo>(`/v1/invites/${encodeURIComponent(token)}`);
+  } catch (err) {
+    if (err instanceof ApiError && err.status < 500) {
+      return <Problem message={REASONS[err.code.replace(/^invite_/, "")] ?? REASONS.not_found} />;
+    }
+    throw err;
+  }
+  const member = { id: info.memberId, name: info.memberName, code: info.memberCode };
+  if (info.myMemberId === member.id) {
     return (
       <Shell>
         <Typography sx={{ fontWeight: 700, fontSize: 18 }}>Bạn đã liên kết với tên này</Typography>
@@ -80,12 +84,10 @@ export default async function InvitePage({ params, searchParams }: Props) {
       </Shell>
     );
   }
-  if (member.linkedUserId) return <Problem message={REASONS.member_taken} />;
+  if (info.memberAlreadyLinked) return <Problem message={REASONS.member_taken} />;
+  if (info.myMemberId) return <Problem message={`${REASONS.user_in_group} (Tên đang liên kết: ${info.myMemberName ?? ""})`} />;
 
-  const already = await findLinkedMember(member.groupId, user.userId);
-  if (already) return <Problem message={`${REASONS.user_in_group} (Tên đang liên kết: ${already.name})`} />;
-
-  const groupName = (await getGroupName(member.groupId)) ?? "";
+  const groupName = info.groupName;
 
   return (
     <Shell>

@@ -10,10 +10,9 @@ import { LinkButton } from "@/components/links";
 import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/session";
-import { getGroupName } from "@/modules/groups/group.service";
+import { api, ApiError } from "@/lib/api";
+import type { JoinInfo } from "@/lib/api-types";
 import { cancelLinkRequestAction } from "@/modules/invites/invite.actions";
-import { checkInvite, findLinkedMember, getPendingRequestOfUser } from "@/modules/invites/invite.service";
-import { getMember, listMembers } from "@/modules/members/member.service";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
@@ -58,19 +57,23 @@ export default async function JoinPage({ params, searchParams }: Props) {
   const { error } = await searchParams;
   const user = await requireUser();
 
-  const check = await checkInvite(token, "group");
-  if (!check.ok) {
-    return (
-      <Shell>
-        <Alert severity="warning">Link tham gia không còn hiệu lực. Hãy xin người quản lý nhóm gửi link mới.</Alert>
-      </Shell>
-    );
+  let info: JoinInfo;
+  try {
+    info = await api<JoinInfo>(`/v1/join/${encodeURIComponent(token)}`);
+  } catch (err) {
+    if (err instanceof ApiError && err.status < 500) {
+      return (
+        <Shell>
+          <Alert severity="warning">Link tham gia không còn hiệu lực. Hãy xin người quản lý nhóm gửi link mới.</Alert>
+        </Shell>
+      );
+    }
+    throw err;
   }
-  const groupId = String(check.invite.groupId);
-  const groupName = (await getGroupName(groupId)) ?? "";
+  const groupName = info.groupName;
 
   // Đã liên kết trong nhóm này
-  const linked = await findLinkedMember(groupId, user.userId);
+  const linked = info.myMemberId ? { id: info.myMemberId, name: info.myMemberName ?? "" } : null;
   if (linked) {
     return (
       <Shell groupName={groupName}>
@@ -79,7 +82,7 @@ export default async function JoinPage({ params, searchParams }: Props) {
             <Typography>
               Tài khoản của bạn đã liên kết với <b>{linked.name}</b>.
             </Typography>
-            <LinkButton href={`/me/${linked._id}`} variant="contained" sx={{ mt: 2 }}>
+            <LinkButton href={`/me/${linked.id}`} variant="contained" sx={{ mt: 2 }}>
               Xem lịch sử điểm danh
             </LinkButton>
           </CardContent>
@@ -89,9 +92,9 @@ export default async function JoinPage({ params, searchParams }: Props) {
   }
 
   // Đang chờ duyệt
-  const pending = await getPendingRequestOfUser(groupId, user.userId);
+  const pending = info.pendingRequest;
   if (pending) {
-    const member = await getMember(String(pending.memberId));
+    const member = { name: pending.memberName };
     return (
       <Shell groupName={groupName}>
         <Card sx={{ borderColor: brand.orange, bgcolor: brand.orangeLight }}>
@@ -113,7 +116,7 @@ export default async function JoinPage({ params, searchParams }: Props) {
     );
   }
 
-  const members = (await listMembers(groupId)).filter((m) => !m.linkedUserId);
+  const members = info.members;
 
   return (
     <Shell groupName={groupName}>

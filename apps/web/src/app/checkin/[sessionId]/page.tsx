@@ -8,11 +8,10 @@ import Alert from "@mui/material/Alert";
 import { CheckInDone, CheckInList, SelfCheckInButton } from "@/components/checkin-list";
 import { AppLink } from "@/components/links";
 import { getSession } from "@/lib/session";
-import { deviceCookieName, verifyCheckInToken } from "@/lib/checkin-token";
+import { api, ApiError } from "@/lib/api";
+import type { CheckInInfo } from "@/lib/api-types";
+import { deviceCookieName } from "@/lib/checkin-token";
 import { formatDate } from "@/lib/format";
-import { getAttendanceSession, getCheckInSecret, getSessionRecords } from "@/modules/attendance/attendance.service";
-import { getGroupName } from "@/modules/groups/group.service";
-import { getMember, listMembers } from "@/modules/members/member.service";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Tự điểm danh" };
@@ -41,16 +40,21 @@ export default async function CheckInPage({ params, searchParams }: Props) {
   const { sessionId } = await params;
   const { t } = await searchParams;
 
-  const session = await getAttendanceSession(sessionId);
-  if (!session) return <Notice title="Không tìm thấy buổi điểm danh" />;
-
-  const secret = await getCheckInSecret(sessionId);
-  if (!secret) return <Notice title="Điểm danh đã đóng">Buổi này không còn nhận tự điểm danh.</Notice>;
-  if (!verifyCheckInToken(sessionId, secret, t)) {
-    return <Notice title="Mã QR đã hết hạn">Hãy quét lại mã đang hiện trên màn hình.</Notice>;
+  // Thông tin buổi + danh sách tên qua API (gửi kèm phiên đăng nhập nếu có, để biết tên của chính mình)
+  let session: CheckInInfo;
+  try {
+    session = await api<CheckInInfo>(`/v1/checkin/${encodeURIComponent(sessionId)}?t=${encodeURIComponent(t ?? "")}`);
+  } catch (err) {
+    if (err instanceof ApiError && err.code === "expired") {
+      return <Notice title="Mã QR đã hết hạn">Hãy quét lại mã đang hiện trên màn hình.</Notice>;
+    }
+    if (err instanceof ApiError && err.status < 500) {
+      return <Notice title="Điểm danh đã đóng">Buổi này không còn nhận tự điểm danh.</Notice>;
+    }
+    throw err;
   }
 
-  const groupName = (await getGroupName(session.groupId)) ?? "";
+  const groupName = session.groupName;
   const header = (
     <Box sx={{ mb: 2, textAlign: "center" }}>
       <Typography variant="body2" color="text.secondary">
@@ -69,7 +73,7 @@ export default async function CheckInPage({ params, searchParams }: Props) {
   const store = await cookies();
   const doneId = store.get(deviceCookieName(sessionId))?.value;
   if (doneId) {
-    const m = await getMember(doneId);
+    const m = session.members.find((x) => x.id === doneId);
     return (
       <Box sx={{ maxWidth: 440, mx: "auto" }}>
         {header}
@@ -78,18 +82,12 @@ export default async function CheckInPage({ params, searchParams }: Props) {
     );
   }
 
-  const [members, records, user] = await Promise.all([
-    listMembers(session.groupId),
-    getSessionRecords(sessionId),
-    getSession(),
-  ]);
-  const isPresent = (memberId: string) => {
-    const st = records.get(memberId)?.status;
-    return st === "present" || st === "late";
-  };
+  const members = session.members;
+  const user = await getSession();
+  const isPresent = (memberId: string) => !!members.find((m) => m.id === memberId)?.checkedIn;
 
   // Đã đăng nhập và đã liên kết trong nhóm: chỉ một nút điểm danh cho chính mình
-  const mine = user ? members.find((m) => m.linkedUserId === user.userId) : undefined;
+  const mine = members.find((m) => m.isMe);
   if (mine) {
     return (
       <Box sx={{ maxWidth: 440, mx: "auto" }}>
@@ -108,7 +106,7 @@ export default async function CheckInPage({ params, searchParams }: Props) {
     name: m.name,
     code: m.code,
     checkedIn: isPresent(m.id),
-    locked: !!m.linkedUserId,
+    locked: m.linked,
   }));
   const hasLocked = list.some((m) => m.locked && !m.checkedIn);
   const loginHref = `/login?next=${encodeURIComponent(`/checkin/${sessionId}?t=${t ?? ""}`)}`;
