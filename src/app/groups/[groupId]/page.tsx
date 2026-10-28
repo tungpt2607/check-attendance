@@ -271,7 +271,15 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   return (
     <>
       {/* Đường dẫn cùng kiểu với nút quay lại "← …" ở các trang khác */}
-      <Breadcrumbs sx={{ mb: 1, typography: "body2", color: "text.secondary" }}>
+      {/* Mọi mục cùng kiểu căn giữa theo chiều dọc để mục có mũi tên không bị nhô lên */}
+      <Breadcrumbs
+        sx={{
+          mb: 1,
+          typography: "body2",
+          color: "text.secondary",
+          "& .MuiBreadcrumbs-li, & .MuiBreadcrumbs-separator": { display: "inline-flex", alignItems: "center" },
+        }}
+      >
         <AppLink
           href="/groups"
           color="text.secondary"
@@ -282,7 +290,13 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
           Nhóm của tôi
         </AppLink>
         {ancestors.map((a) => (
-          <AppLink key={a.id} href={`/groups/${a.id}`} color="text.secondary" variant="body2">
+          <AppLink
+            key={a.id}
+            href={`/groups/${a.id}`}
+            color="text.secondary"
+            variant="body2"
+            sx={{ display: "inline-flex", alignItems: "center" }}
+          >
             {a.name}
           </AppLink>
         ))}
