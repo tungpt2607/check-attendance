@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     // nên trang ngắn hơn màn hình sẽ không cuộn được (100vh trên iPhone lớn hơn phần nhìn thấy).
     <html lang="vi" style={{ backgroundColor: brand.background }}>
       <body>
-        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+        <AppRouterCacheProvider>
           <Providers>
             <NavProgress />
             <AppHeader />

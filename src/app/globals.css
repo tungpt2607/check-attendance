@@ -1,83 +1,16 @@
-/* Thứ tự lớp CSS: MUI nằm giữa nền tảng và tiện ích Tailwind (giai đoạn chuyển đổi) */
-@layer theme, base, mui, components, utilities;
-@import "tailwindcss";
-
 /*
- * Màu thương hiệu (lấy từ logo). Đổi màu toàn hệ thống chỉ cần sửa ở đây.
- *   brand  = xanh ngọc  #54B6B9 (400) – màu chính; nút dùng đúng màu logo với chữ on-brand; 600+ cho chữ/liên kết trên nền trắng
- *   warn   = cam        #E69842 (400) – Muộn, cảnh báo
- *   danger = đỏ đô      #982726 (600) – Vắng, xóa, lỗi
- *   ink    = xám than   #404447       – chữ tiêu đề, nền thông báo
+ * Giao diện dùng Material UI (theme ở src/theme). File này chỉ giữ vài quy tắc nền tảng.
+ * Màu thương hiệu: src/theme/brand.ts
  */
-@theme {
-  --color-brand-50: #eef8f8;
-  --color-brand-100: #d5efef;
-  --color-brand-200: #aedfe0;
-  --color-brand-300: #84cdcf;
-  --color-brand-400: #54b6b9;
-  --color-brand-500: #3a9ea1;
-  --color-brand-600: #2a7f82;
-  --color-brand-700: #236a6d;
-  --color-brand-800: #1e5759;
-  --color-brand-900: #1a4749;
-
-  --color-warn-50: #fdf5ec;
-  --color-warn-100: #fae6cf;
-  --color-warn-200: #f4cc9f;
-  --color-warn-300: #edb36f;
-  --color-warn-400: #e69842;
-  --color-warn-500: #d9822a;
-  --color-warn-600: #b96a1f;
-  --color-warn-700: #94541b;
-  --color-warn-800: #77441a;
-  --color-warn-900: #623918;
-
-  --color-danger-50: #fbeeee;
-  --color-danger-100: #f6d6d5;
-  --color-danger-200: #ebaaa9;
-  --color-danger-300: #dc7776;
-  --color-danger-400: #c24846;
-  --color-danger-500: #a9302f;
-  --color-danger-600: #982726;
-  --color-danger-700: #7d2020;
-  --color-danger-800: #661c1c;
-  --color-danger-900: #561a1a;
-
-  --color-ink: #404447;
-  /* Chữ đặt trên nền xanh ngọc của logo: xám than đậm hơn một chút để đủ tương phản (~5,9:1) */
-  --color-on-brand: #24272a;
-}
 
 :root {
   color-scheme: light;
 }
 
-summary::-webkit-details-marker {
-  display: none;
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-
-/* Thanh tiến trình chuyển trang: chạy nhanh lúc đầu rồi chậm dần, dừng ở 85% đến khi trang mới hiện */
-@keyframes nav-progress {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 85%;
-  }
-}
-
-/* Thông báo nhỏ trượt lên từ cuối màn hình */
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  -webkit-font-smoothing: antialiased;
 }

@@ -1,6 +1,6 @@
 # Check Attendance – Phần mềm điểm danh
 
-Web điểm danh theo nhóm nhiều cấp. Next.js (App Router) + MongoDB, deploy tự động trên Vercel.
+Web điểm danh theo nhóm nhiều cấp. Next.js (App Router) + Material UI + MongoDB, deploy tự động trên Vercel.
 
 **Địa chỉ:** https://check-attendance-pi.vercel.app
 
@@ -16,7 +16,8 @@ Web điểm danh theo nhóm nhiều cấp. Next.js (App Router) + MongoDB, deplo
 ```
 src/
   app/                 Trang (routes)
-  components/          Thành phần giao diện dùng chung
+  components/          Thành phần giao diện dùng chung (Material UI)
+  theme/               Màu thương hiệu (brand.ts) và theme MUI (theme.ts)
   lib/                 Hạ tầng: kết nối DB, phiên đăng nhập, định dạng ngày
   modules/             Nghiệp vụ, mỗi module một thư mục
     users/             Tài khoản
@@ -37,6 +38,12 @@ Mỗi module gồm `*.model.ts` (dữ liệu), `*.service.ts` (nghiệp vụ) v�
 | `members` | Người trong nhóm; `userId` để trống ở bản đầu, sau này liên kết tài khoản |
 | `attendancesessions` | Buổi điểm danh; `method` để sau này thêm QR, GPS... |
 | `attendancerecords` | Kết quả của từng thành viên trong một buổi |
+
+## Giao diện
+
+- Dùng **Material UI**; theme và màu thương hiệu OPES nằm trong `src/theme/`.
+- Đổi màu toàn hệ thống: sửa `src/theme/brand.ts`.
+- Logo vector: `src/components/logo.tsx`, biểu tượng web: `src/app/icon.svg`, `src/app/apple-icon.png`.
 
 ## Mở rộng sau này
 
