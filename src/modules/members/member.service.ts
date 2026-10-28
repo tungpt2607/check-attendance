@@ -61,7 +61,10 @@ export async function updateMember(memberId: string, data: { name: string; code:
   await connectDB();
   await Member.updateOne(
     { _id: memberId },
-    { $set: { name: data.name.trim(), code: data.code.trim() || undefined } },
+    // Mã để trống nghĩa là xóa mã ($unset), không phải "giữ nguyên"
+    data.code.trim()
+      ? { $set: { name: data.name.trim(), code: data.code.trim() } }
+      : { $set: { name: data.name.trim() }, $unset: { code: 1 } },
   );
 }
 

@@ -118,7 +118,10 @@ export async function saveSessionRecords(
     entries.map((e) => ({
       updateOne: {
         filter: { sessionId: sid, memberId: new Types.ObjectId(e.memberId) },
-        update: { $set: { status: e.status, note: e.note || undefined, markedBy: uid, source: "manual" as const } },
+        // Ghi chú để trống nghĩa là xóa ghi chú ($unset), không phải "giữ nguyên"
+        update: e.note
+          ? { $set: { status: e.status, note: e.note, markedBy: uid, source: "manual" as const } }
+          : { $set: { status: e.status, markedBy: uid, source: "manual" as const }, $unset: { note: 1 as const } },
         upsert: true,
       },
     })),
