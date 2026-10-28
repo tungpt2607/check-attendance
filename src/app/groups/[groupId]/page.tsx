@@ -209,14 +209,14 @@ export default async function GroupDetailPage({ params }: Props) {
               )}
               <form action={addMembersAction}>
                 <input type="hidden" name="groupId" value={group.id} />
-                <Stack spacing={1} sx={{ mt: members.length > 0 ? 0 : 1 }}>
-                  {/* Nhãn đặt cố định phía trên: nhãn nổi của ô nhiều dòng bị lệch viền trên iPhone */}
-                  <Typography component="label" htmlFor="add-members" variant="body2" sx={{ fontWeight: 600 }}>
-                    Thêm thành viên
-                  </Typography>
+                <Stack spacing={1.5} sx={{ mt: members.length > 0 ? 0 : 1 }}>
+                  {/* Ô nhiều dòng: cố định nhãn nằm trên viền và phần hở của viền,
+                      vì nhãn nổi tự động bị lệch viền trên iPhone */}
                   <TextField
                     id="add-members"
                     name="members"
+                    label="Thêm thành viên"
+                    slotProps={{ inputLabel: { shrink: true }, input: { notched: true } }}
                     multiline
                     minRows={3}
                     required
