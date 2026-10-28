@@ -22,7 +22,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { Fragment } from "react";
-import { Avatar } from "@/components/avatar";
+import { ZoomableAvatar } from "@/components/avatar-zoom";
 import { EditMemberButton, RenameGroupButton } from "@/components/edit-dialogs";
 import { GroupInviteCard } from "@/components/group-invite-card";
 import { MemberInviteButton } from "@/components/member-invite";
@@ -121,7 +121,7 @@ export default async function GroupDetailPage({ params }: Props) {
                   return (
                     <ListItem key={String(r._id)} disableGutters divider={i < requests.length - 1} sx={{ py: 1.25, flexWrap: "wrap", gap: 1.5 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: "1 1 220px", minWidth: 0 }}>
-                        <Avatar userId={String(r.userId)} name={acc?.name ?? "?"} version={acc?.avatarVersion ?? null} size={36} />
+                        <ZoomableAvatar userId={String(r.userId)} name={acc?.name ?? "?"} version={acc?.avatarVersion ?? null} caption={acc?.email} size={36} />
                         <Box sx={{ minWidth: 0 }}>
                           <Typography noWrap sx={{ fontWeight: 600 }}>
                             {acc?.name ?? "Tài khoản"} <Typography component="span" variant="body2" color="text.secondary">({acc?.email ?? ""})</Typography>
@@ -282,11 +282,12 @@ export default async function GroupDetailPage({ params }: Props) {
                                 title={`Đã liên kết: ${accounts.get(m.linkedUserId)?.email ?? ""}`}
                                 sx={{ display: "inline-flex", verticalAlign: "middle", ml: 1 }}
                               >
-                                <Avatar
+                                <ZoomableAvatar
                                   userId={m.linkedUserId}
                                   name={accounts.get(m.linkedUserId)?.name ?? m.name}
                                   version={accounts.get(m.linkedUserId)?.avatarVersion ?? null}
-                                  size={20}
+                                  caption={accounts.get(m.linkedUserId)?.email}
+                                  size={28}
                                 />
                               </Box>
                             )}

@@ -1,6 +1,5 @@
 "use client";
 
-import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutline from "@mui/icons-material/DeleteOutline";
 import PhotoCameraOutlined from "@mui/icons-material/PhotoCameraOutlined";
 import Alert from "@mui/material/Alert";
@@ -9,7 +8,6 @@ import Button from "@mui/material/Button";
 import ButtonBase from "@mui/material/ButtonBase";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
-import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -22,6 +20,7 @@ import {
   type FormState,
 } from "@/modules/users/account.actions";
 import { Avatar } from "./avatar";
+import { AvatarPhotoDialog } from "./avatar-zoom";
 import { PasswordInput } from "./password-input";
 import { SubmitButton } from "./submit-button";
 import { toast } from "./toaster";
@@ -140,29 +139,7 @@ export function AvatarForm({ userId, name, version }: { userId: string; name: st
       {error && <Alert severity="error">{error}</Alert>}
 
       {/* Xem ảnh phóng to */}
-      <Dialog
-        open={zoomed && !!version}
-        onClose={() => setZoomed(false)}
-        maxWidth="sm"
-        slotProps={{ paper: { sx: { bgcolor: "transparent", boxShadow: "none", m: 2, overflow: "visible" } } }}
-      >
-        <Box sx={{ position: "relative" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/api/avatar/${userId}?v=${version}`}
-            alt={name}
-            style={{ display: "block", width: "min(85vw, 440px)", aspectRatio: "1", objectFit: "cover", borderRadius: 16 }}
-          />
-          <IconButton
-            onClick={() => setZoomed(false)}
-            aria-label="Đóng"
-            sx={{ position: "absolute", top: 8, right: 8, bgcolor: "rgba(0,0,0,0.45)", color: "#fff", "&:hover": { bgcolor: "rgba(0,0,0,0.6)" } }}
-          >
-            <CloseRounded />
-          </IconButton>
-          <Typography sx={{ color: "#fff", textAlign: "center", mt: 1.5, fontWeight: 500 }}>{name}</Typography>
-        </Box>
-      </Dialog>
+      <AvatarPhotoDialog open={zoomed} onClose={() => setZoomed(false)} userId={userId} version={version} name={name} />
 
       {/* Xác nhận xóa ảnh */}
       <Dialog open={askRemove} onClose={() => setAskRemove(false)} maxWidth="xs" fullWidth>
