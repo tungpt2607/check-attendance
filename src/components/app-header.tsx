@@ -4,9 +4,9 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { getSession } from "@/lib/session";
 import { brand, logoStripe } from "@/theme/brand";
-import { Avatar } from "./avatar";
 import { AppLink } from "./links";
 import { Logo } from "./logo";
+import { UserMenu } from "./user-menu";
 
 /** Dải mảnh 4 màu của logo chạy dưới thanh tiêu đề */
 function BrandStripe() {
@@ -34,33 +34,7 @@ export async function AppHeader() {
             Điểm danh
           </Typography>
         </AppLink>
-        {user && (
-          <AppLink
-            href="/account"
-            underline="none"
-            aria-label="Tài khoản của tôi"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              color: brand.ink,
-              borderRadius: 999,
-              p: 0.5,
-              pr: { xs: 0.5, sm: 1.5 },
-              "&:hover": { bgcolor: "action.hover" },
-            }}
-          >
-            <Avatar userId={user.userId} name={user.name} version={user.avatarVersion} size={32} />
-            <Typography
-              component="span"
-              variant="body2"
-              noWrap
-              sx={{ display: { xs: "none", sm: "inline" }, maxWidth: 160 }}
-            >
-              {user.name}
-            </Typography>
-          </AppLink>
-        )}
+        {user && <UserMenu userId={user.userId} name={user.name} email={user.email} avatarVersion={user.avatarVersion} />}
       </Toolbar>
       <BrandStripe />
     </AppBar>
