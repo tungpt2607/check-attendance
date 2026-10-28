@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction, registerAction } from "@/modules/auth/auth.actions";
 import type { AuthFormState } from "@/modules/auth/auth.types";
+import { PasswordInput } from "./password-input";
 import { SubmitButton } from "./submit-button";
 import { ui } from "./ui";
 
@@ -23,7 +24,7 @@ export function LoginForm() {
       </div>
       <div>
         <label className={ui.label} htmlFor="password">Mật khẩu</label>
-        <input id="password" name="password" type="password" required autoComplete="current-password" className={ui.input} />
+        <PasswordInput id="password" name="password" required autoComplete="current-password" />
       </div>
       <SubmitButton className="w-full" pendingText="Đang đăng nhập...">Đăng nhập</SubmitButton>
       <p className="text-center text-sm text-slate-600">
@@ -49,11 +50,11 @@ export function RegisterForm() {
       </div>
       <div>
         <label className={ui.label} htmlFor="password">Mật khẩu</label>
-        <input id="password" name="password" type="password" required minLength={6} autoComplete="new-password" className={ui.input} />
+        <PasswordInput id="password" name="password" required minLength={6} autoComplete="new-password" />
       </div>
       <div>
         <label className={ui.label} htmlFor="confirm">Nhập lại mật khẩu</label>
-        <input id="confirm" name="confirm" type="password" required minLength={6} autoComplete="new-password" className={ui.input} />
+        <PasswordInput id="confirm" name="confirm" required minLength={6} autoComplete="new-password" />
       </div>
       <SubmitButton className="w-full" pendingText="Đang tạo tài khoản...">Đăng ký</SubmitButton>
       <p className="text-center text-sm text-slate-600">

@@ -66,7 +66,7 @@ export function AttendanceFilter({ listId }: Props) {
   );
 
   return (
-    <div className="sticky top-0 z-10 space-y-2 border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
+    <div className="sticky top-14 z-10 space-y-2 border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
       <div className="relative">
         <input
           type="search"

@@ -5,7 +5,7 @@ import { Avatar } from "./avatar";
 export async function AppHeader() {
   const user = await getSession();
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         <Link href={user ? "/groups" : "/login"} className="flex items-center gap-2 font-semibold text-slate-900">
           <span className="grid h-7 w-7 place-items-center rounded-md bg-indigo-600 text-sm text-white">✓</span>
