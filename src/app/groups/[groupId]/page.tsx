@@ -82,7 +82,7 @@ export default async function GroupDetailPage({ params }: Props) {
           <form action={createSessionAction} className="flex flex-col gap-2 sm:flex-row">
             <input type="hidden" name="groupId" value={group.id} />
             <input name="title" placeholder="Tên buổi (vd: Buổi sáng, Tiết 1...)" className={ui.input} />
-            <input name="date" type="date" required defaultValue={todayInputValue()} className={`${ui.input} sm:w-44`} />
+            <input name="date" type="date" required defaultValue={todayInputValue()} className={`${ui.input} min-w-0 appearance-none sm:w-44`} />
             <SubmitButton pendingText="Đang tạo..." className="shrink-0">Bắt đầu điểm danh</SubmitButton>
           </form>
         )}
@@ -93,13 +93,13 @@ export default async function GroupDetailPage({ params }: Props) {
               <li key={s.id}>
                 <Link
                   href={`/groups/${group.id}/sessions/${s.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 py-2.5 hover:text-indigo-600"
+                  className="flex flex-col items-start gap-1.5 py-2.5 hover:text-indigo-600"
                 >
                   <span>
                     <span className="font-medium">{s.title}</span>
                     <span className="ml-2 text-sm text-slate-500">{formatDate(s.date)}</span>
                   </span>
-                  <span className="flex gap-1.5">
+                  <span className="flex flex-wrap gap-1.5">
                     {ATTENDANCE_STATUSES.map((st) => (
                       <span key={st.value} className={`rounded-md px-2 py-0.5 text-xs font-medium ${st.className}`}>
                         {st.short} {s.counts[st.value] ?? 0}
