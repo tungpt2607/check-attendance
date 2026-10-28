@@ -12,6 +12,11 @@ export function parseDateInput(value: string): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/** Date (lưu 00:00 UTC) -> "YYYY-MM-DD" cho input type="date". */
+export function dateInputValue(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 export function formatDate(d: Date): string {
   return d.toLocaleDateString("vi-VN", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" });
 }

@@ -91,6 +91,11 @@ export async function saveSessionRecords(
   );
 }
 
+export async function updateAttendanceSession(sessionId: string, data: { title: string; date: Date }) {
+  await connectDB();
+  await AttendanceSession.updateOne({ _id: sessionId }, { $set: { title: data.title.trim(), date: data.date } });
+}
+
 export async function deleteAttendanceSession(sessionId: string) {
   await connectDB();
   await AttendanceRecord.deleteMany({ sessionId });

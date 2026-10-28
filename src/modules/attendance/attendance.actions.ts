@@ -11,6 +11,7 @@ import {
   deleteAttendanceSession,
   getAttendanceSession,
   saveSessionRecords,
+  updateAttendanceSession,
 } from "./attendance.service";
 import { DEFAULT_STATUS, isAttendanceStatus } from "./attendance.statuses";
 
@@ -52,6 +53,19 @@ export async function saveAttendanceAction(formData: FormData) {
   await saveSessionRecords(sessionId, user.userId, entries);
   revalidatePath(`/groups/${session.groupId}`);
   redirect(`/groups/${session.groupId}/sessions/${sessionId}?saved=1`);
+}
+
+export async function updateSessionAction(formData: FormData) {
+  const user = await requireUser();
+  const sessionId = String(formData.get("sessionId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const date = parseDateInput(String(formData.get("date") ?? ""));
+  const session = await getOwnedSession(sessionId, user.userId);
+  if (!session || !title || !date) return;
+
+  await updateAttendanceSession(sessionId, { title, date });
+  revalidatePath(`/groups/${session.groupId}`);
+  revalidatePath(`/groups/${session.groupId}/sessions/${sessionId}`);
 }
 
 export async function deleteSessionAction(formData: FormData) {

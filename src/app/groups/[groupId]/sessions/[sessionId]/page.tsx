@@ -4,9 +4,9 @@ import { AttendanceFilter } from "@/components/attendance-filter";
 import { SubmitButton } from "@/components/submit-button";
 import { normalizeSearch } from "@/lib/search";
 import { ui } from "@/components/ui";
-import { formatDate } from "@/lib/format";
+import { dateInputValue, formatDate } from "@/lib/format";
 import { requireUser } from "@/lib/session";
-import { deleteSessionAction, saveAttendanceAction } from "@/modules/attendance/attendance.actions";
+import { deleteSessionAction, saveAttendanceAction, updateSessionAction } from "@/modules/attendance/attendance.actions";
 import { getAttendanceSession, getSessionRecords } from "@/modules/attendance/attendance.service";
 import { ATTENDANCE_STATUSES, DEFAULT_STATUS } from "@/modules/attendance/attendance.statuses";
 import { getOwnedGroup } from "@/modules/groups/group.service";
@@ -45,12 +45,36 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
           <h1 className="text-2xl font-semibold">{session.title}</h1>
           <p className={ui.muted}>{formatDate(session.date)} · {members.length} thành viên</p>
         </div>
-        <form action={deleteSessionAction}>
-          <input type="hidden" name="sessionId" value={session.id} />
-          <SubmitButton variant="danger" pendingText="Đang xóa..." confirm="Xóa buổi điểm danh này?">
-            Xóa buổi
-          </SubmitButton>
-        </form>
+        <div className="flex items-center gap-2">
+          {/* key đổi theo nội dung để hộp sửa tự đóng sau khi lưu */}
+          <details key={`${session.title}|${dateInputValue(session.date)}`} className="relative">
+            <summary className={`${ui.btnGhost} cursor-pointer list-none`}>Sửa buổi</summary>
+            <form
+              action={updateSessionAction}
+              className="absolute left-0 z-20 mt-2 w-[min(18rem,calc(100vw-2rem))] space-y-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg sm:left-auto sm:right-0"
+            >
+              <input type="hidden" name="sessionId" value={session.id} />
+              <label className={ui.label} htmlFor="session-title">Tên buổi</label>
+              <input id="session-title" name="title" defaultValue={session.title} required className={ui.input} />
+              <label className={ui.label} htmlFor="session-date">Ngày</label>
+              <input
+                id="session-date"
+                name="date"
+                type="date"
+                required
+                defaultValue={dateInputValue(session.date)}
+                className={`${ui.input} min-w-0 appearance-none`}
+              />
+              <SubmitButton pendingText="Đang lưu..." className="w-full">Lưu</SubmitButton>
+            </form>
+          </details>
+          <form action={deleteSessionAction}>
+            <input type="hidden" name="sessionId" value={session.id} />
+            <SubmitButton variant="danger" pendingText="Đang xóa..." confirm="Xóa buổi điểm danh này?">
+              Xóa buổi
+            </SubmitButton>
+          </form>
+        </div>
       </div>
 
       {saved && (

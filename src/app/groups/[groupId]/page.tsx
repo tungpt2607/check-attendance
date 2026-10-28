@@ -50,7 +50,7 @@ export default async function GroupDetailPage({ params }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <details className="relative">
+          <details key={group.name} className="relative">
             <summary className={`${ui.btnGhost} cursor-pointer list-none`}>Đổi tên</summary>
             <form action={renameGroupAction} className="absolute left-0 z-10 mt-2 flex w-[min(18rem,calc(100vw-2rem))] gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
               <input type="hidden" name="groupId" value={group.id} />
@@ -127,7 +127,7 @@ export default async function GroupDetailPage({ params }: Props) {
                     {m.name}
                   </span>
                   <span className="flex shrink-0 items-center gap-1">
-                    <details className="relative">
+                    <details key={`${m.name}|${m.code}`} className="relative">
                       <summary className="cursor-pointer list-none rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-100">Sửa</summary>
                       <form action={updateMemberAction} className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
                         <input type="hidden" name="memberId" value={m.id} />
