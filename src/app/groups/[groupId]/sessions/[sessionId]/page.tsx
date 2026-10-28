@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AttendanceFilter } from "@/components/attendance-filter";
 import { SubmitButton } from "@/components/submit-button";
+import { normalizeSearch } from "@/lib/search";
 import { ui } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { requireUser } from "@/lib/session";
@@ -77,12 +79,17 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
               Mặc định tất cả <b>Có mặt</b>. Chỉ cần chọn lại những người vắng hoặc đi muộn rồi bấm Lưu.
             </p>
           )}
-          <ul className="divide-y divide-slate-100">
+          <AttendanceFilter listId="attendance-list" />
+          <ul id="attendance-list" className="divide-y divide-slate-100">
             {members.map((m, i) => {
               const current = records.get(m.id);
               const status = current?.status ?? DEFAULT_STATUS;
               return (
-                <li key={m.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <li
+                  key={m.id}
+                  data-member={m.id}
+                  data-search={normalizeSearch(`${m.name} ${m.code}`)}
+                  className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <span className="mr-2 text-xs text-slate-400">{i + 1}.</span>
                     {m.code && <span className="mr-2 text-xs text-slate-500">{m.code}</span>}
