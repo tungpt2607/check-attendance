@@ -28,7 +28,7 @@ import { EditMemberButton, RenameGroupButton } from "@/components/edit-dialogs";
 import { GroupInviteCard } from "@/components/group-invite-card";
 import { MemberInviteButton } from "@/components/member-invite";
 import { AppLink, ListLink } from "@/components/links";
-import { ListSearch } from "@/components/list-search";
+import { PagedList } from "@/components/paged-list";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { StatusCounts } from "@/components/status-chip";
 import { SubmitButton } from "@/components/submit-button";
@@ -226,9 +226,10 @@ export default async function GroupDetailPage({ params }: Props) {
           <Card>
             <CardContent sx={{ p: 2.5 }}>
               <SectionTitle>Thành viên ({members.length})</SectionTitle>
-              {members.length > 5 && <ListSearch listId="member-list" />}
               {members.length > 0 && (
-                <List id="member-list" dense disablePadding sx={{ mt: 1, mb: 2 }}>
+                <Box sx={{ mb: 2 }}>
+                <PagedList searchable={members.length > 5}>
+                <List dense disablePadding sx={{ mt: 1 }}>
                   {members.map((m, i) => (
                     <ListItem
                       key={m.id}
@@ -306,6 +307,8 @@ export default async function GroupDetailPage({ params }: Props) {
                     </ListItem>
                   ))}
                 </List>
+                </PagedList>
+                </Box>
               )}
               <form action={addMembersAction}>
                 <input type="hidden" name="groupId" value={group.id} />

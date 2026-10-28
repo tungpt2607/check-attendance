@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { ZoomableAvatar } from "@/components/avatar-zoom";
-import { ListSearch } from "@/components/list-search";
+import { PagedList } from "@/components/paged-list";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { StatusChip, StatusCounts } from "@/components/status-chip";
 import { formatDate } from "@/lib/format";
@@ -76,8 +76,8 @@ export default async function MyHistoryPage({ params, searchParams }: Props) {
         <Card>
           <CardContent sx={{ p: 2.5 }}>
             <SectionTitle>Thành viên ({roster.length})</SectionTitle>
-            {roster.length > 5 && <ListSearch listId="roster-list" />}
-            <List id="roster-list" dense disablePadding sx={{ mt: roster.length > 5 ? 1 : 0, mx: -1 }}>
+            <PagedList searchable={roster.length > 5}>
+            <List dense disablePadding sx={{ mx: -1 }}>
               {roster.map((m, i) => {
                 const isMe = m.id === memberId;
                 return (
@@ -110,6 +110,7 @@ export default async function MyHistoryPage({ params, searchParams }: Props) {
                 );
               })}
             </List>
+            </PagedList>
           </CardContent>
         </Card>
 
