@@ -1,6 +1,7 @@
 import AddRounded from "@mui/icons-material/AddRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import FolderOutlined from "@mui/icons-material/FolderOutlined";
+import HowToRegOutlined from "@mui/icons-material/HowToRegOutlined";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import List from "@mui/material/List";
@@ -14,6 +15,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/session";
 import { createGroupAction } from "@/modules/groups/group.actions";
 import { getOwnedGroupTree, type GroupTreeNode } from "@/modules/groups/group.service";
+import { listMembershipsOfUser } from "@/modules/members/membership.service";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
@@ -50,16 +52,44 @@ function GroupTree({ nodes, depth = 0 }: { nodes: GroupTreeNode[]; depth?: numbe
 
 export default async function GroupsPage() {
   const user = await requireUser();
-  const tree = await getOwnedGroupTree(user.userId);
+  const [tree, memberships] = await Promise.all([getOwnedGroupTree(user.userId), listMembershipsOfUser(user.userId)]);
 
   return (
     <>
       <PageHeader
         title="Nhóm của tôi"
-        subtitle={tree.length === 0 ? "Bạn chưa có nhóm nào." : `${countAll(tree)} nhóm`}
+        subtitle={
+          tree.length === 0 && memberships.length === 0
+            ? "Bạn chưa có nhóm nào."
+            : [tree.length > 0 && `Quản lý ${countAll(tree)} nhóm`, memberships.length > 0 && `tham gia ${memberships.length} nhóm`]
+                .filter(Boolean)
+                .join(" · ")
+        }
       />
 
       <Stack spacing={2}>
+        {/* Nhóm mà tài khoản đã liên kết làm thành viên */}
+        {memberships.length > 0 && (
+          <Card>
+            <CardContent sx={{ p: 2.5 }}>
+              <SectionTitle>Nhóm tôi tham gia</SectionTitle>
+              <List disablePadding sx={{ mx: -1 }}>
+                {memberships.map((m) => (
+                  <ListLink key={m.memberId} href={`/me/${m.memberId}`} sx={{ borderRadius: 2, px: 1, py: 1 }}>
+                    <HowToRegOutlined fontSize="small" sx={{ color: brand.tealDark, mr: 1.5 }} />
+                    <ListItemText
+                      primary={m.groupName}
+                      secondary={`Bạn là ${m.memberName}`}
+                      slotProps={{ primary: { fontWeight: 600 } }}
+                    />
+                    <ChevronRightRounded sx={{ color: "text.disabled" }} />
+                  </ListLink>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent sx={{ p: 2.5 }}>
             <SectionTitle>Tạo nhóm mới</SectionTitle>
@@ -85,7 +115,7 @@ export default async function GroupsPage() {
         {tree.length > 0 && (
           <Card>
             <CardContent sx={{ p: 2.5 }}>
-              <SectionTitle>Danh sách nhóm</SectionTitle>
+              <SectionTitle>Nhóm tôi quản lý</SectionTitle>
               <GroupTree nodes={tree} />
             </CardContent>
           </Card>

@@ -5,12 +5,24 @@ import { ATTENDANCE_STATUSES, type AttendanceStatus } from "@/modules/attendance
 const BY_VALUE = Object.fromEntries(ATTENDANCE_STATUSES.map((s) => [s.value, s]));
 
 /** Nhãn trạng thái điểm danh kèm số lượng, màu theo logo */
-export function StatusChip({ status, count, short = false }: { status: AttendanceStatus; count: number; short?: boolean }) {
+export function StatusChip({
+  status,
+  count,
+  short = false,
+  hideCount = false,
+}: {
+  status: AttendanceStatus;
+  count: number;
+  short?: boolean;
+  /** Chỉ hiện tên trạng thái, không kèm số */
+  hideCount?: boolean;
+}) {
   const st = BY_VALUE[status];
+  const text = short ? st.short : st.label;
   return (
     <Chip
       size="small"
-      label={`${short ? st.short : st.label} ${count}`}
+      label={hideCount ? text : `${text} ${count}`}
       sx={{ bgcolor: st.bg, color: st.fg, fontWeight: 600, borderRadius: 1.5 }}
     />
   );
