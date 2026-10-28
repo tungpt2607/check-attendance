@@ -2,7 +2,7 @@
 
 /*
  * Màu thương hiệu (lấy từ logo). Đổi màu toàn hệ thống chỉ cần sửa ở đây.
- *   brand  = xanh ngọc  #54B6B9 (400) – màu chính; 600 đậm hơn để chữ trắng trên nút dễ đọc
+ *   brand  = xanh ngọc  #54B6B9 (400) – màu chính; nút dùng đúng màu logo với chữ on-brand; 600+ cho chữ/liên kết trên nền trắng
  *   warn   = cam        #E69842 (400) – Muộn, cảnh báo
  *   danger = đỏ đô      #982726 (600) – Vắng, xóa, lỗi
  *   ink    = xám than   #404447       – chữ tiêu đề, nền thông báo
@@ -42,6 +42,8 @@
   --color-danger-900: #561a1a;
 
   --color-ink: #404447;
+  /* Chữ đặt trên nền xanh ngọc của logo: xám than đậm hơn một chút để đủ tương phản (~5,9:1) */
+  --color-on-brand: #24272a;
 }
 
 :root {

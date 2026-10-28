@@ -80,7 +80,7 @@ export function QrPresenter({ sessionId }: { sessionId: string }) {
       <div className="space-y-2">
         <div className="h-2 overflow-hidden rounded-full bg-slate-200">
           <div
-            className={`h-full rounded-full transition-[width] duration-200 ease-linear ${urgent ? "bg-warn-500" : "bg-brand-600"}`}
+            className={`h-full rounded-full transition-[width] duration-200 ease-linear ${urgent ? "bg-warn-400" : "bg-brand-400"}`}
             style={{ width: `${percent}%` }}
           />
         </div>

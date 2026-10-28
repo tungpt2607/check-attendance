@@ -6,7 +6,7 @@ export const ui = {
   input:
     "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base outline-none sm:text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100",
   label: "mb-1 block text-sm font-medium text-slate-700",
-  btn: "inline-flex items-center justify-center gap-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60",
+  btn: "inline-flex items-center justify-center gap-1 rounded-lg bg-brand-400 px-4 py-2 text-sm font-semibold text-on-brand hover:bg-brand-300 disabled:cursor-not-allowed disabled:opacity-60",
   btnGhost:
     "inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60",
   btnDanger:

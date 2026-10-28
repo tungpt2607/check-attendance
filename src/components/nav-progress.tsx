@@ -45,7 +45,7 @@ export function NavProgress() {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-0.5">
       <div
-        className={`h-full bg-brand-600 shadow-[0_0_8px_rgba(42,127,130,0.5)] ${
+        className={`h-full bg-brand-400 shadow-[0_0_8px_rgba(84,182,185,0.7)] ${
           state === "loading" ? "animate-[nav-progress_8s_cubic-bezier(0.1,0.7,0.2,1)_forwards]" : "w-full opacity-0 transition-opacity duration-300"
         }`}
       />

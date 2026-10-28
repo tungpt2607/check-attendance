@@ -57,7 +57,7 @@ export function AttendanceFilter({ listId }: Props) {
       onClick={() => setStatus(value)}
       className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${
         status === value
-          ? "border-brand-600 bg-brand-600 text-white"
+          ? "border-brand-400 bg-brand-400 font-semibold text-on-brand"
           : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
       }`}
     >
