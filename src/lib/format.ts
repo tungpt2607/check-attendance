@@ -20,3 +20,8 @@ export function dateInputValue(d: Date): string {
 export function formatDate(d: Date): string {
   return d.toLocaleDateString("vi-VN", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" });
 }
+
+/** Giờ:phút theo giờ Việt Nam */
+export function formatTime(d: Date): string {
+  return d.toLocaleTimeString("vi-VN", { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" });
+}

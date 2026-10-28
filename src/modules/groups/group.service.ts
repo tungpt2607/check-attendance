@@ -32,6 +32,14 @@ export async function getOwnedGroup(groupId: string, userId: string): Promise<Gr
   return g ? toDTO(g) : null;
 }
 
+/** Chỉ lấy tên nhóm, không kiểm tra quyền (dùng cho trang tự điểm danh công khai). */
+export async function getGroupName(groupId: string): Promise<string | null> {
+  if (!isValidId(groupId)) return null;
+  await connectDB();
+  const g = await Group.findById(groupId).select("name").lean<Pick<GroupRecord, "name">>();
+  return g?.name ?? null;
+}
+
 /** Toàn bộ nhóm của người dùng, dựng thành cây. */
 export async function getOwnedGroupTree(userId: string): Promise<GroupTreeNode[]> {
   await connectDB();

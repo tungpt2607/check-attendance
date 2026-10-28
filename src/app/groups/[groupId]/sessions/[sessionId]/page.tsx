@@ -4,9 +4,15 @@ import { AttendanceFilter } from "@/components/attendance-filter";
 import { SubmitButton } from "@/components/submit-button";
 import { normalizeSearch } from "@/lib/search";
 import { ui } from "@/components/ui";
-import { dateInputValue, formatDate } from "@/lib/format";
+import { dateInputValue, formatDate, formatTime } from "@/lib/format";
 import { requireUser } from "@/lib/session";
-import { deleteSessionAction, saveAttendanceAction, updateSessionAction } from "@/modules/attendance/attendance.actions";
+import {
+  closeSelfCheckInAction,
+  deleteSessionAction,
+  openSelfCheckInAction,
+  saveAttendanceAction,
+  updateSessionAction,
+} from "@/modules/attendance/attendance.actions";
 import { getAttendanceSession, getSessionRecords } from "@/modules/attendance/attendance.service";
 import { ATTENDANCE_STATUSES, DEFAULT_STATUS } from "@/modules/attendance/attendance.statuses";
 import { getOwnedGroup } from "@/modules/groups/group.service";
@@ -81,6 +87,33 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
         <p className="rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-800">Đã lưu kết quả điểm danh.</p>
       )}
 
+      {members.length > 0 && (
+        <div className={`${ui.card} flex flex-wrap items-center justify-between gap-3`}>
+          <div>
+            <h2 className={ui.h2}>Tự điểm danh bằng QR</h2>
+            <p className={ui.muted}>
+              {session.selfCheckInOpen
+                ? "Đang mở. Mọi người quét mã và chọn tên mình."
+                : "Mọi người tự quét mã QR và chọn tên mình để điểm danh."}
+            </p>
+          </div>
+          {session.selfCheckInOpen ? (
+            <div className="flex gap-2">
+              <Link href={`/groups/${group.id}/sessions/${session.id}/qr`} className={ui.btn}>Hiện mã QR</Link>
+              <form action={closeSelfCheckInAction}>
+                <input type="hidden" name="sessionId" value={session.id} />
+                <SubmitButton variant="danger" className="py-2" pendingText="Đang đóng...">Đóng</SubmitButton>
+              </form>
+            </div>
+          ) : (
+            <form action={openSelfCheckInAction}>
+              <input type="hidden" name="sessionId" value={session.id} />
+              <SubmitButton pendingText="Đang mở...">Mở tự điểm danh</SubmitButton>
+            </form>
+          )}
+        </div>
+      )}
+
       {!isNew && (
         <div className="flex flex-wrap gap-2">
           {ATTENDANCE_STATUSES.map((st) => (
@@ -118,8 +151,15 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
                     <span className="mr-2 text-xs text-slate-400">{i + 1}.</span>
                     {m.code && <span className="mr-2 text-xs text-slate-500">{m.code}</span>}
                     <span className="font-medium">{m.name}</span>
+                    {current?.source === "self" && current.checkedInAt && (
+                      <span className="ml-2 rounded bg-indigo-50 px-1.5 py-0.5 text-xs text-indigo-700">
+                        Tự điểm danh {formatTime(current.checkedInAt)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name={`orig_status_${m.id}`} value={current?.status ?? ""} />
+                    <input type="hidden" name={`orig_note_${m.id}`} value={current?.note ?? ""} />
                     <div className="flex overflow-hidden rounded-lg border border-slate-200">
                       {ATTENDANCE_STATUSES.map((st) => (
                         <label

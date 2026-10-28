@@ -98,6 +98,9 @@ export default async function GroupDetailPage({ params }: Props) {
                   <span>
                     <span className="font-medium">{s.title}</span>
                     <span className="ml-2 text-sm text-slate-500">{formatDate(s.date)}</span>
+                    {s.selfCheckInOpen && (
+                      <span className="ml-2 rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-medium text-indigo-700">QR đang mở</span>
+                    )}
                   </span>
                   <span className="flex flex-wrap justify-end gap-1.5">
                     {ATTENDANCE_STATUSES.map((st) => (
