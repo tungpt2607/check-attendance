@@ -1,10 +1,12 @@
+import MuiAvatar from "@mui/material/Avatar";
+import { brand } from "@/theme/brand";
+
 type Props = {
   userId: string;
   name: string;
   /** Phiên bản ảnh; null = chưa có ảnh, hiện chữ cái đầu */
   version: number | null;
   size?: number;
-  className?: string;
 };
 
 /** Chữ cái đầu của tên (lấy từ cuối, kiểu tên Việt: "Phan Thanh Tùng" -> "T") */
@@ -13,28 +15,21 @@ export function initialOf(name: string): string {
   return (parts[parts.length - 1]?.[0] ?? "?").toUpperCase();
 }
 
-export function Avatar({ userId, name, version, size = 32, className = "" }: Props) {
-  const style = { width: size, height: size };
-  if (version) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={`/api/avatar/${userId}?v=${version}`}
-        alt={name}
-        width={size}
-        height={size}
-        style={style}
-        className={`shrink-0 rounded-full object-cover ${className}`}
-      />
-    );
-  }
+export function Avatar({ userId, name, version, size = 32 }: Props) {
   return (
-    <span
-      style={{ ...style, fontSize: Math.round(size * 0.42) }}
-      className={`grid shrink-0 place-items-center rounded-full bg-brand-100 font-semibold text-brand-700 ${className}`}
-      aria-label={name}
+    <MuiAvatar
+      src={version ? `/api/avatar/${userId}?v=${version}` : undefined}
+      alt={name}
+      sx={{
+        width: size,
+        height: size,
+        fontSize: Math.round(size * 0.42),
+        fontWeight: 600,
+        bgcolor: brand.tealLight,
+        color: brand.tealDarker,
+      }}
     >
       {initialOf(name)}
-    </span>
+    </MuiAvatar>
   );
 }

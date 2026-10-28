@@ -1,3 +1,5 @@
+/* Thứ tự lớp CSS: MUI nằm giữa nền tảng và tiện ích Tailwind (giai đoạn chuyển đổi) */
+@layer theme, base, mui, components, utilities;
 @import "tailwindcss";
 
 /*

@@ -1,7 +1,16 @@
 "use client";
 
+import Box from "@mui/material/Box";
+import { keyframes } from "@mui/material/styles";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { brand } from "@/theme/brand";
+
+/** Chạy nhanh lúc đầu rồi chậm dần, dừng ở 85% đến khi trang mới hiện */
+const grow = keyframes`
+  from { width: 0%; }
+  to { width: 85%; }
+`;
 
 /**
  * Thanh tiến trình mảnh ở mép trên màn hình: chạy ngay khi bấm một liên kết trong web,
@@ -43,12 +52,17 @@ export function NavProgress() {
 
   if (state === "idle") return null;
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-0.5">
-      <div
-        className={`h-full bg-brand-400 shadow-[0_0_8px_rgba(84,182,185,0.7)] ${
-          state === "loading" ? "animate-[nav-progress_8s_cubic-bezier(0.1,0.7,0.2,1)_forwards]" : "w-full opacity-0 transition-opacity duration-300"
-        }`}
+    <Box sx={{ pointerEvents: "none", position: "fixed", insetInline: 0, top: 0, zIndex: 1600, height: 3 }}>
+      <Box
+        sx={{
+          height: "100%",
+          bgcolor: brand.teal,
+          boxShadow: `0 0 8px ${brand.teal}`,
+          ...(state === "loading"
+            ? { animation: `${grow} 8s cubic-bezier(0.1,0.7,0.2,1) forwards` }
+            : { width: "100%", opacity: 0, transition: "opacity 300ms" }),
+        }}
       />
-    </div>
+    </Box>
   );
 }
