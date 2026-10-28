@@ -21,7 +21,7 @@ export async function registerAction(_prev: AuthFormState, formData: FormData): 
   if (await findUserByEmail(email)) return { error: "Email này đã được đăng ký." };
 
   const user = await createUser({ name, email, password });
-  await createSession({ userId: user.id, name: user.name });
+  await createSession({ userId: user.id, name: user.name, tv: user.tokenVersion });
   redirect("/groups");
 }
 
@@ -36,7 +36,7 @@ export async function loginAction(_prev: AuthFormState, formData: FormData): Pro
     return { error: "Email hoặc mật khẩu không đúng." };
   }
 
-  await createSession({ userId: String(user._id), name: user.name });
+  await createSession({ userId: String(user._id), name: user.name, tv: user.tokenVersion ?? 0 });
   redirect("/groups");
 }
 
