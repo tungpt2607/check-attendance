@@ -9,10 +9,12 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { normalizeSearch } from "@/lib/search";
 
 const PAGE_SIZE = 20;
+/** Khoảng chừa phía trên khi đưa đầu danh sách vào màn hình: thanh tiêu đề + thanh tab dính */
+const SCROLL_MARGIN = 112;
 
 type Props = {
   children: ReactNode;
@@ -31,8 +33,11 @@ export function PagedList({ children, searchable = false, placeholder = "Tìm th
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [matched, setMatched] = useState(0);
+  const [ready, setReady] = useState(false);
+  const scrollAfter = useRef(false);
 
-  useEffect(() => {
+  // Ẩn/hiện dòng trước khi màn hình vẽ, cùng lúc với chữ trên nút (không bị lệch nhịp)
+  useLayoutEffect(() => {
     const box = boxRef.current;
     if (!box) return;
     const q = normalizeSearch(query);
@@ -43,17 +48,31 @@ export function PagedList({ children, searchable = false, placeholder = "Tìm th
       row.style.display = match && n <= limit ? "" : "none";
     }
     setMatched(n);
+    setReady(true);
+    // Sau khi thu gọn: nếu đầu danh sách đã trôi lên khỏi màn hình thì đưa về ngay, không cuộn mượt
+    if (scrollAfter.current) {
+      scrollAfter.current = false;
+      if (box.getBoundingClientRect().top < SCROLL_MARGIN) box.scrollIntoView({ block: "start", behavior: "instant" as ScrollBehavior });
+    }
   }, [query, limit, children]);
 
   const remaining = Math.max(0, matched - limit);
   const collapse = () => {
-    setLimit(PAGE_SIZE);
     // Đưa đầu danh sách vào màn hình để không bị lạc ở cuối trang sau khi thu gọn
-    boxRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollAfter.current = true;
+    setLimit(PAGE_SIZE);
   };
 
   return (
-    <Box ref={boxRef} sx={{ scrollMarginTop: 72 }}>
+    <Box
+      ref={boxRef}
+      data-ready={ready ? "" : undefined}
+      sx={{
+        scrollMarginTop: SCROLL_MARGIN,
+        // Trước khi script chạy: ẩn sẵn từ dòng thứ 21, tránh cả danh sách chớp hiện rồi mới co lại
+        [`&:not([data-ready]) li[data-search]:nth-of-type(n+${PAGE_SIZE + 1})`]: { display: "none" },
+      }}
+    >
       {searchable && (
         <Box sx={{ mb: 1 }}>
           <TextField
