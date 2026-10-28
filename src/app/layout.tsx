@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/app-header";
+import { NavProgress } from "@/components/nav-progress";
+import { Toaster } from "@/components/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,8 +16,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     // nên trang ngắn hơn màn hình sẽ không cuộn được (100vh trên iPhone lớn hơn phần nhìn thấy).
     <html lang="vi" className="bg-slate-50">
       <body className="text-slate-900 antialiased">
+        <NavProgress />
         <AppHeader />
         <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+        <Toaster />
       </body>
     </html>
   );

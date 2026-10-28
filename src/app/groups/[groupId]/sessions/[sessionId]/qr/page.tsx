@@ -46,6 +46,7 @@ export default async function QrPage({ params }: Props) {
               variant="danger"
               className="w-full py-2"
               pendingText="Đang đóng..."
+              successMessage="Đã đóng tự điểm danh"
               confirm="Đóng tự điểm danh? Sau khi đóng, quét mã sẽ không điểm danh được nữa."
             >
               Đóng điểm danh

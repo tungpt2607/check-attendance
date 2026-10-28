@@ -9,6 +9,7 @@ import {
   type FormState,
 } from "@/modules/users/account.actions";
 import { Avatar } from "./avatar";
+import { Spinner } from "./spinner";
 import { PasswordInput } from "./password-input";
 import { SubmitButton } from "./submit-button";
 import { ui } from "./ui";
@@ -94,7 +95,8 @@ export function AvatarForm({ userId, name, version }: { userId: string; name: st
         )}
         <div className="flex flex-wrap gap-2">
           <button type="button" disabled={pending} onClick={() => inputRef.current?.click()} className={ui.btn}>
-            {pending ? "Đang tải lên..." : version ? "Đổi ảnh" : "Chọn ảnh"}
+            {pending && <Spinner />}
+            {pending ? "Đang xử lý..." : version ? "Đổi ảnh" : "Chọn ảnh"}
           </button>
           {version && (
             <button

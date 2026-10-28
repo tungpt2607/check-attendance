@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { normalizeSearch } from "@/lib/search";
 import { selfCheckInAction } from "@/modules/attendance/checkin.actions";
+import { Spinner } from "./spinner";
 
 export type CheckInMember = { id: string; name: string; code: string; checkedIn: boolean };
 
@@ -97,8 +98,9 @@ export function CheckInList({ sessionId, token, members }: Props) {
                 type="button"
                 disabled={pending}
                 onClick={confirm}
-                className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
               >
+                {pending && <Spinner />}
                 {pending ? "Đang ghi..." : "Đúng, điểm danh"}
               </button>
             </div>

@@ -57,7 +57,7 @@ export default async function GroupDetailPage({ params }: Props) {
             <form action={renameGroupAction} className="absolute left-0 z-10 mt-2 flex w-[min(18rem,calc(100vw-2rem))] gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
               <input type="hidden" name="groupId" value={group.id} />
               <input name="name" defaultValue={group.name} required className={ui.input} />
-              <SubmitButton pendingText="...">Lưu</SubmitButton>
+              <SubmitButton pendingText="Đang lưu..." successMessage="Đã đổi tên nhóm">Lưu</SubmitButton>
             </form>
           </details>
           {children.length === 0 && (
@@ -66,6 +66,7 @@ export default async function GroupDetailPage({ params }: Props) {
               <SubmitButton
                 variant="danger"
                 pendingText="Đang xóa..."
+                successMessage="Đã xóa nhóm"
                 confirm={`Xóa nhóm "${group.name}" cùng toàn bộ thành viên và dữ liệu điểm danh?`}
               >
                 Xóa nhóm
@@ -143,14 +144,15 @@ export default async function GroupDetailPage({ params }: Props) {
                         <input type="hidden" name="memberId" value={m.id} />
                         <input name="name" defaultValue={m.name} required placeholder="Họ tên" className={ui.input} />
                         <input name="code" defaultValue={m.code} placeholder="Mã số (tùy chọn)" className={ui.input} />
-                        <SubmitButton pendingText="..." className="w-full">Lưu</SubmitButton>
+                        <SubmitButton pendingText="Đang lưu..." className="w-full" successMessage="Đã lưu thông tin thành viên">Lưu</SubmitButton>
                       </form>
                     </details>
                     <form action={deleteMemberAction}>
                       <input type="hidden" name="memberId" value={m.id} />
                       <SubmitButton
                         variant="plain"
-                        pendingText="..."
+                        pendingText="Đang xóa"
+                        successMessage="Đã xóa thành viên"
                         className="rounded-md px-2.5 py-1.5 text-sm text-rose-500 hover:bg-rose-50"
                         confirm={`Xóa "${m.name}" khỏi nhóm? Toàn bộ lịch sử điểm danh của người này cũng sẽ bị xóa và không khôi phục được.`}
                       >
@@ -174,7 +176,7 @@ export default async function GroupDetailPage({ params }: Props) {
               className={ui.input}
             />
             <p className="text-xs text-slate-500">Có thể dán từ Excel: cột Mã và cột Tên.</p>
-            <SubmitButton pendingText="Đang thêm...">Thêm</SubmitButton>
+            <SubmitButton pendingText="Đang thêm..." successMessage="Đã thêm thành viên">Thêm</SubmitButton>
           </form>
         </section>
 
@@ -195,7 +197,7 @@ export default async function GroupDetailPage({ params }: Props) {
           <form action={createGroupAction} className="flex gap-2">
             <input type="hidden" name="parentId" value={group.id} />
             <input name="name" required placeholder="Tên nhóm con" className={ui.input} />
-            <SubmitButton pendingText="..." className="shrink-0">Tạo</SubmitButton>
+            <SubmitButton pendingText="Đang tạo..." className="shrink-0" successMessage="Đã tạo nhóm con">Tạo</SubmitButton>
           </form>
         </section>
       </div>

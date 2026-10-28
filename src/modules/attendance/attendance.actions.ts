@@ -66,7 +66,7 @@ export async function saveAttendanceAction(formData: FormData) {
 
   await saveSessionRecords(sessionId, user.userId, entries);
   revalidatePath(`/groups/${session.groupId}`);
-  redirect(`/groups/${session.groupId}/sessions/${sessionId}?saved=1`);
+  revalidatePath(`/groups/${session.groupId}/sessions/${sessionId}`);
 }
 
 export async function updateSessionAction(formData: FormData) {

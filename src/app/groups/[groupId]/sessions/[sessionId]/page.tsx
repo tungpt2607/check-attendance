@@ -22,12 +22,10 @@ export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ groupId: string; sessionId: string }>;
-  searchParams: Promise<{ saved?: string }>;
 };
 
-export default async function AttendanceSessionPage({ params, searchParams }: Props) {
+export default async function AttendanceSessionPage({ params }: Props) {
   const { groupId, sessionId } = await params;
-  const { saved } = await searchParams;
   const user = await requireUser();
 
   const group = await getOwnedGroup(groupId, user.userId);
@@ -69,21 +67,18 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
                 defaultValue={dateInputValue(session.date)}
                 className={`${ui.input} min-w-0 appearance-none`}
               />
-              <SubmitButton pendingText="Đang lưu..." className="w-full">Lưu</SubmitButton>
+              <SubmitButton pendingText="Đang lưu..." className="w-full" successMessage="Đã lưu thông tin buổi">Lưu</SubmitButton>
             </form>
           </details>
           <form action={deleteSessionAction}>
             <input type="hidden" name="sessionId" value={session.id} />
-            <SubmitButton variant="danger" pendingText="Đang xóa..." confirm="Xóa buổi điểm danh này?">
+            <SubmitButton variant="danger" pendingText="Đang xóa..." successMessage="Đã xóa buổi điểm danh" confirm="Xóa buổi điểm danh này?">
               Xóa buổi
             </SubmitButton>
           </form>
         </div>
       </div>
 
-      {saved && (
-        <p className="rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-800">Đã lưu kết quả điểm danh.</p>
-      )}
 
       {members.length > 0 && (
         <div className={`${ui.card} flex flex-wrap items-center justify-between gap-3`}>
@@ -100,7 +95,7 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
               <Link href={`/groups/${group.id}/sessions/${session.id}/qr`} className={ui.btn}>Hiện mã QR</Link>
               <form action={closeSelfCheckInAction}>
                 <input type="hidden" name="sessionId" value={session.id} />
-                <SubmitButton variant="danger" className="py-2" pendingText="Đang đóng...">Đóng</SubmitButton>
+                <SubmitButton variant="danger" className="py-2" pendingText="Đang đóng..." successMessage="Đã đóng tự điểm danh">Đóng</SubmitButton>
               </form>
             </div>
           ) : (
@@ -177,7 +172,7 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
             })}
           </ul>
           <div className="sticky bottom-0 flex justify-end border-t border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
-            <SubmitButton pendingText="Đang lưu...">Lưu điểm danh</SubmitButton>
+            <SubmitButton pendingText="Đang lưu..." successMessage="Đã lưu điểm danh">Lưu điểm danh</SubmitButton>
           </div>
         </form>
       )}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AvatarForm, NameForm, PasswordForm } from "@/components/account-forms";
+import { SubmitButton } from "@/components/submit-button";
 import { ui } from "@/components/ui";
 import { requireUser } from "@/lib/session";
 import { logoutAction } from "@/modules/auth/auth.actions";
@@ -33,7 +34,7 @@ export default async function AccountPage() {
       </section>
 
       <form action={logoutAction}>
-        <button type="submit" className={`${ui.btnGhost} w-full`}>Đăng xuất</button>
+        <SubmitButton variant="ghost" className="w-full" pendingText="Đang đăng xuất...">Đăng xuất</SubmitButton>
       </form>
     </div>
   );

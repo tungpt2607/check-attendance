@@ -54,7 +54,7 @@ export default async function GroupsPage() {
         <h2 className={`${ui.h2} mb-3`}>Tạo nhóm mới</h2>
         <form action={createGroupAction} className="flex flex-col gap-2 sm:flex-row">
           <input name="name" required placeholder="Ví dụ: Lớp 10A1, Công ty ABC..." className={ui.input} />
-          <SubmitButton pendingText="Đang tạo..." className="shrink-0">Tạo nhóm</SubmitButton>
+          <SubmitButton pendingText="Đang tạo..." className="shrink-0" successMessage="Đã tạo nhóm">Tạo nhóm</SubmitButton>
         </form>
         <p className={`${ui.muted} mt-2`}>Nhóm con (phòng ban, tổ, đội...) được tạo bên trong từng nhóm.</p>
       </div>
