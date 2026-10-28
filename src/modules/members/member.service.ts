@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { connectDB, isValidId } from "@/lib/db";
+import { VI_COLLATION, connectDB, isValidId } from "@/lib/db";
 import { AttendanceRecord } from "@/modules/attendance/attendance.model";
 import { Member, type MemberRecord } from "./member.model";
 
@@ -24,7 +24,7 @@ function toDTO(m: MemberRecord): MemberDTO {
 /** Lưu ý: hàm này không kiểm tra quyền, nơi gọi phải kiểm tra quyền sở hữu nhóm trước. */
 export async function listMembers(groupId: string): Promise<MemberDTO[]> {
   await connectDB();
-  const list = await Member.find({ groupId }).sort({ name: 1 }).lean<MemberRecord[]>();
+  const list = await Member.find({ groupId }).collation(VI_COLLATION).sort({ name: 1 }).lean<MemberRecord[]>();
   return list.map(toDTO);
 }
 

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ListSearch } from "@/components/list-search";
 import { SubmitButton } from "@/components/submit-button";
 import { ui } from "@/components/ui";
 import { formatDate, todayInputValue } from "@/lib/format";
+import { normalizeSearch } from "@/lib/search";
 import { requireUser } from "@/lib/session";
 import { createSessionAction } from "@/modules/attendance/attendance.actions";
 import { listSessionsWithCounts } from "@/modules/attendance/attendance.service";
@@ -120,10 +122,15 @@ export default async function GroupDetailPage({ params }: Props) {
         {/* Thành viên */}
         <section className={ui.card}>
           <h2 className={`${ui.h2} mb-3`}>Thành viên ({members.length})</h2>
+          {members.length > 5 && <ListSearch listId="member-list" />}
           {members.length > 0 && (
-            <ul className="mb-4 divide-y divide-slate-100">
+            <ul id="member-list" className="mb-4 divide-y divide-slate-100">
               {members.map((m, i) => (
-                <li key={m.id} className="flex items-center justify-between gap-2 py-2">
+                <li
+                  key={m.id}
+                  data-search={normalizeSearch(`${m.name} ${m.code}`)}
+                  className="flex items-center justify-between gap-2 py-2"
+                >
                   <span className="min-w-0 truncate">
                     <span className="mr-2 text-xs text-slate-400">{i + 1}.</span>
                     {m.code && <span className="mr-2 text-xs text-slate-500">{m.code}</span>}
@@ -131,7 +138,7 @@ export default async function GroupDetailPage({ params }: Props) {
                   </span>
                   <span className="flex shrink-0 items-center gap-1">
                     <details key={`${m.name}|${m.code}`} className="relative">
-                      <summary className="cursor-pointer list-none rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-100">Sửa</summary>
+                      <summary className="cursor-pointer list-none rounded-md px-2.5 py-1.5 text-sm text-slate-500 hover:bg-slate-100">Sửa</summary>
                       <form action={updateMemberAction} className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
                         <input type="hidden" name="memberId" value={m.id} />
                         <input name="name" defaultValue={m.name} required placeholder="Họ tên" className={ui.input} />
@@ -141,13 +148,14 @@ export default async function GroupDetailPage({ params }: Props) {
                     </details>
                     <form action={deleteMemberAction}>
                       <input type="hidden" name="memberId" value={m.id} />
-                      <button
-                        type="submit"
-                        className="rounded px-2 py-1 text-xs text-rose-500 hover:bg-rose-50"
-                        title="Xóa thành viên"
+                      <SubmitButton
+                        variant="plain"
+                        pendingText="..."
+                        className="rounded-md px-2.5 py-1.5 text-sm text-rose-500 hover:bg-rose-50"
+                        confirm={`Xóa "${m.name}" khỏi nhóm? Toàn bộ lịch sử điểm danh của người này cũng sẽ bị xóa và không khôi phục được.`}
                       >
                         Xóa
-                      </button>
+                      </SubmitButton>
                     </form>
                   </span>
                 </li>

@@ -37,8 +37,6 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
   const [members, records] = await Promise.all([listMembers(group.id), getSessionRecords(session.id)]);
   const isNew = records.size === 0;
 
-  const counts = new Map<string, number>();
-  for (const r of records.values()) counts.set(r.status, (counts.get(r.status) ?? 0) + 1);
 
   return (
     <div className="space-y-6">
@@ -114,22 +112,12 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
         </div>
       )}
 
-      {!isNew && (
-        <div className="flex flex-wrap gap-2">
-          {ATTENDANCE_STATUSES.map((st) => (
-            <span key={st.value} className={`rounded-lg px-3 py-1 text-sm font-medium ${st.className}`}>
-              {st.label}: {counts.get(st.value) ?? 0}
-            </span>
-          ))}
-        </div>
-      )}
-
       {members.length === 0 ? (
         <div className={ui.card}>
           <p className={ui.muted}>Nhóm chưa có thành viên.</p>
         </div>
       ) : (
-        <form action={saveAttendanceAction} className={`${ui.card} p-0`}>
+        <form action={saveAttendanceAction} className={ui.cardFlush}>
           <input type="hidden" name="sessionId" value={session.id} />
           {isNew && (
             <p className="border-b border-slate-100 px-5 py-3 text-sm text-slate-600">

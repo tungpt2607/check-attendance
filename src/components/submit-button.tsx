@@ -7,7 +7,7 @@ import { ui } from "./ui";
 type Props = {
   children: ReactNode;
   pendingText?: string;
-  variant?: "primary" | "ghost" | "danger";
+  variant?: "primary" | "ghost" | "danger" | "plain";
   className?: string;
   /** Nếu có, hỏi xác nhận trước khi gửi */
   confirm?: string;
@@ -15,7 +15,8 @@ type Props = {
 
 export function SubmitButton({ children, pendingText = "Đang xử lý...", variant = "primary", className = "", confirm }: Props) {
   const { pending } = useFormStatus();
-  const base = variant === "danger" ? ui.btnDanger : variant === "ghost" ? ui.btnGhost : ui.btn;
+  const base =
+    variant === "danger" ? ui.btnDanger : variant === "ghost" ? ui.btnGhost : variant === "plain" ? "" : ui.btn;
   return (
     <button
       type="submit"

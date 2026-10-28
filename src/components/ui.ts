@@ -1,6 +1,8 @@
 // Lớp CSS dùng chung, đổi giao diện toàn hệ thống chỉ cần sửa ở đây.
 export const ui = {
   card: "rounded-xl border border-slate-200 bg-white p-5 shadow-sm",
+  /** Thẻ không lề trong, cho nội dung tự canh lề (danh sách dài) */
+  cardFlush: "rounded-xl border border-slate-200 bg-white shadow-sm",
   input:
     "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base outline-none sm:text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100",
   label: "mb-1 block text-sm font-medium text-slate-700",

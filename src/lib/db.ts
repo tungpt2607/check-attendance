@@ -31,3 +31,6 @@ export async function connectDB() {
 export function isValidId(id: string | null | undefined): id is string {
   return !!id && mongoose.isValidObjectId(id);
 }
+
+/** Sắp xếp chuỗi theo chuẩn tiếng Việt (Â, Đ, Ơ... đúng vị trí, không phân biệt hoa thường) */
+export const VI_COLLATION = { locale: "vi", strength: 2 } as const;

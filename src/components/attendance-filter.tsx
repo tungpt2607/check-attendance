@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ATTENDANCE_STATUSES } from "@/modules/attendance/attendance.statuses";
 import { normalizeSearch } from "@/lib/search";
+import { SearchIcon } from "./search-icon";
 
 type Props = {
   /** id của <ul> chứa các dòng thành viên (mỗi dòng có data-search và data-member) */
@@ -79,9 +80,9 @@ export function AttendanceFilter({ listId }: Props) {
             if (e.key === "Enter") e.preventDefault();
           }}
         />
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">⌕</span>
+        <SearchIcon />
       </div>
-      <div className="flex items-center gap-2 overflow-x-auto">
+      <div className="flex flex-wrap items-center gap-2">
         {chip("all", "Tất cả", total)}
         {ATTENDANCE_STATUSES.map((st) => chip(st.value, st.label, counts[st.value] ?? 0))}
         {(query || status !== "all") && (

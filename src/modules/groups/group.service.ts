@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { connectDB, isValidId } from "@/lib/db";
+import { VI_COLLATION, connectDB, isValidId } from "@/lib/db";
 import { Member } from "@/modules/members/member.model";
 import { AttendanceRecord, AttendanceSession } from "@/modules/attendance/attendance.model";
 import { Group, type GroupRecord } from "./group.model";
@@ -43,7 +43,7 @@ export async function getGroupName(groupId: string): Promise<string | null> {
 /** Toàn bộ nhóm của người dùng, dựng thành cây. */
 export async function getOwnedGroupTree(userId: string): Promise<GroupTreeNode[]> {
   await connectDB();
-  const groups = await Group.find({ ownerId: userId }).sort({ name: 1 }).lean<GroupRecord[]>();
+  const groups = await Group.find({ ownerId: userId }).collation(VI_COLLATION).sort({ name: 1 }).lean<GroupRecord[]>();
   const counts = await Member.aggregate<{ _id: Types.ObjectId; n: number }>([
     { $match: { groupId: { $in: groups.map((g) => g._id) } } },
     { $group: { _id: "$groupId", n: { $sum: 1 } } },
@@ -66,7 +66,7 @@ export async function getOwnedGroupTree(userId: string): Promise<GroupTreeNode[]
 
 export async function getChildGroups(groupId: string, userId: string): Promise<GroupDTO[]> {
   await connectDB();
-  const list = await Group.find({ parentId: groupId, ownerId: userId }).sort({ name: 1 }).lean<GroupRecord[]>();
+  const list = await Group.find({ parentId: groupId, ownerId: userId }).collation(VI_COLLATION).sort({ name: 1 }).lean<GroupRecord[]>();
   return list.map(toDTO);
 }
 
