@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { toDataURL } from "qrcode";
-import { createCheckInToken } from "@/lib/checkin-token";
+import { createCheckInToken, currentWindowEndsAt } from "@/lib/checkin-token";
 import { parseDateInput } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 import { getOwnedGroup } from "@/modules/groups/group.service";
@@ -117,7 +117,17 @@ export async function closeSelfCheckInAction(formData: FormData) {
 }
 
 export type QrState =
-  | { open: true; qrDataUrl: string; url: string; checkedIn: number; total: number }
+  | {
+      open: true;
+      qrDataUrl: string;
+      url: string;
+      checkedIn: number;
+      total: number;
+      /** Thời điểm mã hiện tại đổi (ms, theo giờ máy chủ) */
+      windowEndsAt: number;
+      /** Giờ máy chủ lúc trả kết quả (ms), để bù lệch đồng hồ điện thoại */
+      serverNow: number;
+    }
   | { open: false };
 
 /** Màn hình trình chiếu gọi định kỳ để lấy mã QR mới nhất và số người đã điểm danh. */
@@ -138,5 +148,13 @@ export async function getQrStateAction(sessionId: string): Promise<QrState> {
     countCheckedIn(sessionId),
     listMembers(session.groupId),
   ]);
-  return { open: true, qrDataUrl, url, checkedIn, total: members.length };
+  return {
+    open: true,
+    qrDataUrl,
+    url,
+    checkedIn,
+    total: members.length,
+    windowEndsAt: currentWindowEndsAt(),
+    serverNow: Date.now(),
+  };
 }

@@ -19,6 +19,11 @@ function currentWindow(now = Date.now()): number {
   return Math.floor(now / QR_WINDOW_MS);
 }
 
+/** Thời điểm (ms) mã QR hiện tại hết lượt hiển thị và đổi sang mã mới */
+export function currentWindowEndsAt(now = Date.now()): number {
+  return (currentWindow(now) + 1) * QR_WINDOW_MS;
+}
+
 export function createCheckInToken(sessionId: string, secret: string): string {
   return sign(sessionId, secret, currentWindow());
 }

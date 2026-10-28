@@ -1,35 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getQrStateAction, type QrState } from "@/modules/attendance/attendance.actions";
 
-const REFRESH_MS = 10_000;
+/** Mỗi mã hiển thị 30 giây (khớp QR_WINDOW_MS phía máy chủ) */
+const WINDOW_MS = 30_000;
+/** Cập nhật số người đã điểm danh */
+const COUNT_REFRESH_MS = 10_000;
 
-/** Hiện mã QR tự điểm danh, tự lấy mã mới và số người đã điểm danh mỗi 10 giây. */
+type OpenState = Extract<QrState, { open: true }>;
+
+/**
+ * Hiện mã QR tự điểm danh kèm đếm ngược tới lúc đổi mã.
+ * Đồng hồ được đồng bộ theo giờ máy chủ, hết giờ là lấy mã mới ngay.
+ */
 export function QrPresenter({ sessionId }: { sessionId: string }) {
   const [state, setState] = useState<QrState | null>(null);
   const [error, setError] = useState(false);
+  const [remainingMs, setRemainingMs] = useState(WINDOW_MS);
+  /** Chênh lệch giờ máy chủ - giờ điện thoại */
+  const offsetRef = useRef(0);
+  const loadingRef = useRef(false);
+  const stateRef = useRef<QrState | null>(null);
 
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      try {
-        const next = await getQrStateAction(sessionId);
-        if (alive) {
-          setState(next);
-          setError(false);
-        }
-      } catch {
-        if (alive) setError(true);
-      }
-    };
-    load();
-    const timer = setInterval(load, REFRESH_MS);
-    return () => {
-      alive = false;
-      clearInterval(timer);
-    };
+  const load = useCallback(async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    try {
+      const next = await getQrStateAction(sessionId);
+      if (next.open) offsetRef.current = next.serverNow - Date.now();
+      stateRef.current = next;
+      setState(next);
+      setError(false);
+    } catch {
+      setError(true);
+    } finally {
+      loadingRef.current = false;
+    }
   }, [sessionId]);
+
+  // Lấy mã lần đầu và cập nhật số người định kỳ
+  useEffect(() => {
+    load();
+    const timer = setInterval(load, COUNT_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [load]);
+
+  // Đếm ngược; về 0 thì lấy mã mới ngay
+  useEffect(() => {
+    const tick = setInterval(() => {
+      const s = stateRef.current;
+      if (!s || !s.open) return;
+      const left = (s as OpenState).windowEndsAt - (Date.now() + offsetRef.current);
+      setRemainingMs(Math.max(0, left));
+      if (left <= 0) load();
+    }, 250);
+    return () => clearInterval(tick);
+  }, [load]);
 
   if (!state) {
     return <div className="grid aspect-square w-full place-items-center rounded-2xl bg-slate-100 text-slate-500">Đang tạo mã QR...</div>;
@@ -37,6 +64,10 @@ export function QrPresenter({ sessionId }: { sessionId: string }) {
   if (!state.open) {
     return <p className="rounded-lg bg-slate-100 p-6 text-center text-slate-600">Tự điểm danh đã đóng.</p>;
   }
+
+  const seconds = Math.ceil(remainingMs / 1000);
+  const percent = Math.min(100, (remainingMs / WINDOW_MS) * 100);
+  const urgent = seconds <= 5;
 
   return (
     <div className="space-y-4">
@@ -46,6 +77,19 @@ export function QrPresenter({ sessionId }: { sessionId: string }) {
         alt="Mã QR tự điểm danh"
         className="mx-auto aspect-square w-full max-w-md rounded-2xl border border-slate-200 bg-white p-3"
       />
+
+      <div className="mx-auto max-w-md space-y-1.5">
+        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+          <div
+            className={`h-full rounded-full transition-[width] duration-200 ease-linear ${urgent ? "bg-amber-500" : "bg-indigo-600"}`}
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+        <p className={`text-center text-sm font-medium tabular-nums ${urgent ? "text-amber-600" : "text-slate-600"}`}>
+          {seconds > 0 ? `Mã mới sau ${seconds}s` : "Đang đổi mã..."}
+        </p>
+      </div>
+
       <div className="text-center">
         <p className="text-4xl font-bold text-indigo-600">
           {state.checkedIn}
@@ -53,9 +97,7 @@ export function QrPresenter({ sessionId }: { sessionId: string }) {
         </p>
         <p className="text-sm text-slate-500">người đã điểm danh</p>
       </div>
-      <p className="text-center text-xs text-slate-400">
-        Mã tự đổi mỗi 30 giây{error && " · Mất kết nối, đang thử lại..."}
-      </p>
+      {error && <p className="text-center text-xs text-amber-600">Mất kết nối, đang thử lại...</p>}
     </div>
   );
 }
