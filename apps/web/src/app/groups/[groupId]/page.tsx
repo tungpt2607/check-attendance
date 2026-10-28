@@ -34,9 +34,9 @@ import { normalizeSearch } from "@/lib/search";
 import { requireUser } from "@/lib/session";
 import { createSessionAction } from "@/modules/attendance/attendance.actions";
 import { listSessionsWithCounts } from "@/modules/attendance/attendance.service";
-import { getAncestors, getChildGroups, getOwnedGroup } from "@/modules/groups/group.service";
+import { fetchGroup } from "@/modules/groups/group.api";
 import { listMembers } from "@/modules/members/member.service";
-import { getBranchStats, getMemberRates } from "@/modules/attendance/stats.service";
+import { getMemberRates } from "@/modules/attendance/stats.service";
 import { approveRequestAction, rejectRequestAction } from "@/modules/invites/invite.actions";
 import { getActiveGroupInvite, listPendingRequests } from "@/modules/invites/invite.service";
 import { buildShareLink } from "@/modules/invites/share";
@@ -52,15 +52,12 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const { tab, sort: sortParam } = await searchParams;
   const sort: MemberSort = sortParam === "rate" ? "rate" : "name";
   const user = await requireUser();
-  const group = await getOwnedGroup(groupId, user.userId);
+  // Thông tin nhóm, nhóm cha, nhóm con kèm thống kê: lấy qua API
+  const group = await fetchGroup(groupId);
   if (!group) notFound();
+  const { ancestors, children } = group;
 
-  const [ancestors, children, members, sessions] = await Promise.all([
-    getAncestors(group, user.userId),
-    getChildGroups(group.id, user.userId),
-    listMembers(group.id),
-    listSessionsWithCounts(group.id),
-  ]);
+  const [members, sessions] = await Promise.all([listMembers(group.id), listSessionsWithCounts(group.id)]);
   // Tài khoản đã liên kết với thành viên (tên, ảnh đại diện)
   const accounts = await getAccountsByIds(members.map((m) => m.linkedUserId).filter((id): id is string => !!id));
   // Link chung và các yêu cầu chờ duyệt
@@ -68,10 +65,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const groupLink = activeInvite ? await buildShareLink(`/join/${activeInvite.token}`, null) : null;
   const requestAccounts = await getAccountsByIds(requests.map((r) => String(r.userId)));
   // Thống kê: % từng thành viên; % chung của nhóm này (cả nhánh) và của từng nhóm con (gồm nhóm con bên trong)
-  const [memberRates, branchStats] = await Promise.all([
-    getMemberRates(group.id),
-    getBranchStats([group.id, ...children.map((c) => c.id)]),
-  ]);
+  const memberRates = await getMemberRates(group.id);
   const rateOf = (id: string) => memberRates.get(id)?.rate ?? null;
   // Xếp theo chuyên cần thấp → cao; người chưa có kết quả nằm cuối; cùng tỷ lệ thì giữ thứ tự tên
   const sortedMembers =
@@ -83,7 +77,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
           return ra - rb;
         })
       : members;
-  const branch = branchStats.get(group.id);
+  const branch = group.branchStats;
 
   // ---------- Tab "Điểm danh" ----------
   const sessionsTab = (
@@ -292,7 +286,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
         ) : (
           <List disablePadding sx={{ mx: -1 }}>
             {children.map((c) => {
-              const st = branchStats.get(c.id);
+              const st = c.stats;
               return (
                 <ListLink key={c.id} href={`/groups/${c.id}`} sx={{ borderRadius: 2, px: 1 }}>
                   <SubdirectoryArrowRightRounded fontSize="small" sx={{ color: "text.disabled", mr: 1 }} />

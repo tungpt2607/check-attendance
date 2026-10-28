@@ -16,25 +16,19 @@ import { PageHeader, SectionTitle } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/session";
 import { createGroupAction } from "@/modules/groups/group.actions";
-import { getOwnedGroupTree, type GroupTreeNode } from "@/modules/groups/group.service";
-import { getGroupsWithActiveInvite } from "@/modules/invites/invite.service";
+import { fetchGroupTree, type GroupTreeItem } from "@/modules/groups/group.api";
 import { listMembershipsOfUser } from "@/modules/members/membership.service";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Nhóm của tôi · Điểm danh" };
 
-function countAll(nodes: GroupTreeNode[]): number {
+function countAll(nodes: GroupTreeItem[]): number {
   return nodes.reduce((sum, n) => sum + 1 + countAll(n.children), 0);
 }
 
 /** Cây nhóm nhiều cấp: mỗi cấp con thụt vào và có đường kẻ dọc */
-/** Tất cả mã nhóm trong cây */
-function allIds(nodes: GroupTreeNode[]): string[] {
-  return nodes.flatMap((n) => [n.id, ...allIds(n.children)]);
-}
-
-function GroupTree({ nodes, depth = 0, linkOn }: { nodes: GroupTreeNode[]; depth?: number; linkOn: Set<string> }) {
+function GroupTree({ nodes, depth = 0 }: { nodes: GroupTreeItem[]; depth?: number }) {
   return (
     <List
       disablePadding
@@ -49,7 +43,7 @@ function GroupTree({ nodes, depth = 0, linkOn }: { nodes: GroupTreeNode[]; depth
               secondary={
                 <>
                   {`${node.memberCount} thành viên${node.children.length > 0 ? ` · ${node.children.length} nhóm con` : ""}`}
-                  {linkOn.has(node.id) && (
+                  {node.inviteActive && (
                     <Box
                       component="span"
                       sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, ml: 1, color: brand.tealDark, fontWeight: 500, verticalAlign: "bottom" }}
@@ -64,7 +58,7 @@ function GroupTree({ nodes, depth = 0, linkOn }: { nodes: GroupTreeNode[]; depth
             />
             <ChevronRightRounded sx={{ color: "text.disabled" }} />
           </ListLink>
-          {node.children.length > 0 && <GroupTree nodes={node.children} depth={depth + 1} linkOn={linkOn} />}
+          {node.children.length > 0 && <GroupTree nodes={node.children} depth={depth + 1} />}
         </li>
       ))}
     </List>
@@ -73,9 +67,8 @@ function GroupTree({ nodes, depth = 0, linkOn }: { nodes: GroupTreeNode[]; depth
 
 export default async function GroupsPage() {
   const user = await requireUser();
-  const [tree, memberships] = await Promise.all([getOwnedGroupTree(user.userId), listMembershipsOfUser(user.userId)]);
-  // Nhóm nào đang bật link tham gia (để hiện nhãn ngoài danh sách)
-  const linkOn = await getGroupsWithActiveInvite(allIds(tree));
+  // Cây nhóm tôi quản lý (kèm trạng thái link tham gia) lấy qua API
+  const [tree, memberships] = await Promise.all([fetchGroupTree(), listMembershipsOfUser(user.userId)]);
 
   return (
     <>
@@ -139,7 +132,7 @@ export default async function GroupsPage() {
           <Card>
             <CardContent sx={{ p: 2.5 }}>
               <SectionTitle>Nhóm tôi quản lý</SectionTitle>
-              <GroupTree nodes={tree} linkOn={linkOn} />
+              <GroupTree nodes={tree} />
             </CardContent>
           </Card>
         )}
