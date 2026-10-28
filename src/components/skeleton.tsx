@@ -56,3 +56,28 @@ export function PageSkeleton({ cards = [3, 3], narrow = false }: { cards?: numbe
     </Box>
   );
 }
+
+/** Trang hẹp canh giữa (lời mời, tham gia nhóm, tự điểm danh): logo/tiêu đề + danh sách tên */
+export function CenteredListSkeleton({ rows = 6, logo = true }: { rows?: number; logo?: boolean }) {
+  return (
+    <Box sx={{ maxWidth: 440, mx: "auto" }} aria-busy="true" aria-label="Đang tải">
+      <Stack spacing={1} sx={{ alignItems: "center", mb: 2 }}>
+        {logo && <Bone circle width={44} height={44} />}
+        <Bone width={110} height={14} />
+        <Bone width={190} height={26} />
+      </Stack>
+      <Stack spacing={1.5}>
+        <Bone height={40} />
+        <Card>
+          <CardContent>
+            <Stack spacing={2}>
+              {Array.from({ length: rows }, (_, i) => (
+                <Bone key={i} width={i % 3 === 1 ? "70%" : "85%"} height={20} />
+              ))}
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+    </Box>
+  );
+}
