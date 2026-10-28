@@ -2,9 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { makeQrDataUrl } from "@/lib/qr";
 import { requireUser } from "@/lib/session";
-import { getBaseUrl } from "@/lib/url";
 import { getOwnedGroup } from "@/modules/groups/group.service";
 import { getMember } from "@/modules/members/member.service";
 import {
@@ -22,7 +20,8 @@ import {
   unlinkMember,
 } from "./invite.service";
 
-export type ShareLink = { url: string; qrDataUrl: string; expiresAt: string | null };
+import { buildShareLink, type ShareLink } from "./share";
+
 export type ShareLinkResult = { ok: true; link: ShareLink } | { ok: false; error: string };
 
 /** Thành viên thuộc nhóm do người dùng hiện tại quản lý */
@@ -32,10 +31,6 @@ async function getOwnedMember(memberId: string, userId: string) {
   return (await getOwnedGroup(member.groupId, userId)) ? member : null;
 }
 
-async function toShareLink(path: string, expiresAt: Date | null): Promise<ShareLink> {
-  const url = `${await getBaseUrl()}${path}`;
-  return { url, qrDataUrl: await makeQrDataUrl(url), expiresAt: expiresAt ? expiresAt.toISOString() : null };
-}
 
 // ---------- A. Link mời riêng ----------
 
@@ -46,7 +41,7 @@ export async function createMemberInviteAction(memberId: string): Promise<ShareL
   if (member.linkedUserId) return { ok: false, error: "Thành viên này đã liên kết tài khoản." };
 
   const { token, expiresAt } = await createMemberInvite(member.groupId, member.id, user.userId);
-  return { ok: true, link: await toShareLink(`/invite/${token}`, expiresAt) };
+  return { ok: true, link: await buildShareLink(`/invite/${token}`, expiresAt) };
 }
 
 /** Người được mời xác nhận "Đúng, đây là tôi" */
@@ -82,7 +77,7 @@ export async function createGroupInviteAction(groupId: string): Promise<ShareLin
   if (!(await getOwnedGroup(groupId, user.userId))) return { ok: false, error: "Không tìm thấy nhóm." };
   const token = await createGroupInvite(groupId, user.userId);
   revalidatePath(`/groups/${groupId}`);
-  return { ok: true, link: await toShareLink(`/join/${token}`, null) };
+  return { ok: true, link: await buildShareLink(`/join/${token}`, null) };
 }
 
 export async function disableGroupInviteAction(groupId: string): Promise<void> {

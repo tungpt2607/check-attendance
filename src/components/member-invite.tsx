@@ -12,7 +12,8 @@ import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { useState, useTransition } from "react";
-import { createMemberInviteAction, type ShareLink } from "@/modules/invites/invite.actions";
+import { createMemberInviteAction } from "@/modules/invites/invite.actions";
+import type { ShareLink } from "@/modules/invites/share";
 import { ShareLinkBox } from "./share-link";
 
 /** Nút "Mời" cạnh thành viên chưa liên kết: tạo link riêng và hiện để gửi */

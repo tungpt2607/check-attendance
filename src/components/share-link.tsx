@@ -8,7 +8,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
-import type { ShareLink } from "@/modules/invites/invite.actions";
+import type { ShareLink } from "@/modules/invites/share";
 import { toast } from "./toaster";
 
 /** Hiện link mời: mã QR, ô link, nút Chia sẻ (Zalo, Messenger...) và Sao chép */

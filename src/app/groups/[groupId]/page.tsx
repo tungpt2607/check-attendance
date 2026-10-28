@@ -1,5 +1,7 @@
 import AddRounded from "@mui/icons-material/AddRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import CheckRounded from "@mui/icons-material/CheckRounded";
+import CloseRounded from "@mui/icons-material/CloseRounded";
 import DeleteOutline from "@mui/icons-material/DeleteOutline";
 import LinkOffRounded from "@mui/icons-material/LinkOffRounded";
 import EventAvailableRounded from "@mui/icons-material/EventAvailableRounded";
@@ -22,6 +24,7 @@ import { notFound } from "next/navigation";
 import { Fragment } from "react";
 import { Avatar } from "@/components/avatar";
 import { EditMemberButton, RenameGroupButton } from "@/components/edit-dialogs";
+import { GroupInviteCard } from "@/components/group-invite-card";
 import { MemberInviteButton } from "@/components/member-invite";
 import { AppLink, ListLink } from "@/components/links";
 import { ListSearch } from "@/components/list-search";
@@ -37,7 +40,9 @@ import { createGroupAction, deleteGroupAction } from "@/modules/groups/group.act
 import { getAncestors, getChildGroups, getOwnedGroup } from "@/modules/groups/group.service";
 import { addMembersAction, deleteMemberAction } from "@/modules/members/member.actions";
 import { listMembers } from "@/modules/members/member.service";
-import { unlinkMemberAction } from "@/modules/invites/invite.actions";
+import { approveRequestAction, rejectRequestAction, unlinkMemberAction } from "@/modules/invites/invite.actions";
+import { getActiveGroupInvite, listPendingRequests } from "@/modules/invites/invite.service";
+import { buildShareLink } from "@/modules/invites/share";
 import { getAccountsByIds } from "@/modules/users/user.service";
 import { brand } from "@/theme/brand";
 
@@ -59,6 +64,10 @@ export default async function GroupDetailPage({ params }: Props) {
   ]);
   // Tài khoản đã liên kết với thành viên (tên, ảnh đại diện)
   const accounts = await getAccountsByIds(members.map((m) => m.linkedUserId).filter((id): id is string => !!id));
+  // Link chung và các yêu cầu chờ duyệt
+  const [activeInvite, requests] = await Promise.all([getActiveGroupInvite(group.id), listPendingRequests(group.id)]);
+  const groupLink = activeInvite ? await buildShareLink(`/join/${activeInvite.token}`, null) : null;
+  const requestAccounts = await getAccountsByIds(requests.map((r) => String(r.userId)));
 
   return (
     <>
@@ -100,6 +109,50 @@ export default async function GroupDetailPage({ params }: Props) {
       />
 
       <Stack spacing={2}>
+        {/* Yêu cầu liên kết chờ duyệt (qua link chung) */}
+        {requests.length > 0 && (
+          <Card sx={{ borderColor: brand.orange }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <SectionTitle>Yêu cầu chờ duyệt ({requests.length})</SectionTitle>
+              <List disablePadding>
+                {requests.map((r, i) => {
+                  const acc = requestAccounts.get(String(r.userId));
+                  const mem = members.find((m) => m.id === String(r.memberId));
+                  return (
+                    <ListItem key={String(r._id)} disableGutters divider={i < requests.length - 1} sx={{ py: 1.25, flexWrap: "wrap", gap: 1.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: "1 1 220px", minWidth: 0 }}>
+                        <Avatar userId={String(r.userId)} name={acc?.name ?? "?"} version={acc?.avatarVersion ?? null} size={36} />
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography noWrap sx={{ fontWeight: 600 }}>
+                            {acc?.name ?? "Tài khoản"} <Typography component="span" variant="body2" color="text.secondary">({acc?.email ?? ""})</Typography>
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Xin nhận tên <b>{mem?.name ?? "(đã xóa)"}</b>
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Stack direction="row" spacing={1}>
+                        <form action={rejectRequestAction}>
+                          <input type="hidden" name="requestId" value={String(r._id)} />
+                          <SubmitButton variant="ghost" pendingText="..." startIcon={<CloseRounded />} successMessage="Đã từ chối">
+                            Từ chối
+                          </SubmitButton>
+                        </form>
+                        <form action={approveRequestAction}>
+                          <input type="hidden" name="requestId" value={String(r._id)} />
+                          <SubmitButton pendingText="..." startIcon={<CheckRounded />} successMessage="Đã duyệt">
+                            Duyệt
+                          </SubmitButton>
+                        </form>
+                      </Stack>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Điểm danh */}
         <Card>
           <CardContent sx={{ p: 2.5 }}>
@@ -298,6 +351,8 @@ export default async function GroupDetailPage({ params }: Props) {
             </CardContent>
           </Card>
         </Box>
+
+        <GroupInviteCard groupId={group.id} groupName={group.name} initialLink={groupLink} />
       </Stack>
     </>
   );
