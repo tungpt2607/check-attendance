@@ -11,10 +11,9 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { normalizeSearch } from "@/lib/search";
+import { useFastTap } from "./use-fast-tap";
 
 const PAGE_SIZE = 20;
-/** Khoảng chừa phía trên khi đưa đầu danh sách vào màn hình: thanh tiêu đề + thanh tab dính */
-const SCROLL_MARGIN = 112;
 
 type Props = {
   children: ReactNode;
@@ -34,7 +33,12 @@ export function PagedList({ children, searchable = false, placeholder = "Tìm th
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [matched, setMatched] = useState(0);
   const [ready, setReady] = useState(false);
-  const scrollAfter = useRef(false);
+  // Hàng nút "Xem thêm / Thu gọn": giữ nó đứng đúng chỗ trên màn hình sau khi thu gọn
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const keepActionsAt = useRef<number | null>(null);
+  // Số dòng đang hiện trước lần đổi: dòng mới hiện thêm thì có hiệu ứng hiện dần
+  const shownBefore = useRef(PAGE_SIZE);
+  const animateNew = useRef(false);
 
   // Ẩn/hiện dòng trước khi màn hình vẽ, cùng lúc với chữ trên nút (không bị lệch nhịp)
   useLayoutEffect(() => {
@@ -45,30 +49,42 @@ export function PagedList({ children, searchable = false, placeholder = "Tìm th
     for (const row of Array.from(box.querySelectorAll<HTMLElement>("[data-search]"))) {
       const match = !q || (row.dataset.search ?? "").includes(q);
       if (match) n++;
-      row.style.display = match && n <= limit ? "" : "none";
+      const show = match && n <= limit;
+      row.style.display = show ? "" : "none";
+      // Dòng vừa được "Xem thêm" mở ra: hiện dần
+      if (show && animateNew.current && n > shownBefore.current) row.classList.add("ca-fade-in");
+      else row.classList.remove("ca-fade-in");
     }
+    animateNew.current = false;
+    shownBefore.current = Math.min(n, limit);
     setMatched(n);
     setReady(true);
-    // Sau khi thu gọn: nếu đầu danh sách đã trôi lên khỏi màn hình thì đưa về ngay, không cuộn mượt
-    if (scrollAfter.current) {
-      scrollAfter.current = false;
-      if (box.getBoundingClientRect().top < SCROLL_MARGIN) box.scrollIntoView({ block: "start", behavior: "instant" as ScrollBehavior });
+    // Sau khi thu gọn: cuộn bù để hàng nút nằm đúng chỗ vừa bấm (không bị kéo lên đầu danh sách)
+    if (keepActionsAt.current !== null) {
+      const before = keepActionsAt.current;
+      keepActionsAt.current = null;
+      const now = actionsRef.current?.getBoundingClientRect().top;
+      if (now !== undefined) window.scrollBy({ top: now - before, behavior: "instant" as ScrollBehavior });
     }
   }, [query, limit, children]);
 
   const remaining = Math.max(0, matched - limit);
+  const more = () => {
+    animateNew.current = true;
+    setLimit((l) => l + PAGE_SIZE);
+  };
   const collapse = () => {
-    // Đưa đầu danh sách vào màn hình để không bị lạc ở cuối trang sau khi thu gọn
-    scrollAfter.current = true;
+    keepActionsAt.current = actionsRef.current?.getBoundingClientRect().top ?? null;
     setLimit(PAGE_SIZE);
   };
+  const moreTap = useFastTap(more);
+  const collapseTap = useFastTap(collapse);
 
   return (
     <Box
       ref={boxRef}
       data-ready={ready ? "" : undefined}
       sx={{
-        scrollMarginTop: SCROLL_MARGIN,
         // Trước khi script chạy: ẩn sẵn từ dòng thứ 21, tránh cả danh sách chớp hiện rồi mới co lại
         [`&:not([data-ready]) li[data-search]:nth-of-type(n+${PAGE_SIZE + 1})`]: { display: "none" },
       }}
@@ -105,14 +121,14 @@ export function PagedList({ children, searchable = false, placeholder = "Tìm th
       {children}
 
       {(remaining > 0 || limit > PAGE_SIZE) && (
-        <Stack direction="row" spacing={1} sx={{ justifyContent: "center", mt: 1 }}>
+        <Stack ref={actionsRef} direction="row" spacing={1} sx={{ justifyContent: "center", mt: 1 }}>
           {remaining > 0 && (
-            <Button size="small" startIcon={<ExpandMoreRounded />} onClick={() => setLimit((l) => l + PAGE_SIZE)}>
+            <Button size="small" startIcon={<ExpandMoreRounded />} {...moreTap}>
               Xem thêm (còn {remaining} người)
             </Button>
           )}
           {limit > PAGE_SIZE && (
-            <Button size="small" color="inherit" startIcon={<ExpandLessRounded />} onClick={collapse}>
+            <Button size="small" color="inherit" startIcon={<ExpandLessRounded />} {...collapseTap}>
               Thu gọn
             </Button>
           )}
