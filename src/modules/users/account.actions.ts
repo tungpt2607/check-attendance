@@ -18,8 +18,8 @@ export async function updateNameAction(_prev: FormState, formData: FormData): Pr
 }
 
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
-/** Ảnh đã được thu nhỏ trên điện thoại nên thường chỉ vài chục KB */
-const AVATAR_MAX_BYTES = 300 * 1024;
+/** Ảnh đã được cắt và thu nhỏ trên điện thoại (1024px), thường 150–400KB */
+const AVATAR_MAX_BYTES = 600 * 1024;
 
 export async function uploadAvatarAction(formData: FormData): Promise<FormState> {
   const user = await requireUser();

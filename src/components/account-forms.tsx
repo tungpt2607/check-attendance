@@ -20,6 +20,7 @@ import {
   type FormState,
 } from "@/modules/users/account.actions";
 import { Avatar } from "./avatar";
+import { AvatarCropper } from "./avatar-cropper";
 import { AvatarPhotoDialog } from "./avatar-zoom";
 import { PasswordInput } from "./password-input";
 import { SubmitButton } from "./submit-button";
@@ -34,43 +35,14 @@ function useResultToast(state: FormState) {
 
 // ---------- Ảnh đại diện ----------
 
-/** 512px để ảnh phóng to vẫn nét; JPEG khoảng 50–100KB */
-const AVATAR_SIZE = 512;
-
-/** Cắt vuông ở giữa và thu nhỏ ảnh ngay trên máy, trả về file JPEG nhẹ. */
-async function shrinkToSquare(file: File): Promise<File> {
-  const url = URL.createObjectURL(file);
-  try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("Không đọc được ảnh"));
-      el.src = url;
-    });
-    const side = Math.min(img.naturalWidth, img.naturalHeight);
-    const sx = (img.naturalWidth - side) / 2;
-    const sy = (img.naturalHeight - side) / 2;
-    const canvas = document.createElement("canvas");
-    canvas.width = AVATAR_SIZE;
-    canvas.height = AVATAR_SIZE;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Trình duyệt không hỗ trợ xử lý ảnh");
-    ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
-    const blob = await new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Không xử lý được ảnh"))), "image/jpeg", 0.85),
-    );
-    return new File([blob], "avatar.jpg", { type: "image/jpeg" });
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
 export function AvatarForm({ userId, name, version }: { userId: string; name: string; version: number | null }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [zoomed, setZoomed] = useState(false);
   const [askRemove, setAskRemove] = useState(false);
+  // Ảnh vừa chọn, đang chờ chỉnh khung
+  const [picked, setPicked] = useState<File | null>(null);
 
   const handle = (result: FormState) => {
     if (result?.error) setError(result.error);
@@ -81,19 +53,20 @@ export function AvatarForm({ userId, name, version }: { userId: string; name: st
   };
 
   const onPick = (file: File | undefined) => {
+    if (inputRef.current) inputRef.current.value = "";
     if (!file) return;
-    startTransition(async () => {
-      try {
-        const small = await shrinkToSquare(file);
-        const fd = new FormData();
-        fd.append("avatar", small);
-        handle(await uploadAvatarAction(fd));
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Không tải được ảnh.");
-      } finally {
-        if (inputRef.current) inputRef.current.value = "";
-      }
-    });
+    setError(null);
+    setPicked(file);
+  };
+
+  /** Gửi ảnh đã chỉnh lên máy chủ; lỗi thì giữ hộp chỉnh để thử lại */
+  const upload = async (cropped: File) => {
+    const fd = new FormData();
+    fd.append("avatar", cropped);
+    const result = await uploadAvatarAction(fd);
+    if (result?.error) throw new Error(result.error);
+    setPicked(null);
+    handle(result);
   };
 
   return (
@@ -137,6 +110,9 @@ export function AvatarForm({ userId, name, version }: { userId: string; name: st
         />
       </Stack>
       {error && <Alert severity="error">{error}</Alert>}
+
+      {/* Chỉnh khung ảnh trước khi lưu */}
+      <AvatarCropper file={picked} onCancel={() => setPicked(null)} onConfirm={upload} />
 
       {/* Xem ảnh phóng to */}
       <AvatarPhotoDialog open={zoomed} onClose={() => setZoomed(false)} userId={userId} version={version} name={name} />
