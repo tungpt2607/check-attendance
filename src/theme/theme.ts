@@ -37,7 +37,7 @@ export const theme = createTheme({
   components: {
     MuiButton: {
       defaultProps: { disableElevation: true },
-      styleOverrides: { root: { borderRadius: 10, paddingInline: 16 } },
+      styleOverrides: { root: { borderRadius: 10, paddingInline: 16, whiteSpace: "nowrap" } },
     },
     MuiCard: {
       defaultProps: { variant: "outlined" },

@@ -55,11 +55,11 @@ export default async function QrPage({ params }: Props) {
 
         <QrPresenter sessionId={session.id} />
 
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <LinkButton href={back} variant="outlined" color="inherit" startIcon={<FormatListBulletedRounded />} sx={{ flex: 1 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+          <LinkButton href={back} variant="outlined" color="inherit" startIcon={<FormatListBulletedRounded />}>
             Xem danh sách
           </LinkButton>
-          <form action={closeSelfCheckInAction} style={{ flex: 1, display: "flex" }}>
+          <form action={closeSelfCheckInAction} style={{ display: "flex", minWidth: 0 }}>
             <input type="hidden" name="sessionId" value={session.id} />
             <SubmitButton
               variant="danger"
@@ -70,7 +70,7 @@ export default async function QrPage({ params }: Props) {
               confirmLabel="Đóng"
               confirm="Đóng tự điểm danh? Sau khi đóng, quét mã sẽ không điểm danh được nữa."
             >
-              Đóng điểm danh
+              Đóng QR
             </SubmitButton>
           </form>
         </Box>
