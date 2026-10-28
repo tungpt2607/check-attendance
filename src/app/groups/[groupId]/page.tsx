@@ -52,7 +52,7 @@ export default async function GroupDetailPage({ params }: Props) {
         <div className="flex items-center gap-2">
           <details className="relative">
             <summary className={`${ui.btnGhost} cursor-pointer list-none`}>Đổi tên</summary>
-            <form action={renameGroupAction} className="absolute right-0 z-10 mt-2 flex w-72 gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+            <form action={renameGroupAction} className="absolute left-0 z-10 mt-2 flex w-[min(18rem,calc(100vw-2rem))] gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
               <input type="hidden" name="groupId" value={group.id} />
               <input name="name" defaultValue={group.name} required className={ui.input} />
               <SubmitButton pendingText="...">Lưu</SubmitButton>

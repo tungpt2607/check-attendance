@@ -72,7 +72,7 @@ export function AttendanceFilter({ listId }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Tìm theo tên hoặc mã..."
-          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-base outline-none sm:text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
           // Không gửi ô tìm kiếm khi lưu, và Enter không vô tình bấm Lưu
           form="__none__"
           onKeyDown={(e) => {
