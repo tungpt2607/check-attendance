@@ -1,5 +1,5 @@
 // Góc nhìn của thành viên đã liên kết tài khoản: nhóm mình tham gia và lịch sử điểm danh của mình.
-import { Types } from "mongoose";
+import mongoose, { type Types } from "mongoose";
 import { VI_COLLATION, connectDB, isValidId } from "../../lib/db.js";
 import {
   AttendanceRecord,
@@ -61,7 +61,7 @@ export async function getMyHistory(memberId: string, userId: string): Promise<My
   const [group, sessions, records] = await Promise.all([
     Group.findById(member.groupId).select("name").lean<GroupRecord>(),
     AttendanceSession.find({ groupId: member.groupId }).sort({ date: -1, createdAt: -1 }).lean<AttendanceSessionRecord[]>(),
-    AttendanceRecord.find({ memberId: new Types.ObjectId(memberId) }).lean<AttendanceRecordRecord[]>(),
+    AttendanceRecord.find({ memberId: new mongoose.Types.ObjectId(memberId) }).lean<AttendanceRecordRecord[]>(),
   ]);
   const bySession = new Map(records.map((r) => [String(r.sessionId), r]));
 

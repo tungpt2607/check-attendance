@@ -1,4 +1,7 @@
-import { Schema, model, models, type Model, type Types } from "mongoose";
+// mongoose là thư viện CommonJS: trong ES Module của Node phải nạp mặc định rồi mới lấy từng phần
+import mongoose, { type Model, type Types } from "mongoose";
+
+const { Schema, model, models } = mongoose;
 
 export interface GroupRecord {
   _id: Types.ObjectId;

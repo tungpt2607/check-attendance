@@ -1,7 +1,7 @@
 // Thống kê chuyên cần cho chủ nhóm: từng thành viên, từng nhóm và cả nhánh nhóm con.
 // Cách tính thống nhất với trang nhóm tham gia:
 //   tỷ lệ = (có mặt + muộn) / số buổi đã có kết quả của người đó.
-import { Types } from "mongoose";
+import mongoose, { type Types } from "mongoose";
 import { connectDB, isValidId } from "../../lib/db.js";
 import { Group, type GroupRecord } from "../groups/group.model.js";
 import { Member, type MemberRecord } from "../members/member.model.js";
@@ -42,7 +42,7 @@ export async function getMemberRates(groupId: string): Promise<Map<string, Rate>
   const result = new Map<string, Rate>();
   if (!isValidId(groupId)) return result;
   await connectDB();
-  const sessionIds = await AttendanceSession.distinct("_id", { groupId: new Types.ObjectId(groupId) });
+  const sessionIds = await AttendanceSession.distinct("_id", { groupId: new mongoose.Types.ObjectId(groupId) });
   if (sessionIds.length === 0) return result;
   const records = await AttendanceRecord.find({ sessionId: { $in: sessionIds } })
     .select("memberId status")
@@ -68,7 +68,7 @@ export async function getBranchStats(rootIds: string[]): Promise<Map<string, Bra
   const roots = rootIds.filter(isValidId);
   if (roots.length === 0) return result;
   await connectDB();
-  const rootObj = roots.map((id) => new Types.ObjectId(id));
+  const rootObj = roots.map((id) => new mongoose.Types.ObjectId(id));
 
   // Mọi nhóm thuộc các nhánh: chính nó hoặc có nó trong danh sách tổ tiên
   const groups = await Group.find({ $or: [{ _id: { $in: rootObj } }, { ancestors: { $in: rootObj } }] })
@@ -120,11 +120,11 @@ export type MemberHistoryItem = {
 export async function getMemberHistory(memberId: string, groupId: string): Promise<{ items: MemberHistoryItem[]; rate: Rate }> {
   await connectDB();
   const [sessions, records] = await Promise.all([
-    AttendanceSession.find({ groupId: new Types.ObjectId(groupId) })
+    AttendanceSession.find({ groupId: new mongoose.Types.ObjectId(groupId) })
       .sort({ date: -1, createdAt: -1 })
       .select("_id title date")
       .lean<Pick<AttendanceSessionRecord, "_id" | "title" | "date">[]>(),
-    AttendanceRecord.find({ memberId: new Types.ObjectId(memberId) }).lean<AttendanceRecordRecord[]>(),
+    AttendanceRecord.find({ memberId: new mongoose.Types.ObjectId(memberId) }).lean<AttendanceRecordRecord[]>(),
   ]);
   const bySession = new Map(records.map((r) => [String(r.sessionId), r]));
   const rate = emptyRate();

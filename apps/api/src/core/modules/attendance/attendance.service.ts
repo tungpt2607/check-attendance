@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { type Types } from "mongoose";
 import { newCheckInSecret } from "../../lib/checkin-token.js";
 import { connectDB, isValidId } from "../../lib/db.js";
 import {
@@ -40,11 +40,11 @@ export async function createAttendanceSession(input: {
 }): Promise<AttendanceSessionDTO> {
   await connectDB();
   const created = await AttendanceSession.create({
-    groupId: new Types.ObjectId(input.groupId),
+    groupId: new mongoose.Types.ObjectId(input.groupId),
     title: input.title.trim(),
     date: input.date,
     method: "manual",
-    createdBy: new Types.ObjectId(input.createdBy),
+    createdBy: new mongoose.Types.ObjectId(input.createdBy),
   });
   return toDTO(created);
 }
@@ -112,12 +112,12 @@ export async function saveSessionRecords(
 ) {
   if (entries.length === 0) return;
   await connectDB();
-  const sid = new Types.ObjectId(sessionId);
-  const uid = new Types.ObjectId(markedBy);
+  const sid = new mongoose.Types.ObjectId(sessionId);
+  const uid = new mongoose.Types.ObjectId(markedBy);
   await AttendanceRecord.bulkWrite(
     entries.map((e) => ({
       updateOne: {
-        filter: { sessionId: sid, memberId: new Types.ObjectId(e.memberId) },
+        filter: { sessionId: sid, memberId: new mongoose.Types.ObjectId(e.memberId) },
         // Ghi chú để trống nghĩa là xóa ghi chú ($unset), không phải "giữ nguyên"
         update: e.note
           ? { $set: { status: e.status, note: e.note, markedBy: uid, source: "manual" as const } }
@@ -131,17 +131,17 @@ export async function saveSessionRecords(
 /** Mở tự điểm danh: tạo khóa QR mới, ghi sẵn trạng thái mặc định cho người chưa có kết quả. */
 export async function openSelfCheckIn(sessionId: string, memberIds: string[], openedBy: string) {
   await connectDB();
-  const sid = new Types.ObjectId(sessionId);
+  const sid = new mongoose.Types.ObjectId(sessionId);
   await AttendanceSession.updateOne(
     { _id: sid },
     { $set: { selfCheckIn: { open: true, secret: newCheckInSecret(), openedAt: new Date() } } },
   );
   if (memberIds.length === 0) return;
-  const uid = new Types.ObjectId(openedBy);
+  const uid = new mongoose.Types.ObjectId(openedBy);
   await AttendanceRecord.bulkWrite(
     memberIds.map((id) => ({
       updateOne: {
-        filter: { sessionId: sid, memberId: new Types.ObjectId(id) },
+        filter: { sessionId: sid, memberId: new mongoose.Types.ObjectId(id) },
         update: { $setOnInsert: { status: DEFAULT_STATUS, source: "manual" as const, markedBy: uid } },
         upsert: true,
       },
@@ -169,8 +169,8 @@ export async function recordSelfCheckIn(sessionId: string, memberId: string): Pr
   try {
     await AttendanceRecord.updateOne(
       {
-        sessionId: new Types.ObjectId(sessionId),
-        memberId: new Types.ObjectId(memberId),
+        sessionId: new mongoose.Types.ObjectId(sessionId),
+        memberId: new mongoose.Types.ObjectId(memberId),
         status: { $nin: ["present", "late"] },
       },
       { $set: { status: "present", source: "self", checkedInAt: new Date(), markedBy: null } },

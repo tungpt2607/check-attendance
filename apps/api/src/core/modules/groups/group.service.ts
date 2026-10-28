@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { type Types } from "mongoose";
 import { VI_COLLATION, connectDB, isValidId } from "../../lib/db.js";
 import { Invite, LinkRequest } from "../invites/invite.model.js";
 import { Member } from "../members/member.model.js";
@@ -102,7 +102,7 @@ export async function createGroup(input: {
     description: input.description?.trim() || undefined,
     parentId,
     ancestors,
-    ownerId: new Types.ObjectId(input.ownerId),
+    ownerId: new mongoose.Types.ObjectId(input.ownerId),
   });
   return toDTO(created);
 }

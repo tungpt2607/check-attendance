@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { type Types } from "mongoose";
 import { VI_COLLATION, connectDB, isValidId } from "../../lib/db.js";
 import { AttendanceRecord } from "../attendance/attendance.model.js";
 import { Invite, LinkRequest } from "../invites/invite.model.js";
@@ -46,7 +46,7 @@ export async function addMembersFromText(groupId: string, text: string): Promise
 
   if (rows.length === 0) return 0;
   await connectDB();
-  const gid = new Types.ObjectId(groupId);
+  const gid = new mongoose.Types.ObjectId(groupId);
   await Member.insertMany(rows.map((r) => ({ groupId: gid, name: r.name, code: r.code, userId: null })));
   return rows.length;
 }

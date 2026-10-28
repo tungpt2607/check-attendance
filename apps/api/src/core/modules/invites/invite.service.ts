@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { Types } from "mongoose";
+import mongoose, { type Types } from "mongoose";
 import { connectDB, isValidId } from "../../lib/db.js";
 import { Member, type MemberRecord } from "../members/member.model.js";
 import { Invite, LinkRequest, type InviteRecord, type LinkRequestRecord } from "./invite.model.js";
@@ -26,7 +26,7 @@ export async function linkMember(memberId: string, userId: string): Promise<Link
   const existing = await Member.exists({ groupId: member.groupId, userId });
   if (existing) return "user_in_group";
   try {
-    const res = await Member.updateOne({ _id: memberId, userId: null }, { $set: { userId: new Types.ObjectId(userId) } });
+    const res = await Member.updateOne({ _id: memberId, userId: null }, { $set: { userId: new mongoose.Types.ObjectId(userId) } });
     return res.modifiedCount === 1 ? "ok" : "member_taken";
   } catch (err) {
     // Trùng chỉ mục (nhóm, tài khoản): tài khoản vừa được gắn ở nơi khác
@@ -60,9 +60,9 @@ export async function createMemberInvite(groupId: string, memberId: string, crea
   await Invite.create({
     token,
     kind: "member",
-    groupId: new Types.ObjectId(groupId),
-    memberId: new Types.ObjectId(memberId),
-    createdBy: new Types.ObjectId(createdBy),
+    groupId: new mongoose.Types.ObjectId(groupId),
+    memberId: new mongoose.Types.ObjectId(memberId),
+    createdBy: new mongoose.Types.ObjectId(createdBy),
     expiresAt,
   });
   return { token, expiresAt };
@@ -86,7 +86,7 @@ export async function checkInvite(token: string, kind: InviteRecord["kind"]): Pr
 
 export async function markInviteUsed(inviteId: Types.ObjectId, userId: string) {
   await connectDB();
-  await Invite.updateOne({ _id: inviteId }, { $set: { usedAt: new Date(), usedBy: new Types.ObjectId(userId) } });
+  await Invite.updateOne({ _id: inviteId }, { $set: { usedAt: new Date(), usedBy: new mongoose.Types.ObjectId(userId) } });
 }
 
 // ---------- B. Link chung + duyệt ----------
@@ -99,7 +99,7 @@ export async function getActiveGroupInvite(groupId: string): Promise<InviteRecor
 
 /** Trong các nhóm cho trước, nhóm nào đang bật link tham gia */
 export async function getGroupsWithActiveInvite(groupIds: string[]): Promise<Set<string>> {
-  const ids = groupIds.filter(isValidId).map((id) => new Types.ObjectId(id));
+  const ids = groupIds.filter(isValidId).map((id) => new mongoose.Types.ObjectId(id));
   if (ids.length === 0) return new Set();
   await connectDB();
   const found = await Invite.distinct("groupId", { groupId: { $in: ids }, kind: "group", revoked: false });
@@ -114,9 +114,9 @@ export async function createGroupInvite(groupId: string, createdBy: string): Pro
   await Invite.create({
     token,
     kind: "group",
-    groupId: new Types.ObjectId(groupId),
+    groupId: new mongoose.Types.ObjectId(groupId),
     memberId: null,
-    createdBy: new Types.ObjectId(createdBy),
+    createdBy: new mongoose.Types.ObjectId(createdBy),
     expiresAt: null,
   });
   return token;
@@ -137,9 +137,9 @@ export async function createLinkRequest(groupId: string, memberId: string, userI
   if (await Member.exists({ groupId, userId })) return "user_in_group";
   if (await LinkRequest.exists({ groupId, userId, status: "pending" })) return "already_pending";
   await LinkRequest.create({
-    groupId: new Types.ObjectId(groupId),
-    memberId: new Types.ObjectId(memberId),
-    userId: new Types.ObjectId(userId),
+    groupId: new mongoose.Types.ObjectId(groupId),
+    memberId: new mongoose.Types.ObjectId(memberId),
+    userId: new mongoose.Types.ObjectId(userId),
     status: "pending",
   });
   return "ok";

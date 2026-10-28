@@ -1,7 +1,7 @@
 // /v1/sessions: buổi điểm danh, kết quả, mở/đóng tự điểm danh QR
 // /v1/checkin: thành viên tự điểm danh bằng QR (công khai)
 import { Hono } from "hono";
-import { toDataURL } from "qrcode";
+import QRCode from "qrcode";
 import { requireUser, type AppEnv } from "../auth.js";
 import { createCheckInToken, currentWindowEndsAt, encodeShortCode, verifyCheckInToken } from "../core/lib/checkin-token.js";
 import { isValidId } from "../core/lib/db.js";
@@ -131,7 +131,7 @@ export const sessions = new Hono<AppEnv>()
     if (!secret) return c.json({ open: false as const });
     const url = `${webUrl()}/c/${encodeShortCode(session.id, createCheckInToken(session.id, secret))}`;
     const [qrDataUrl, checkedIn, members] = await Promise.all([
-      toDataURL(url, { margin: 2, width: 640, errorCorrectionLevel: "L" }),
+      QRCode.toDataURL(url, { margin: 2, width: 640, errorCorrectionLevel: "L" }),
       countCheckedIn(session.id),
       listMembers(session.groupId),
     ]);
