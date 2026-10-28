@@ -18,7 +18,7 @@ Repo chứa nhiều dự án dùng npm workspaces. Mục tiêu: một **backend 
 ```
 apps/
   web/                 Web người dùng (Next.js) — dự án Vercel đặt Root Directory = apps/web
-  api/                 (giai đoạn 2) Backend API (Hono) — dự án Vercel riêng
+  api/                 Backend API (Hono) — dự án Vercel riêng, Root Directory = apps/api
   cms/                 (sau này) Trang quản trị
   mobile/              (sau này) App điện thoại
 packages/
@@ -45,6 +45,18 @@ src/
 ```
 
 Mỗi module gồm `*.model.ts` (dữ liệu), `*.service.ts` (nghiệp vụ) và `*.actions.ts` (server actions gọi từ giao diện, có kiểm tra quyền).
+
+## Backend API (`apps/api`)
+
+- Tài liệu và bấm thử: `/docs` (Swagger UI), đặc tả: `/openapi.json`, kiểm tra sống: `/health`.
+- Mọi API nằm dưới `/v1`. Đăng nhập `POST /v1/auth/login` nhận `token`, gửi kèm `Authorization: Bearer <token>`.
+  Token chính là phiên đăng nhập của web (ký bằng `AUTH_SECRET`), đổi mật khẩu thì mọi token cũ hết hiệu lực.
+- Lỗi luôn có dạng `{ "error": { "code": "...", "message": "..." } }` (message tiếng Việt để hiện cho người dùng).
+- Quyền: chỉ chủ nhóm xem/sửa nhóm, thành viên, buổi điểm danh của nhóm đó (không thuộc quyền thì trả 404).
+  Vai trò `admin` (cho CMS) lấy từ trường `users.role` hoặc danh sách email trong `ADMIN_EMAILS`.
+- `src/core/`: models + services (tạm sao chép từ web; giai đoạn 4 web bỏ bản của mình).
+  `src/routes/`: các route; `src/openapi.ts`: tài liệu (thêm API mới thì thêm một dòng ở đây).
+- Biến môi trường: xem `apps/api/.env.example`.
 
 ## Dữ liệu
 
