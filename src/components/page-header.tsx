@@ -29,7 +29,7 @@ export function PageHeader({ title, subtitle, back, actions }: Props) {
         </AppLink>
       )}
       <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 1.5 }}>
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, flex: "1 1 0" }}>
           <Typography variant="h1" sx={{ wordBreak: "break-word" }}>
             {title}
           </Typography>

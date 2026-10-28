@@ -15,7 +15,7 @@ type Props = {
   children: ReactNode;
   pendingText?: string;
   /** primary: nút chính; ghost: viền; danger: xóa; plain: chữ không viền */
-  variant?: "primary" | "ghost" | "danger" | "plain";
+  variant?: "primary" | "ghost" | "danger" | "dangerSolid" | "plain";
   className?: string;
   sx?: ButtonProps["sx"];
   fullWidth?: boolean;
@@ -33,6 +33,7 @@ const VARIANTS: Record<NonNullable<Props["variant"]>, Pick<ButtonProps, "variant
   primary: { variant: "contained", color: "primary" },
   ghost: { variant: "outlined", color: "inherit" },
   danger: { variant: "outlined", color: "error" },
+  dangerSolid: { variant: "contained", color: "error" },
   plain: { variant: "text", color: "inherit" },
 };
 
@@ -114,7 +115,7 @@ export function SubmitButton({
             <Button
               onClick={submitConfirmed}
               variant="contained"
-              color={variant === "danger" || variant === "plain" ? "error" : "primary"}
+              color={variant === "danger" || variant === "dangerSolid" || variant === "plain" ? "error" : "primary"}
               autoFocus
             >
               {confirmLabel ?? "Đồng ý"}

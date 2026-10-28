@@ -1,5 +1,5 @@
-import { PageSkeleton } from "@/components/skeleton";
+import { TabbedPageSkeleton } from "@/components/skeleton";
 
 export default function Loading() {
-  return <PageSkeleton cards={[4, 5, 2]} />;
+  return <TabbedPageSkeleton tabs={3} cards={[5]} />;
 }

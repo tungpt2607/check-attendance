@@ -81,3 +81,24 @@ export function CenteredListSkeleton({ rows = 6, logo = true }: { rows?: number;
     </Box>
   );
 }
+
+/** Trang có thanh tab (trang nhóm): tiêu đề + thanh tab + các thẻ của tab đầu */
+export function TabbedPageSkeleton({ tabs = 3, cards = [4] }: { tabs?: number; cards?: number[] }) {
+  return (
+    <Box aria-busy="true" aria-label="Đang tải">
+      <TitleSkeleton />
+      <Box sx={{ display: "flex", gap: 2, mb: 2, pb: 1.5, borderBottom: 1, borderColor: "divider" }}>
+        {Array.from({ length: tabs }, (_, i) => (
+          <Box key={i} sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+            <Bone width="60%" height={20} />
+          </Box>
+        ))}
+      </Box>
+      <Stack spacing={2}>
+        {cards.map((n, i) => (
+          <CardSkeleton key={i} lines={n} />
+        ))}
+      </Stack>
+    </Box>
+  );
+}

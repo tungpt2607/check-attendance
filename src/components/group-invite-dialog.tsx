@@ -2,15 +2,13 @@
 
 import LinkRounded from "@mui/icons-material/LinkRounded";
 import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useState, useTransition } from "react";
@@ -19,10 +17,10 @@ import type { ShareLink } from "@/modules/invites/share";
 import { ShareLinkBox } from "./share-link";
 import { toast } from "./toaster";
 
-type Props = { groupId: string; groupName: string; initialLink: ShareLink | null };
+type Props = { groupId: string; groupName: string; initialLink: ShareLink | null; open: boolean; onClose: () => void };
 
 /** Link chung để mọi người tự chọn tên mình và xin liên kết tài khoản (chủ nhóm duyệt) */
-export function GroupInviteCard({ groupId, groupName, initialLink }: Props) {
+export function GroupInviteDialog({ groupId, groupName, initialLink, open, onClose }: Props) {
   const [link, setLink] = useState<ShareLink | null>(initialLink);
   const [error, setError] = useState<string | null>(null);
   const [ask, setAsk] = useState<"rotate" | "disable" | null>(null);
@@ -46,17 +44,15 @@ export function GroupInviteCard({ groupId, groupName, initialLink }: Props) {
     });
 
   return (
-    <Card>
-      <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", mb: 2 }}>
-          <LinkRounded color="primary" sx={{ mt: 0.25 }} />
-          <Box>
-            <Typography variant="h2">Link tham gia nhóm</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Gửi một link cho cả nhóm. Mỗi người đăng nhập, chọn tên mình, bạn duyệt là liên kết xong.
-            </Typography>
-          </Box>
-        </Box>
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ fontSize: 18, fontWeight: 600, pb: 0.5, display: "flex", alignItems: "center", gap: 1 }}>
+        <LinkRounded color="primary" />
+        Link tham gia nhóm
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Gửi một link cho cả nhóm. Mỗi người đăng nhập, chọn tên mình, bạn duyệt là liên kết xong.
+        </Typography>
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -86,7 +82,10 @@ export function GroupInviteCard({ groupId, groupName, initialLink }: Props) {
             {pending ? "Đang tạo..." : "Bật link tham gia"}
           </Button>
         )}
-      </CardContent>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose}>Đóng</Button>
+      </DialogActions>
 
       <Dialog open={ask !== null} onClose={() => setAsk(null)} maxWidth="xs" fullWidth>
         <DialogContent sx={{ pt: 3 }}>
@@ -115,6 +114,6 @@ export function GroupInviteCard({ groupId, groupName, initialLink }: Props) {
           </Button>
         </DialogActions>
       </Dialog>
-    </Card>
+    </Dialog>
   );
 }

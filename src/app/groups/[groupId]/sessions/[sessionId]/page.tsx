@@ -1,4 +1,3 @@
-import DeleteOutline from "@mui/icons-material/DeleteOutline";
 import LockOutlined from "@mui/icons-material/LockOutlined";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import Box from "@mui/material/Box";
@@ -8,13 +7,13 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { AttendanceSheet, type SheetRow } from "@/components/attendance-sheet";
-import { EditSessionButton } from "@/components/edit-dialogs";
+import { SessionHeaderMenu } from "@/components/group-menus";
 import { LinkButton } from "@/components/links";
 import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { dateInputValue, formatDate, formatTime } from "@/lib/format";
 import { requireUser } from "@/lib/session";
-import { closeSelfCheckInAction, deleteSessionAction, openSelfCheckInAction } from "@/modules/attendance/attendance.actions";
+import { closeSelfCheckInAction, openSelfCheckInAction } from "@/modules/attendance/attendance.actions";
 import { getAttendanceSession, getSessionRecords } from "@/modules/attendance/attendance.service";
 import { DEFAULT_STATUS } from "@/modules/attendance/attendance.statuses";
 import { getOwnedGroup } from "@/modules/groups/group.service";
@@ -61,27 +60,11 @@ export default async function AttendanceSessionPage({ params }: Props) {
         subtitle={`${formatDate(session.date)} · ${members.length} thành viên`}
         back={{ href: `/groups/${group.id}`, label: group.name }}
         actions={
-          <>
-            <EditSessionButton
-              key={`${session.title}|${dateInputValue(session.date)}`}
-              sessionId={session.id}
-              title={session.title}
-              date={dateInputValue(session.date)}
-            />
-            <form action={deleteSessionAction}>
-              <input type="hidden" name="sessionId" value={session.id} />
-              <SubmitButton
-                variant="danger"
-                pendingText="Đang xóa..."
-                startIcon={<DeleteOutline />}
-                successMessage="Đã xóa buổi điểm danh"
-                confirmLabel="Xóa buổi"
-                confirm="Xóa buổi điểm danh này cùng toàn bộ kết quả? Không thể khôi phục."
-              >
-                Xóa buổi
-              </SubmitButton>
-            </form>
-          </>
+          <SessionHeaderMenu
+            sessionId={session.id}
+            title={session.title}
+            date={dateInputValue(session.date)}
+          />
         }
       />
 
