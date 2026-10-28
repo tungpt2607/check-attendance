@@ -1,6 +1,7 @@
 "use client";
 
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
+import LockOutlined from "@mui/icons-material/LockOutlined";
 import SearchRounded from "@mui/icons-material/SearchRounded";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -22,7 +23,14 @@ import { normalizeSearch } from "@/lib/search";
 import { selfCheckInAction } from "@/modules/attendance/checkin.actions";
 import { brand } from "@/theme/brand";
 
-export type CheckInMember = { id: string; name: string; code: string; checkedIn: boolean };
+export type CheckInMember = {
+  id: string;
+  name: string;
+  code: string;
+  checkedIn: boolean;
+  /** Tên đã liên kết tài khoản: phải đăng nhập đúng tài khoản mới điểm danh được */
+  locked: boolean;
+};
 
 type Props = { sessionId: string; token: string; members: CheckInMember[] };
 
@@ -99,7 +107,7 @@ export function CheckInList({ sessionId, token, members }: Props) {
             <ListItemButton
               key={m.id}
               divider={i < filtered.length - 1}
-              disabled={m.checkedIn}
+              disabled={m.checkedIn || m.locked}
               onClick={() => {
                 setError(null);
                 setSelected(m);
@@ -117,8 +125,19 @@ export function CheckInList({ sessionId, token, members }: Props) {
                     {m.name}
                   </>
                 }
-                slotProps={{ primary: { fontWeight: m.checkedIn ? 400 : 600, color: m.checkedIn ? "text.disabled" : "text.primary" } }}
+                slotProps={{
+                  primary: { fontWeight: m.checkedIn || m.locked ? 400 : 600, color: m.checkedIn || m.locked ? "text.disabled" : "text.primary" },
+                }}
               />
+              {!m.checkedIn && m.locked && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}
+                >
+                  <LockOutlined sx={{ fontSize: 15 }} /> Cần đăng nhập
+                </Typography>
+              )}
               {m.checkedIn && (
                 <Typography
                   variant="caption"
@@ -167,5 +186,48 @@ export function CheckInList({ sessionId, token, members }: Props) {
         </DialogActions>
       </Dialog>
     </Stack>
+  );
+}
+
+/** Người đã đăng nhập và đã liên kết: chỉ một nút điểm danh cho chính mình */
+export function SelfCheckInButton({ sessionId, token, memberId, name }: { sessionId: string; token: string; memberId: string; name: string }) {
+  const [error, setError] = useState<string | null>(null);
+  const [doneName, setDoneName] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  if (doneName) return <CheckInDone title="Điểm danh thành công" name={doneName} />;
+
+  return (
+    <Card>
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography variant="body2" color="text.secondary">
+          Bạn đang đăng nhập với tên
+        </Typography>
+        <Typography sx={{ fontWeight: 700, fontSize: 20, mt: 0.5 }}>{name}</Typography>
+        {error && (
+          <Alert severity="error" sx={{ mt: 2, textAlign: "left" }}>
+            {error}
+          </Alert>
+        )}
+        <Button
+          variant="contained"
+          size="large"
+          fullWidth
+          disabled={pending}
+          sx={{ mt: 2.5, py: 1.5, fontSize: 17 }}
+          startIcon={pending ? <CircularProgress size={18} color="inherit" /> : <CheckCircleRounded />}
+          onClick={() =>
+            startTransition(async () => {
+              setError(null);
+              const res = await selfCheckInAction(sessionId, token, memberId);
+              if (res.ok) setDoneName(res.name);
+              else setError(res.error);
+            })
+          }
+        >
+          {pending ? "Đang ghi..." : "Điểm danh"}
+        </Button>
+      </Box>
+    </Card>
   );
 }

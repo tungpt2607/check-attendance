@@ -1,10 +1,13 @@
 "use server";
 
-// Hành động công khai: thành viên tự điểm danh bằng QR, KHÔNG cần đăng nhập.
-// Mọi kiểm tra (buổi đang mở, mã QR còn hạn, mỗi điện thoại 1 người) nằm ở đây.
+// Hành động công khai: thành viên tự điểm danh bằng QR.
+// - Tên CHƯA liên kết tài khoản: không cần đăng nhập
+// - Tên ĐÃ liên kết tài khoản: bắt buộc đăng nhập đúng tài khoản đó
+// Mọi kiểm tra (buổi đang mở, mã QR còn hạn, mỗi điện thoại 1 người, đúng tài khoản) nằm ở đây.
 import { cookies } from "next/headers";
 import { deviceCookieName, verifyCheckInToken } from "@/lib/checkin-token";
 import { isValidId } from "@/lib/db";
+import { getSession } from "@/lib/session";
 import { getMember } from "@/modules/members/member.service";
 import { getAttendanceSession, getCheckInSecret, recordSelfCheckIn } from "./attendance.service";
 
@@ -30,6 +33,13 @@ export async function selfCheckInAction(sessionId: string, token: string, member
 
   const member = await getMember(memberId);
   if (!member || member.groupId !== session.groupId) return { ok: false, error: "Không tìm thấy tên này trong nhóm." };
+  if (member.linkedUserId) {
+    const user = await getSession();
+    if (!user) return { ok: false, error: `${member.name} đã liên kết tài khoản. Hãy đăng nhập để điểm danh.` };
+    if (user.userId !== member.linkedUserId) {
+      return { ok: false, error: `${member.name} đã liên kết với một tài khoản khác. Bạn chỉ điểm danh được cho chính mình.` };
+    }
+  }
 
   const result = await recordSelfCheckIn(sessionId, memberId);
   if (result === "already") {

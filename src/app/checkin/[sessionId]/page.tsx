@@ -4,7 +4,10 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import { CheckInDone, CheckInList } from "@/components/checkin-list";
+import Alert from "@mui/material/Alert";
+import { CheckInDone, CheckInList, SelfCheckInButton } from "@/components/checkin-list";
+import { AppLink } from "@/components/links";
+import { getSession } from "@/lib/session";
 import { deviceCookieName, verifyCheckInToken } from "@/lib/checkin-token";
 import { formatDate } from "@/lib/format";
 import { getAttendanceSession, getCheckInSecret, getSessionRecords } from "@/modules/attendance/attendance.service";
@@ -75,15 +78,62 @@ export default async function CheckInPage({ params, searchParams }: Props) {
     );
   }
 
-  const [members, records] = await Promise.all([listMembers(session.groupId), getSessionRecords(sessionId)]);
-  const list = members.map((m) => {
-    const st = records.get(m.id)?.status;
-    return { id: m.id, name: m.name, code: m.code, checkedIn: st === "present" || st === "late" };
-  });
+  const [members, records, user] = await Promise.all([
+    listMembers(session.groupId),
+    getSessionRecords(sessionId),
+    getSession(),
+  ]);
+  const isPresent = (memberId: string) => {
+    const st = records.get(memberId)?.status;
+    return st === "present" || st === "late";
+  };
+
+  // Đã đăng nhập và đã liên kết trong nhóm: chỉ một nút điểm danh cho chính mình
+  const mine = user ? members.find((m) => m.linkedUserId === user.userId) : undefined;
+  if (mine) {
+    return (
+      <Box sx={{ maxWidth: 440, mx: "auto" }}>
+        {header}
+        {isPresent(mine.id) ? (
+          <CheckInDone title="Bạn đã điểm danh" name={mine.name} />
+        ) : (
+          <SelfCheckInButton sessionId={sessionId} token={t ?? ""} memberId={mine.id} name={mine.name} />
+        )}
+      </Box>
+    );
+  }
+
+  const list = members.map((m) => ({
+    id: m.id,
+    name: m.name,
+    code: m.code,
+    checkedIn: isPresent(m.id),
+    locked: !!m.linkedUserId,
+  }));
+  const hasLocked = list.some((m) => m.locked && !m.checkedIn);
+  const loginHref = `/login?next=${encodeURIComponent(`/checkin/${sessionId}?t=${t ?? ""}`)}`;
 
   return (
     <Box sx={{ maxWidth: 440, mx: "auto" }}>
       {header}
+      {hasLocked && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {user ? (
+            <>
+              Tài khoản <b>{user.email}</b> chưa liên kết với tên nào trong nhóm này. Tên có biểu tượng khóa cần đăng nhập đúng
+              tài khoản đã liên kết.
+            </>
+          ) : (
+            <>
+              Tên của bạn có biểu tượng khóa?{" "}
+              <AppLink href={loginHref} fontWeight={700}>
+                Đăng nhập
+              </AppLink>{" "}
+              để điểm danh.
+            </>
+          )}
+        </Alert>
+      )}
       <CheckInList sessionId={sessionId} token={t ?? ""} members={list} />
     </Box>
   );
