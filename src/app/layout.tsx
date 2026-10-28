@@ -1,0 +1,20 @@
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { AppHeader } from "@/components/app-header";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Điểm danh",
+  description: "Phần mềm điểm danh theo nhóm",
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="vi">
+      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+        <AppHeader />
+        <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      </body>
+    </html>
+  );
+}
