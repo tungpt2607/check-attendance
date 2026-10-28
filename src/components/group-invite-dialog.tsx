@@ -17,11 +17,18 @@ import type { ShareLink } from "@/modules/invites/share";
 import { ShareLinkBox } from "./share-link";
 import { toast } from "./toaster";
 
-type Props = { groupId: string; groupName: string; initialLink: ShareLink | null; open: boolean; onClose: () => void };
+type Props = {
+  groupId: string;
+  groupName: string;
+  /** Link đang bật (null: đang tắt). Trạng thái giữ ở component cha để hiện nhãn "đang bật" bên ngoài */
+  link: ShareLink | null;
+  onLinkChange: (link: ShareLink | null) => void;
+  open: boolean;
+  onClose: () => void;
+};
 
 /** Link chung để mọi người tự chọn tên mình và xin liên kết tài khoản (chủ nhóm duyệt) */
-export function GroupInviteDialog({ groupId, groupName, initialLink, open, onClose }: Props) {
-  const [link, setLink] = useState<ShareLink | null>(initialLink);
+export function GroupInviteDialog({ groupId, groupName, link, onLinkChange: setLink, open, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [ask, setAsk] = useState<"rotate" | "disable" | null>(null);
   const [pending, startTransition] = useTransition();

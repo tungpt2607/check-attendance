@@ -77,6 +77,7 @@ export async function createGroupInviteAction(groupId: string): Promise<ShareLin
   if (!(await getOwnedGroup(groupId, user.userId))) return { ok: false, error: "Không tìm thấy nhóm." };
   const token = await createGroupInvite(groupId, user.userId);
   revalidatePath(`/groups/${groupId}`);
+  revalidatePath("/groups");
   return { ok: true, link: await buildShareLink(`/join/${token}`, null) };
 }
 
@@ -85,6 +86,7 @@ export async function disableGroupInviteAction(groupId: string): Promise<void> {
   if (!(await getOwnedGroup(groupId, user.userId))) return;
   await disableGroupInvite(groupId);
   revalidatePath(`/groups/${groupId}`);
+  revalidatePath("/groups");
 }
 
 /** Người mở link chung chọn tên mình và gửi yêu cầu */

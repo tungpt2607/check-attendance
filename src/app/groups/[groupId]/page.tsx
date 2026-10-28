@@ -20,7 +20,7 @@ import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { Fragment } from "react";
 import { ZoomableAvatar } from "@/components/avatar-zoom";
-import { AddMembersButton, CreateSubgroupButton, GroupHeaderMenu, MemberRowMenu } from "@/components/group-menus";
+import { AddMembersButton, CreateSubgroupButton, GroupPageHeader, MemberRowMenu } from "@/components/group-menus";
 import { GroupTabs } from "@/components/group-tabs";
 import { AppLink, ListLink } from "@/components/links";
 import { PagedList } from "@/components/paged-list";
@@ -288,18 +288,13 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
         ))}
       </Breadcrumbs>
 
-      <PageHeader
-        title={group.name}
+      <GroupPageHeader
+        key={group.name}
+        groupId={group.id}
+        groupName={group.name}
         subtitle={`${members.length} thành viên · ${children.length} nhóm con · ${sessions.length} buổi điểm danh`}
-        actions={
-          <GroupHeaderMenu
-            key={group.name}
-            groupId={group.id}
-            groupName={group.name}
-            canDelete={children.length === 0}
-            inviteLink={groupLink}
-          />
-        }
+        canDelete={children.length === 0}
+        inviteLink={groupLink}
       />
 
       <GroupTabs

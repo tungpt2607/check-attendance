@@ -2,6 +2,8 @@ import AddRounded from "@mui/icons-material/AddRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import FolderOutlined from "@mui/icons-material/FolderOutlined";
 import HowToRegOutlined from "@mui/icons-material/HowToRegOutlined";
+import LinkRounded from "@mui/icons-material/LinkRounded";
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import List from "@mui/material/List";
@@ -15,6 +17,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/session";
 import { createGroupAction } from "@/modules/groups/group.actions";
 import { getOwnedGroupTree, type GroupTreeNode } from "@/modules/groups/group.service";
+import { getGroupsWithActiveInvite } from "@/modules/invites/invite.service";
 import { listMembershipsOfUser } from "@/modules/members/membership.service";
 import { brand } from "@/theme/brand";
 
@@ -26,7 +29,12 @@ function countAll(nodes: GroupTreeNode[]): number {
 }
 
 /** Cây nhóm nhiều cấp: mỗi cấp con thụt vào và có đường kẻ dọc */
-function GroupTree({ nodes, depth = 0 }: { nodes: GroupTreeNode[]; depth?: number }) {
+/** Tất cả mã nhóm trong cây */
+function allIds(nodes: GroupTreeNode[]): string[] {
+  return nodes.flatMap((n) => [n.id, ...allIds(n.children)]);
+}
+
+function GroupTree({ nodes, depth = 0, linkOn }: { nodes: GroupTreeNode[]; depth?: number; linkOn: Set<string> }) {
   return (
     <List
       disablePadding
@@ -38,12 +46,25 @@ function GroupTree({ nodes, depth = 0 }: { nodes: GroupTreeNode[]; depth?: numbe
             <FolderOutlined fontSize="small" sx={{ color: depth === 0 ? brand.tealDark : "text.disabled", mr: 1.5 }} />
             <ListItemText
               primary={node.name}
-              secondary={`${node.memberCount} thành viên${node.children.length > 0 ? ` · ${node.children.length} nhóm con` : ""}`}
+              secondary={
+                <>
+                  {`${node.memberCount} thành viên${node.children.length > 0 ? ` · ${node.children.length} nhóm con` : ""}`}
+                  {linkOn.has(node.id) && (
+                    <Box
+                      component="span"
+                      sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, ml: 1, color: brand.tealDark, fontWeight: 500, verticalAlign: "bottom" }}
+                    >
+                      <LinkRounded sx={{ fontSize: 16 }} />
+                      Link tham gia đang bật
+                    </Box>
+                  )}
+                </>
+              }
               slotProps={{ primary: { fontWeight: 600 } }}
             />
             <ChevronRightRounded sx={{ color: "text.disabled" }} />
           </ListLink>
-          {node.children.length > 0 && <GroupTree nodes={node.children} depth={depth + 1} />}
+          {node.children.length > 0 && <GroupTree nodes={node.children} depth={depth + 1} linkOn={linkOn} />}
         </li>
       ))}
     </List>
@@ -53,6 +74,8 @@ function GroupTree({ nodes, depth = 0 }: { nodes: GroupTreeNode[]; depth?: numbe
 export default async function GroupsPage() {
   const user = await requireUser();
   const [tree, memberships] = await Promise.all([getOwnedGroupTree(user.userId), listMembershipsOfUser(user.userId)]);
+  // Nhóm nào đang bật link tham gia (để hiện nhãn ngoài danh sách)
+  const linkOn = await getGroupsWithActiveInvite(allIds(tree));
 
   return (
     <>
@@ -116,7 +139,7 @@ export default async function GroupsPage() {
           <Card>
             <CardContent sx={{ p: 2.5 }}>
               <SectionTitle>Nhóm tôi quản lý</SectionTitle>
-              <GroupTree nodes={tree} />
+              <GroupTree nodes={tree} linkOn={linkOn} />
             </CardContent>
           </Card>
         )}

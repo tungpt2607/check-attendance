@@ -97,6 +97,15 @@ export async function getActiveGroupInvite(groupId: string): Promise<InviteRecor
   return Invite.findOne({ groupId, kind: "group", revoked: false }).sort({ createdAt: -1 }).lean<InviteRecord>();
 }
 
+/** Trong các nhóm cho trước, nhóm nào đang bật link tham gia */
+export async function getGroupsWithActiveInvite(groupIds: string[]): Promise<Set<string>> {
+  const ids = groupIds.filter(isValidId).map((id) => new Types.ObjectId(id));
+  if (ids.length === 0) return new Set();
+  await connectDB();
+  const found = await Invite.distinct("groupId", { groupId: { $in: ids }, kind: "group", revoked: false });
+  return new Set(found.map(String));
+}
+
 /** Bật link chung (hoặc tạo link mới thay link cũ) */
 export async function createGroupInvite(groupId: string, createdBy: string): Promise<string> {
   await connectDB();

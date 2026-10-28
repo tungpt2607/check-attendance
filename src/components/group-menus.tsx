@@ -7,7 +7,9 @@ import GroupAddOutlined from "@mui/icons-material/GroupAddOutlined";
 import LinkOffRounded from "@mui/icons-material/LinkOffRounded";
 import LinkRounded from "@mui/icons-material/LinkRounded";
 import PersonAddAltRounded from "@mui/icons-material/PersonAddAltRounded";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import TextField from "@mui/material/TextField";
 import { useState } from "react";
 import { deleteSessionAction } from "@/modules/attendance/attendance.actions";
@@ -20,34 +22,68 @@ import { ConfirmDialog } from "./confirm-dialog";
 import { DialogForm, EditMemberDialog, EditSessionDialog, RenameGroupDialog } from "./edit-dialogs";
 import { GroupInviteDialog } from "./group-invite-dialog";
 import { MemberInviteDialog } from "./member-invite";
+import { PageHeader } from "./page-header";
+import { brand } from "@/theme/brand";
 
-/** Menu "⋮" ở tiêu đề trang nhóm: Đổi tên nhóm, Link tham gia nhóm, Xóa nhóm */
-export function GroupHeaderMenu({
+/**
+ * Tiêu đề trang nhóm: tên, mô tả, nhãn "Link tham gia đang bật" (bấm để mở link)
+ * và menu "⋮": Đổi tên nhóm, Link tham gia nhóm (ghi trạng thái bật/tắt), Xóa nhóm
+ */
+export function GroupPageHeader({
   groupId,
   groupName,
+  subtitle,
   canDelete,
   inviteLink,
 }: {
   groupId: string;
   groupName: string;
+  subtitle: string;
   /** Chỉ xóa được khi không còn nhóm con */
   canDelete: boolean;
   inviteLink: ShareLink | null;
 }) {
   const [open, setOpen] = useState<"rename" | "invite" | "delete" | null>(null);
+  const [link, setLink] = useState<ShareLink | null>(inviteLink);
   const close = () => setOpen(null);
   return (
     <>
-      <ActionMenu
-        label="Thao tác với nhóm"
-        actions={[
-          { label: "Đổi tên nhóm", icon: <EditOutlined fontSize="small" />, onClick: () => setOpen("rename") },
-          { label: "Link tham gia nhóm", icon: <LinkRounded fontSize="small" />, onClick: () => setOpen("invite") },
-          { label: "Xóa nhóm", icon: <DeleteOutline fontSize="small" />, onClick: () => setOpen("delete"), danger: true, hidden: !canDelete },
-        ]}
+      <PageHeader
+        title={groupName}
+        subtitle={
+          <>
+            {subtitle}
+            {link && (
+              <Box component="span" sx={{ display: "block", mt: 1 }}>
+                <Chip
+                  component="span"
+                  size="small"
+                  icon={<LinkRounded />}
+                  label="Link tham gia đang bật"
+                  onClick={() => setOpen("invite")}
+                  sx={{ bgcolor: brand.tealLighter, color: brand.tealDarker, fontWeight: 500, "& .MuiChip-icon": { color: brand.tealDark } }}
+                />
+              </Box>
+            )}
+          </>
+        }
+        actions={
+          <ActionMenu
+            label="Thao tác với nhóm"
+            actions={[
+              { label: "Đổi tên nhóm", icon: <EditOutlined fontSize="small" />, onClick: () => setOpen("rename") },
+              {
+                label: `Link tham gia nhóm · ${link ? "Đang bật" : "Đang tắt"}`,
+                icon: <LinkRounded fontSize="small" />,
+                onClick: () => setOpen("invite"),
+              },
+              { label: "Xóa nhóm", icon: <DeleteOutline fontSize="small" />, onClick: () => setOpen("delete"), danger: true, hidden: !canDelete },
+            ]}
+          />
+        }
       />
       <RenameGroupDialog key={groupName} groupId={groupId} name={groupName} open={open === "rename"} onClose={close} />
-      <GroupInviteDialog groupId={groupId} groupName={groupName} initialLink={inviteLink} open={open === "invite"} onClose={close} />
+      <GroupInviteDialog groupId={groupId} groupName={groupName} link={link} onLinkChange={setLink} open={open === "invite"} onClose={close} />
       {canDelete && (
         <ConfirmDialog
           open={open === "delete"}
