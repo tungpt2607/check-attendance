@@ -1,6 +1,6 @@
 // Góc nhìn của thành viên đã liên kết tài khoản: nhóm mình tham gia và lịch sử điểm danh của mình.
 import { Types } from "mongoose";
-import { connectDB, isValidId } from "@/lib/db";
+import { VI_COLLATION, connectDB, isValidId } from "@/lib/db";
 import {
   AttendanceRecord,
   AttendanceSession,
@@ -9,6 +9,7 @@ import {
 } from "@/modules/attendance/attendance.model";
 import type { AttendanceStatus } from "@/modules/attendance/attendance.statuses";
 import { Group, type GroupRecord } from "@/modules/groups/group.model";
+import { getAccountsByIds } from "@/modules/users/user.service";
 import { Member, type MemberRecord } from "./member.model";
 
 export type MembershipDTO = { memberId: string; memberName: string; groupId: string; groupName: string };
@@ -82,4 +83,35 @@ export async function getMyHistory(memberId: string, userId: string): Promise<My
     recorded,
     rate: recorded > 0 ? attended / recorded : null,
   };
+}
+
+export type RosterItem = {
+  id: string;
+  name: string;
+  code: string;
+  /** Tài khoản đã liên kết (chỉ tên và phiên bản ảnh, KHÔNG có email) */
+  linked: { userId: string; name: string; avatarVersion: number | null } | null;
+};
+
+/**
+ * Danh sách thành viên nhóm cho thành viên đã liên kết xem (chỉ đọc).
+ * Không trả kết quả điểm danh, ghi chú hay email của người khác.
+ */
+export async function getRosterForMember(memberId: string, userId: string): Promise<RosterItem[] | null> {
+  if (!isValidId(memberId)) return null;
+  await connectDB();
+  const me = await Member.findById(memberId).lean<MemberRecord>();
+  if (!me || !me.userId || String(me.userId) !== userId) return null;
+
+  const members = await Member.find({ groupId: me.groupId }).collation(VI_COLLATION).sort({ name: 1 }).lean<MemberRecord[]>();
+  const accounts = await getAccountsByIds(members.map((m) => (m.userId ? String(m.userId) : "")).filter(Boolean));
+  return members.map((m) => {
+    const acc = m.userId ? accounts.get(String(m.userId)) : undefined;
+    return {
+      id: String(m._id),
+      name: m.name,
+      code: m.code ?? "",
+      linked: acc ? { userId: acc.id, name: acc.name, avatarVersion: acc.avatarVersion } : null,
+    };
+  });
 }

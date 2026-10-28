@@ -9,11 +9,14 @@ import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
+import { ZoomableAvatar } from "@/components/avatar-zoom";
+import { ListSearch } from "@/components/list-search";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { StatusChip, StatusCounts } from "@/components/status-chip";
 import { formatDate } from "@/lib/format";
+import { normalizeSearch } from "@/lib/search";
 import { requireUser } from "@/lib/session";
-import { getMyHistory } from "@/modules/members/membership.service";
+import { getMyHistory, getRosterForMember } from "@/modules/members/membership.service";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
@@ -28,8 +31,11 @@ export default async function MyHistoryPage({ params, searchParams }: Props) {
   const { memberId } = await params;
   const { linked } = await searchParams;
   const user = await requireUser();
-  const history = await getMyHistory(memberId, user.userId);
-  if (!history) notFound();
+  const [history, roster] = await Promise.all([
+    getMyHistory(memberId, user.userId),
+    getRosterForMember(memberId, user.userId),
+  ]);
+  if (!history || !roster) notFound();
 
   const percent = history.rate === null ? null : Math.round(history.rate * 100);
 
@@ -63,6 +69,47 @@ export default async function MyHistoryPage({ params, searchParams }: Props) {
                 <StatusCounts counts={history.counts} short={false} />
               </>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Danh sách thành viên nhóm (chỉ xem) */}
+        <Card>
+          <CardContent sx={{ p: 2.5 }}>
+            <SectionTitle>Thành viên ({roster.length})</SectionTitle>
+            {roster.length > 5 && <ListSearch listId="roster-list" />}
+            <List id="roster-list" dense disablePadding sx={{ mt: roster.length > 5 ? 1 : 0, mx: -1 }}>
+              {roster.map((m, i) => {
+                const isMe = m.id === memberId;
+                return (
+                  <ListItem
+                    key={m.id}
+                    data-search={normalizeSearch(`${m.name} ${m.code}`)}
+                    divider={i < roster.length - 1}
+                    sx={{ px: 1, py: 0.75, borderRadius: isMe ? 2 : 0, bgcolor: isMe ? brand.tealLighter : undefined }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flex: 1 }}>
+                      <Typography component="span" variant="caption" color="text.disabled" sx={{ minWidth: 22 }}>
+                        {i + 1}.
+                      </Typography>
+                      {m.code && (
+                        <Typography component="span" variant="caption" color="text.secondary">
+                          {m.code}
+                        </Typography>
+                      )}
+                      <Typography component="span" noWrap sx={{ fontWeight: isMe ? 700 : 400, minWidth: 0 }}>
+                        {m.name}
+                      </Typography>
+                      {m.linked && (
+                        <ZoomableAvatar userId={m.linked.userId} name={m.linked.name} version={m.linked.avatarVersion} size={28} />
+                      )}
+                      {isMe && (
+                        <Chip label="Bạn" size="small" sx={{ ml: "auto", height: 22, bgcolor: brand.tealDark, color: "#fff", fontWeight: 600 }} />
+                      )}
+                    </Box>
+                  </ListItem>
+                );
+              })}
+            </List>
           </CardContent>
         </Card>
 
