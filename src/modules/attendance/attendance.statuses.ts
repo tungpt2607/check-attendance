@@ -4,22 +4,22 @@ export const ATTENDANCE_STATUSES = [
     value: "present",
     label: "Có mặt",
     short: "Có",
-    className: "bg-emerald-100 text-emerald-800",
-    checkedClass: "has-checked:bg-emerald-100 has-checked:text-emerald-800",
+    className: "bg-brand-100 text-brand-800",
+    checkedClass: "has-checked:bg-brand-100 has-checked:text-brand-800",
   },
   {
     value: "late",
     label: "Muộn",
     short: "Muộn",
-    className: "bg-amber-100 text-amber-800",
-    checkedClass: "has-checked:bg-amber-100 has-checked:text-amber-800",
+    className: "bg-warn-100 text-warn-800",
+    checkedClass: "has-checked:bg-warn-100 has-checked:text-warn-800",
   },
   {
     value: "absent",
     label: "Vắng",
     short: "Vắng",
-    className: "bg-rose-100 text-rose-800",
-    checkedClass: "has-checked:bg-rose-100 has-checked:text-rose-800",
+    className: "bg-danger-100 text-danger-800",
+    checkedClass: "has-checked:bg-danger-100 has-checked:text-danger-800",
   },
 ] as const;
 

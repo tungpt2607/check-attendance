@@ -57,7 +57,7 @@ export function AttendanceFilter({ listId }: Props) {
       onClick={() => setStatus(value)}
       className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${
         status === value
-          ? "border-indigo-600 bg-indigo-600 text-white"
+          ? "border-brand-600 bg-brand-600 text-white"
           : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
       }`}
     >
@@ -73,7 +73,7 @@ export function AttendanceFilter({ listId }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Tìm theo tên hoặc mã..."
-          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-base outline-none sm:text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-base outline-none sm:text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           // Không gửi ô tìm kiếm khi lưu, và Enter không vô tình bấm Lưu
           form="__none__"
           onKeyDown={(e) => {

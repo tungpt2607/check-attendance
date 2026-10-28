@@ -31,7 +31,7 @@ export function Avatar({ userId, name, version, size = 32, className = "" }: Pro
   return (
     <span
       style={{ ...style, fontSize: Math.round(size * 0.42) }}
-      className={`grid shrink-0 place-items-center rounded-full bg-indigo-100 font-semibold text-indigo-700 ${className}`}
+      className={`grid shrink-0 place-items-center rounded-full bg-brand-100 font-semibold text-brand-700 ${className}`}
       aria-label={name}
     >
       {initialOf(name)}

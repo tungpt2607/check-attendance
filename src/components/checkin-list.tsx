@@ -24,10 +24,10 @@ export function CheckInList({ sessionId, token, members }: Props) {
 
   if (doneName) {
     return (
-      <div className="rounded-2xl bg-emerald-50 p-8 text-center">
-        <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-emerald-500 text-3xl text-white">✓</div>
-        <p className="text-lg font-semibold text-emerald-900">Điểm danh thành công</p>
-        <p className="mt-1 text-emerald-800">{doneName}</p>
+      <div className="rounded-2xl bg-brand-50 p-8 text-center">
+        <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-brand-500 text-3xl text-white">✓</div>
+        <p className="text-lg font-semibold text-brand-900">Điểm danh thành công</p>
+        <p className="mt-1 text-brand-800">{doneName}</p>
       </div>
     );
   }
@@ -49,10 +49,10 @@ export function CheckInList({ sessionId, token, members }: Props) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Tìm tên của bạn..."
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
       />
 
-      {error && !selected && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+      {error && !selected && <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">{error}</p>}
 
       <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
         {filtered.length === 0 && <li className="px-4 py-6 text-center text-sm text-slate-500">Không tìm thấy tên phù hợp.</li>}
@@ -71,18 +71,18 @@ export function CheckInList({ sessionId, token, members }: Props) {
                 {m.code && <span className="mr-2 text-xs text-slate-400">{m.code}</span>}
                 {m.name}
               </span>
-              {m.checkedIn && <span className="shrink-0 text-xs text-emerald-600">Đã điểm danh</span>}
+              {m.checkedIn && <span className="shrink-0 text-xs text-brand-600">Đã điểm danh</span>}
             </button>
           </li>
         ))}
       </ul>
 
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 sm:items-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
             <p className="text-sm text-slate-500">Xác nhận điểm danh</p>
             <p className="mt-1 text-lg font-semibold">Bạn là {selected.name}?</p>
-            {error && <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+            {error && <p className="mt-3 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">{error}</p>}
             <div className="mt-5 flex gap-2">
               <button
                 type="button"
@@ -98,7 +98,7 @@ export function CheckInList({ sessionId, token, members }: Props) {
                 type="button"
                 disabled={pending}
                 onClick={confirm}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
               >
                 {pending && <Spinner />}
                 {pending ? "Đang ghi..." : "Đúng, điểm danh"}

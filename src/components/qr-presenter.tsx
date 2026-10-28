@@ -80,17 +80,17 @@ export function QrPresenter({ sessionId }: { sessionId: string }) {
       <div className="space-y-2">
         <div className="h-2 overflow-hidden rounded-full bg-slate-200">
           <div
-            className={`h-full rounded-full transition-[width] duration-200 ease-linear ${urgent ? "bg-amber-500" : "bg-indigo-600"}`}
+            className={`h-full rounded-full transition-[width] duration-200 ease-linear ${urgent ? "bg-warn-500" : "bg-brand-600"}`}
             style={{ width: `${percent}%` }}
           />
         </div>
         <div className="flex items-end justify-between gap-3">
-          <p className={`text-sm font-medium tabular-nums ${urgent ? "text-amber-600" : "text-slate-600"}`}>
+          <p className={`text-sm font-medium tabular-nums ${urgent ? "text-warn-600" : "text-slate-600"}`}>
             {seconds > 0 ? `Mã mới sau ${seconds}s` : "Đang đổi mã..."}
-            {error && <span className="block text-xs text-amber-600">Mất kết nối, đang thử lại...</span>}
+            {error && <span className="block text-xs text-warn-600">Mất kết nối, đang thử lại...</span>}
           </p>
           <p className="text-right leading-none">
-            <span className="text-3xl font-bold tabular-nums text-indigo-600">{state.checkedIn}</span>
+            <span className="text-3xl font-bold tabular-nums text-brand-600">{state.checkedIn}</span>
             <span className="text-lg font-medium text-slate-400">/{state.total}</span>
             <span className="block pt-1 text-xs text-slate-500">đã điểm danh</span>
           </p>

@@ -36,7 +36,7 @@ export function ListSearch({ listId, placeholder = "Tìm theo tên hoặc mã...
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-base outline-none sm:text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-base outline-none sm:text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         />
         <SearchIcon />
       </div>

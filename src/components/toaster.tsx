@@ -40,7 +40,7 @@ export function Toaster() {
           key={t.id}
           role="status"
           className={`flex animate-[toast-in_0.2s_ease-out] items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-white shadow-lg ${
-            t.kind === "error" ? "bg-rose-600" : "bg-slate-900"
+            t.kind === "error" ? "bg-danger-600" : "bg-ink"
           }`}
         >
           <span aria-hidden="true">{t.kind === "error" ? "!" : "✓"}</span>

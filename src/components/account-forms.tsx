@@ -15,8 +15,8 @@ import { SubmitButton } from "./submit-button";
 import { ui } from "./ui";
 
 function Message({ state }: { state: FormState }) {
-  if (state?.error) return <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{state.error}</p>;
-  if (state?.ok) return <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{state.ok}</p>;
+  if (state?.error) return <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">{state.error}</p>;
+  if (state?.ok) return <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{state.ok}</p>;
   return null;
 }
 
@@ -129,7 +129,7 @@ export function AvatarForm({ userId, name, version }: { userId: string; name: st
           aria-modal="true"
           aria-label="Ảnh đại diện"
           onClick={() => setZoomed(false)}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-900/85 p-6"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/85 p-6"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

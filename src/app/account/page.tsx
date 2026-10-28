@@ -14,7 +14,7 @@ export default async function AccountPage() {
   return (
     <div className="mx-auto max-w-lg space-y-6">
       <div>
-        <Link href="/groups" className="text-sm text-slate-500 hover:text-indigo-600">← Nhóm của tôi</Link>
+        <Link href="/groups" className="text-sm text-slate-500 hover:text-brand-600">← Nhóm của tôi</Link>
         <h1 className="mt-2 text-2xl font-semibold">Tài khoản của tôi</h1>
         <p className={ui.muted}>{user.email}</p>
       </div>

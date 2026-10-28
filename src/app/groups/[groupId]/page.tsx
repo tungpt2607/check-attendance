@@ -35,11 +35,11 @@ export default async function GroupDetailPage({ params }: Props) {
     <div className="space-y-6">
       {/* Đường dẫn nhóm */}
       <nav className="flex flex-wrap items-center gap-1 text-sm text-slate-500">
-        <Link href="/groups" className="hover:text-indigo-600">Nhóm của tôi</Link>
+        <Link href="/groups" className="hover:text-brand-600">Nhóm của tôi</Link>
         {ancestors.map((a) => (
           <span key={a.id} className="flex items-center gap-1">
             <span>/</span>
-            <Link href={`/groups/${a.id}`} className="hover:text-indigo-600">{a.name}</Link>
+            <Link href={`/groups/${a.id}`} className="hover:text-brand-600">{a.name}</Link>
           </span>
         ))}
       </nav>
@@ -96,13 +96,13 @@ export default async function GroupDetailPage({ params }: Props) {
               <li key={s.id}>
                 <Link
                   href={`/groups/${group.id}/sessions/${s.id}`}
-                  className="flex flex-col gap-1.5 py-2.5 hover:text-indigo-600"
+                  className="flex flex-col gap-1.5 py-2.5 hover:text-brand-600"
                 >
                   <span>
                     <span className="font-medium">{s.title}</span>
                     <span className="ml-2 text-sm text-slate-500">{formatDate(s.date)}</span>
                     {s.selfCheckInOpen && (
-                      <span className="ml-2 rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-medium text-indigo-700">QR đang mở</span>
+                      <span className="ml-2 rounded bg-brand-50 px-1.5 py-0.5 text-xs font-medium text-brand-700">QR đang mở</span>
                     )}
                   </span>
                   <span className="flex flex-wrap justify-end gap-1.5">
@@ -153,7 +153,7 @@ export default async function GroupDetailPage({ params }: Props) {
                         variant="plain"
                         pendingText="Đang xóa"
                         successMessage="Đã xóa thành viên"
-                        className="rounded-md px-2.5 py-1.5 text-sm text-rose-500 hover:bg-rose-50"
+                        className="rounded-md px-2.5 py-1.5 text-sm text-danger-500 hover:bg-danger-50"
                         confirm={`Xóa "${m.name}" khỏi nhóm? Toàn bộ lịch sử điểm danh của người này cũng sẽ bị xóa và không khôi phục được.`}
                       >
                         Xóa
@@ -187,7 +187,7 @@ export default async function GroupDetailPage({ params }: Props) {
             <ul className="mb-4 divide-y divide-slate-100">
               {children.map((c) => (
                 <li key={c.id}>
-                  <Link href={`/groups/${c.id}`} className="block py-2 font-medium hover:text-indigo-600">
+                  <Link href={`/groups/${c.id}`} className="block py-2 font-medium hover:text-brand-600">
                     ↳ {c.name}
                   </Link>
                 </li>

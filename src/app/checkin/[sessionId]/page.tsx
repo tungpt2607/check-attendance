@@ -54,10 +54,10 @@ export default async function CheckInPage({ params, searchParams }: Props) {
     return (
       <div className="mx-auto max-w-md">
         {header}
-        <div className="rounded-2xl bg-emerald-50 p-8 text-center">
-          <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-emerald-500 text-3xl text-white">✓</div>
-          <p className="text-lg font-semibold text-emerald-900">Bạn đã điểm danh</p>
-          {m && <p className="mt-1 text-emerald-800">{m.name}</p>}
+        <div className="rounded-2xl bg-brand-50 p-8 text-center">
+          <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-brand-500 text-3xl text-white">✓</div>
+          <p className="text-lg font-semibold text-brand-900">Bạn đã điểm danh</p>
+          {m && <p className="mt-1 text-brand-800">{m.name}</p>}
         </div>
       </div>
     );

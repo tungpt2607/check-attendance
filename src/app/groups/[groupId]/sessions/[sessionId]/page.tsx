@@ -39,7 +39,7 @@ export default async function AttendanceSessionPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <nav className="text-sm text-slate-500">
-        <Link href={`/groups/${group.id}`} className="hover:text-indigo-600">← {group.name}</Link>
+        <Link href={`/groups/${group.id}`} className="hover:text-brand-600">← {group.name}</Link>
       </nav>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -135,7 +135,7 @@ export default async function AttendanceSessionPage({ params }: Props) {
                     {m.code && <span className="mr-2 text-xs text-slate-500">{m.code}</span>}
                     <span className="font-medium">{m.name}</span>
                     {current?.source === "self" && current.checkedInAt && (
-                      <span className="ml-2 rounded bg-indigo-50 px-1.5 py-0.5 text-xs text-indigo-700">
+                      <span className="ml-2 rounded bg-brand-50 px-1.5 py-0.5 text-xs text-brand-700">
                         Tự điểm danh {formatTime(current.checkedInAt)}
                       </span>
                     )}
