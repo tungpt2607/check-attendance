@@ -1,6 +1,6 @@
 // /v1/auth: đăng ký, đăng nhập · /v1/me: tài khoản của tôi · /v1/users/:id/avatar: ảnh đại diện
 import { Hono } from "hono";
-import { publicUser, requireUser, type AppEnv } from "../auth.js";
+import { publicUser, requireUser, resolveRole, type AppEnv } from "../auth.js";
 import { signSession } from "../core/lib/auth-token.js";
 import { isValidId } from "../core/lib/db.js";
 import {
@@ -27,7 +27,7 @@ async function issue(userId: string) {
   const token = await signSession({ userId: acc.id, name: acc.name, tv: acc.tokenVersion });
   return {
     token,
-    user: { id: acc.id, name: acc.name, email: acc.email, avatarVersion: acc.avatarVersion, role: acc.role },
+    user: { id: acc.id, name: acc.name, email: acc.email, avatarVersion: acc.avatarVersion, role: resolveRole(acc) },
   };
 }
 

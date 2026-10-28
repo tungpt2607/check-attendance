@@ -25,6 +25,12 @@ function adminEmails(): Set<string> {
   );
 }
 
+/** Vai trò thực tế của một tài khoản: admin nếu được đánh dấu trong DB hoặc có email trong ADMIN_EMAILS.
+ *  Mọi chỗ (đăng nhập, đăng ký, đổi mật khẩu, các API cần token) đều dùng hàm này. */
+export function resolveRole(acc: { role: "user" | "admin"; email: string }): "user" | "admin" {
+  return acc.role === "admin" || adminEmails().has(acc.email.toLowerCase()) ? "admin" : "user";
+}
+
 function bearer(c: Context): string | undefined {
   const h = c.req.header("authorization") ?? "";
   const m = /^Bearer\s+(.+)$/i.exec(h);
@@ -54,7 +60,7 @@ export const loadUser: MiddlewareHandler<AppEnv> = async (c, next) => {
     email: acc.email,
     avatarVersion: acc.avatarVersion,
     tokenVersion: acc.tokenVersion,
-    role: acc.role === "admin" || adminEmails().has(acc.email.toLowerCase()) ? "admin" : "user",
+    role: resolveRole(acc),
   });
   return next();
 };
