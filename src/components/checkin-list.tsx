@@ -1,13 +1,41 @@
 "use client";
 
+import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
+import SearchRounded from "@mui/icons-material/SearchRounded";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import InputAdornment from "@mui/material/InputAdornment";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useMemo, useState, useTransition } from "react";
 import { normalizeSearch } from "@/lib/search";
 import { selfCheckInAction } from "@/modules/attendance/checkin.actions";
-import { Spinner } from "./spinner";
+import { brand } from "@/theme/brand";
 
 export type CheckInMember = { id: string; name: string; code: string; checkedIn: boolean };
 
 type Props = { sessionId: string; token: string; members: CheckInMember[] };
+
+/** Ô báo điểm danh thành công (dùng cả ở trang khi điện thoại đã điểm danh trước đó) */
+export function CheckInDone({ title, name }: { title: string; name?: string }) {
+  return (
+    <Box sx={{ borderRadius: 4, bgcolor: brand.tealLighter, border: `1px solid ${brand.tealLight}`, p: 4, textAlign: "center" }}>
+      <CheckCircleRounded sx={{ fontSize: 64, color: brand.tealDark }} />
+      <Typography sx={{ fontWeight: 700, fontSize: 18, mt: 1 }}>{title}</Typography>
+      {name && <Typography sx={{ mt: 0.5, color: brand.tealDarker }}>{name}</Typography>}
+    </Box>
+  );
+}
 
 export function CheckInList({ sessionId, token, members }: Props) {
   const [query, setQuery] = useState("");
@@ -22,15 +50,13 @@ export function CheckInList({ sessionId, token, members }: Props) {
     return members.filter((m) => normalizeSearch(`${m.name} ${m.code}`).includes(q));
   }, [members, query]);
 
-  if (doneName) {
-    return (
-      <div className="rounded-2xl bg-brand-50 p-8 text-center">
-        <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-brand-500 text-3xl text-white">✓</div>
-        <p className="text-lg font-semibold text-brand-900">Điểm danh thành công</p>
-        <p className="mt-1 text-brand-800">{doneName}</p>
-      </div>
-    );
-  }
+  if (doneName) return <CheckInDone title="Điểm danh thành công" name={doneName} />;
+
+  const close = () => {
+    if (pending) return;
+    setSelected(null);
+    setError(null);
+  };
 
   const confirm = () => {
     if (!selected) return;
@@ -43,70 +69,103 @@ export function CheckInList({ sessionId, token, members }: Props) {
   };
 
   return (
-    <div className="space-y-3">
-      <input
+    <Stack spacing={1.5}>
+      <TextField
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Tìm tên của bạn..."
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchRounded fontSize="small" />
+              </InputAdornment>
+            ),
+          },
+        }}
       />
 
-      {error && !selected && <p className="rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">{error}</p>}
+      {error && !selected && <Alert severity="error">{error}</Alert>}
 
-      <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-        {filtered.length === 0 && <li className="px-4 py-6 text-center text-sm text-slate-500">Không tìm thấy tên phù hợp.</li>}
-        {filtered.map((m) => (
-          <li key={m.id}>
-            <button
-              type="button"
+      <Card>
+        <List disablePadding>
+          {filtered.length === 0 && (
+            <Typography sx={{ py: 3, textAlign: "center" }} variant="body2" color="text.secondary">
+              Không tìm thấy tên phù hợp.
+            </Typography>
+          )}
+          {filtered.map((m, i) => (
+            <ListItemButton
+              key={m.id}
+              divider={i < filtered.length - 1}
               disabled={m.checkedIn}
               onClick={() => {
                 setError(null);
                 setSelected(m);
               }}
-              className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-50"
+              sx={{ py: 1.5, "&.Mui-disabled": { opacity: 1 } }}
             >
-              <span className={m.checkedIn ? "text-slate-400" : "font-medium text-slate-800"}>
-                {m.code && <span className="mr-2 text-xs text-slate-400">{m.code}</span>}
-                {m.name}
-              </span>
-              {m.checkedIn && <span className="shrink-0 text-xs text-brand-600">Đã điểm danh</span>}
-            </button>
-          </li>
-        ))}
-      </ul>
+              <ListItemText
+                primary={
+                  <>
+                    {m.code && (
+                      <Typography component="span" variant="caption" color="text.secondary" sx={{ mr: 1 }}>
+                        {m.code}
+                      </Typography>
+                    )}
+                    {m.name}
+                  </>
+                }
+                slotProps={{ primary: { fontWeight: m.checkedIn ? 400 : 600, color: m.checkedIn ? "text.disabled" : "text.primary" } }}
+              />
+              {m.checkedIn && (
+                <Typography
+                  variant="caption"
+                  sx={{ color: brand.tealDark, fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}
+                >
+                  <CheckCircleRounded sx={{ fontSize: 16 }} /> Đã điểm danh
+                </Typography>
+              )}
+            </ListItemButton>
+          ))}
+        </List>
+      </Card>
 
-      {selected && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
-            <p className="text-sm text-slate-500">Xác nhận điểm danh</p>
-            <p className="mt-1 text-lg font-semibold">Bạn là {selected.name}?</p>
-            {error && <p className="mt-3 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">{error}</p>}
-            <div className="mt-5 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelected(null);
-                  setError(null);
-                }}
-                className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700"
-              >
-                Không phải
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={confirm}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-400 px-4 py-2.5 text-sm font-semibold text-on-brand disabled:opacity-60"
-              >
-                {pending && <Spinner />}
-                {pending ? "Đang ghi..." : "Đúng, điểm danh"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      {/* Xác nhận đúng người */}
+      <Dialog
+        open={!!selected}
+        onClose={close}
+        fullWidth
+        maxWidth="xs"
+        sx={{ "& .MuiDialog-container": { alignItems: { xs: "flex-end", sm: "center" } } }}
+      >
+        <DialogContent sx={{ pt: 3 }}>
+          <Typography variant="body2" color="text.secondary">
+            Xác nhận điểm danh
+          </Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: 19, mt: 0.5 }}>Bạn là {selected?.name}?</Typography>
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" color="inherit" fullWidth disabled={pending} onClick={close}>
+            Không phải
+          </Button>
+          <Button
+            variant="contained"
+            fullWidth
+            disabled={pending}
+            onClick={confirm}
+            startIcon={pending ? <CircularProgress size={16} color="inherit" /> : <CheckCircleRounded />}
+          >
+            {pending ? "Đang ghi..." : "Đúng, điểm danh"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Stack>
   );
 }

@@ -9,8 +9,6 @@ export const ATTENDANCE_STATUSES = [
     short: "Có",
     bg: brand.tealLight,
     fg: brand.tealDarker,
-    className: "bg-brand-100 text-brand-800",
-    checkedClass: "has-checked:bg-brand-100 has-checked:text-brand-800",
   },
   {
     value: "late",
@@ -18,8 +16,6 @@ export const ATTENDANCE_STATUSES = [
     short: "Muộn",
     bg: brand.orangeLight,
     fg: brand.orangeDark,
-    className: "bg-warn-100 text-warn-800",
-    checkedClass: "has-checked:bg-warn-100 has-checked:text-warn-800",
   },
   {
     value: "absent",
@@ -27,8 +23,6 @@ export const ATTENDANCE_STATUSES = [
     short: "Vắng",
     bg: brand.redLight,
     fg: brand.redDark,
-    className: "bg-danger-100 text-danger-800",
-    checkedClass: "has-checked:bg-danger-100 has-checked:text-danger-800",
   },
 ] as const;
 

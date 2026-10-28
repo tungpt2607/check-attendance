@@ -1,7 +1,11 @@
 "use client";
 
+import Box from "@mui/material/Box";
+import LinearProgress from "@mui/material/LinearProgress";
+import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getQrStateAction, type QrState } from "@/modules/attendance/attendance.actions";
+import { brand } from "@/theme/brand";
 
 /** Mỗi mã hiển thị 30 giây (khớp QR_WINDOW_MS phía máy chủ) */
 const WINDOW_MS = 30_000;
@@ -59,10 +63,18 @@ export function QrPresenter({ sessionId }: { sessionId: string }) {
   }, [load]);
 
   if (!state) {
-    return <div className="grid min-h-0 flex-1 place-items-center rounded-2xl bg-slate-100 text-slate-500">Đang tạo mã QR...</div>;
+    return (
+      <Box sx={{ flex: 1, minHeight: 0, display: "grid", placeItems: "center", borderRadius: 4, bgcolor: "#EDF1F1", color: "text.secondary" }}>
+        Đang tạo mã QR...
+      </Box>
+    );
   }
   if (!state.open) {
-    return <p className="flex-1 rounded-lg bg-slate-100 p-6 text-center text-slate-600">Tự điểm danh đã đóng.</p>;
+    return (
+      <Box sx={{ flex: 1, borderRadius: 3, bgcolor: "#EDF1F1", p: 3, textAlign: "center", color: "text.secondary" }}>
+        Tự điểm danh đã đóng.
+      </Box>
+    );
   }
 
   const seconds = Math.ceil(remainingMs / 1000);
@@ -70,32 +82,52 @@ export function QrPresenter({ sessionId }: { sessionId: string }) {
   const urgent = seconds <= 5;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, flex: 1, minHeight: 0 }}>
       {/* QR tự co theo phần chiều cao còn lại của màn hình */}
-      <div className="relative min-h-0 flex-1">
+      <Box sx={{ position: "relative", flex: 1, minHeight: 0 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={state.qrDataUrl} alt="Mã QR tự điểm danh" className="absolute inset-0 h-full w-full object-contain" />
-      </div>
+        <img
+          src={state.qrDataUrl}
+          alt="Mã QR tự điểm danh"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }}
+        />
+      </Box>
 
-      <div className="space-y-2">
-        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-          <div
-            className={`h-full rounded-full transition-[width] duration-200 ease-linear ${urgent ? "bg-warn-400" : "bg-brand-400"}`}
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-        <div className="flex items-end justify-between gap-3">
-          <p className={`text-sm font-medium tabular-nums ${urgent ? "text-warn-600" : "text-slate-600"}`}>
+      <Box>
+        <LinearProgress
+          variant="determinate"
+          value={percent}
+          sx={{
+            height: 8,
+            borderRadius: 4,
+            "& .MuiLinearProgress-bar": { bgcolor: urgent ? brand.orange : brand.teal, transition: "transform 200ms linear" },
+          }}
+        />
+        <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 1.5, mt: 1 }}>
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", color: urgent ? brand.orangeDark : "text.secondary" }}
+          >
             {seconds > 0 ? `Mã mới sau ${seconds}s` : "Đang đổi mã..."}
-            {error && <span className="block text-xs text-warn-600">Mất kết nối, đang thử lại...</span>}
-          </p>
-          <p className="text-right leading-none">
-            <span className="text-3xl font-bold tabular-nums text-brand-600">{state.checkedIn}</span>
-            <span className="text-lg font-medium text-slate-400">/{state.total}</span>
-            <span className="block pt-1 text-xs text-slate-500">đã điểm danh</span>
-          </p>
-        </div>
-      </div>
-    </div>
+            {error && (
+              <Typography component="span" variant="caption" sx={{ display: "block", color: brand.orangeDark }}>
+                Mất kết nối, đang thử lại...
+              </Typography>
+            )}
+          </Typography>
+          <Box sx={{ textAlign: "right", lineHeight: 1 }}>
+            <Typography component="span" sx={{ fontSize: 30, fontWeight: 800, color: brand.tealDark, fontVariantNumeric: "tabular-nums" }}>
+              {state.checkedIn}
+            </Typography>
+            <Typography component="span" sx={{ fontSize: 18, fontWeight: 600, color: "text.disabled" }}>
+              /{state.total}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", pt: 0.5 }}>
+              đã điểm danh
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 }

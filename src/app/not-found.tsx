@@ -1,13 +1,17 @@
-import Link from "next/link";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { LinkButton } from "@/components/links";
 
 export default function NotFound() {
   return (
-    <div className="mx-auto mt-16 max-w-sm text-center">
-      <h1 className="text-2xl font-semibold">Không tìm thấy</h1>
-      <p className="mt-2 text-sm text-slate-500">Trang không tồn tại hoặc bạn không có quyền truy cập.</p>
-      <Link href="/groups" className="mt-4 inline-block text-sm font-medium text-brand-600 hover:underline">
+    <Box sx={{ maxWidth: 400, mx: "auto", mt: 8, textAlign: "center" }}>
+      <Typography variant="h1">Không tìm thấy</Typography>
+      <Typography color="text.secondary" sx={{ mt: 1 }}>
+        Trang không tồn tại hoặc bạn không có quyền truy cập.
+      </Typography>
+      <LinkButton href="/groups" variant="contained" sx={{ mt: 3 }}>
         Về danh sách nhóm
-      </Link>
-    </div>
+      </LinkButton>
+    </Box>
   );
 }

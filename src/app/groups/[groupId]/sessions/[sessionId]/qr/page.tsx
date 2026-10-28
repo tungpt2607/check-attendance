@@ -1,13 +1,17 @@
-import Link from "next/link";
+import FormatListBulletedRounded from "@mui/icons-material/FormatListBulletedRounded";
+import LockOutlined from "@mui/icons-material/LockOutlined";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { notFound, redirect } from "next/navigation";
+import { LinkButton } from "@/components/links";
 import { QrPresenter } from "@/components/qr-presenter";
 import { SubmitButton } from "@/components/submit-button";
-import { ui } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { requireUser } from "@/lib/session";
 import { closeSelfCheckInAction } from "@/modules/attendance/attendance.actions";
 import { getAttendanceSession } from "@/modules/attendance/attendance.service";
 import { getOwnedGroup } from "@/modules/groups/group.service";
+import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -25,35 +29,52 @@ export default async function QrPage({ params }: Props) {
 
   return (
     // Lớp phủ toàn màn hình: che thanh tiêu đề, mọi thứ vừa trong một màn hình điện thoại
-    <div className="fixed inset-0 z-50 flex h-dvh flex-col bg-slate-50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]">
-      <div className="mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col gap-3">
-        <div className="text-center leading-tight">
-          <p className="truncate font-semibold">
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1300,
+        display: "flex",
+        flexDirection: "column",
+        height: "100dvh",
+        bgcolor: brand.background,
+        px: 2,
+        pt: "max(12px, env(safe-area-inset-top))",
+        pb: "max(16px, env(safe-area-inset-bottom))",
+      }}
+    >
+      <Box sx={{ mx: "auto", width: "100%", maxWidth: 520, minHeight: 0, flex: 1, display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Box sx={{ textAlign: "center", lineHeight: 1.2 }}>
+          <Typography noWrap sx={{ fontWeight: 700 }}>
             {group.name} · {session.title}
-          </p>
-          <p className="text-xs text-slate-500">
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
             {formatDate(session.date)} · Quét mã và chọn tên mình để điểm danh
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
         <QrPresenter sessionId={session.id} />
 
-        <div className="flex gap-2">
-          <Link href={back} className={`${ui.btnGhost} flex-1`}>Xem danh sách</Link>
-          <form action={closeSelfCheckInAction} className="flex-1">
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <LinkButton href={back} variant="outlined" color="inherit" startIcon={<FormatListBulletedRounded />} sx={{ flex: 1 }}>
+            Xem danh sách
+          </LinkButton>
+          <form action={closeSelfCheckInAction} style={{ flex: 1, display: "flex" }}>
             <input type="hidden" name="sessionId" value={session.id} />
             <SubmitButton
               variant="danger"
-              className="w-full py-2"
+              fullWidth
               pendingText="Đang đóng..."
+              startIcon={<LockOutlined />}
               successMessage="Đã đóng tự điểm danh"
+              confirmLabel="Đóng"
               confirm="Đóng tự điểm danh? Sau khi đóng, quét mã sẽ không điểm danh được nữa."
             >
               Đóng điểm danh
             </SubmitButton>
           </form>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }

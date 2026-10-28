@@ -1,6 +1,10 @@
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
-import { CheckInList } from "@/components/checkin-list";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import { CheckInDone, CheckInList } from "@/components/checkin-list";
 import { deviceCookieName, verifyCheckInToken } from "@/lib/checkin-token";
 import { formatDate } from "@/lib/format";
 import { getAttendanceSession, getCheckInSecret, getSessionRecords } from "@/modules/attendance/attendance.service";
@@ -17,10 +21,16 @@ type Props = {
 
 function Notice({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="mx-auto mt-10 max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center">
-      <p className="text-lg font-semibold">{title}</p>
-      {children && <div className="mt-2 text-sm text-slate-600">{children}</div>}
-    </div>
+    <Card sx={{ maxWidth: 400, mx: "auto", mt: 4, textAlign: "center" }}>
+      <CardContent sx={{ p: 3 }}>
+        <Typography sx={{ fontWeight: 700, fontSize: 18 }}>{title}</Typography>
+        {children && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            {children}
+          </Typography>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -39,11 +49,17 @@ export default async function CheckInPage({ params, searchParams }: Props) {
 
   const groupName = (await getGroupName(session.groupId)) ?? "";
   const header = (
-    <div className="mb-4 text-center">
-      <p className="text-sm text-slate-500">{groupName}</p>
-      <h1 className="text-xl font-semibold">{session.title}</h1>
-      <p className="text-sm text-slate-500">{formatDate(session.date)}</p>
-    </div>
+    <Box sx={{ mb: 2, textAlign: "center" }}>
+      <Typography variant="body2" color="text.secondary">
+        {groupName}
+      </Typography>
+      <Typography variant="h1" sx={{ fontSize: "1.35rem" }}>
+        {session.title}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {formatDate(session.date)}
+      </Typography>
+    </Box>
   );
 
   // Điện thoại này đã điểm danh trong buổi
@@ -52,14 +68,10 @@ export default async function CheckInPage({ params, searchParams }: Props) {
   if (doneId) {
     const m = await getMember(doneId);
     return (
-      <div className="mx-auto max-w-md">
+      <Box sx={{ maxWidth: 440, mx: "auto" }}>
         {header}
-        <div className="rounded-2xl bg-brand-50 p-8 text-center">
-          <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-brand-500 text-3xl text-white">✓</div>
-          <p className="text-lg font-semibold text-brand-900">Bạn đã điểm danh</p>
-          {m && <p className="mt-1 text-brand-800">{m.name}</p>}
-        </div>
-      </div>
+        <CheckInDone title="Bạn đã điểm danh" name={m?.name} />
+      </Box>
     );
   }
 
@@ -70,9 +82,9 @@ export default async function CheckInPage({ params, searchParams }: Props) {
   });
 
   return (
-    <div className="mx-auto max-w-md">
+    <Box sx={{ maxWidth: 440, mx: "auto" }}>
       {header}
       <CheckInList sessionId={sessionId} token={t ?? ""} members={list} />
-    </div>
+    </Box>
   );
 }
