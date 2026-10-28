@@ -32,7 +32,7 @@ export function AvatarPhotoDialog({ open, onClose, userId, version, name, captio
       <Box sx={{ position: "relative" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={avatarUrl(userId, version)}
+          src={version ? avatarUrl(userId, version) : undefined}
           alt={name}
           style={{ display: "block", width: "min(85vw, 440px)", aspectRatio: "1", objectFit: "cover", borderRadius: 16 }}
         />
