@@ -76,7 +76,7 @@ export default async function AttendanceSessionPage({ params, searchParams }: Pr
           <input type="hidden" name="sessionId" value={session.id} />
           {isNew && (
             <p className="border-b border-slate-100 px-5 py-3 text-sm text-slate-600">
-              Mặc định tất cả <b>Có mặt</b>. Chỉ cần chọn lại những người vắng hoặc đi muộn rồi bấm Lưu.
+              Mặc định tất cả <b>Vắng</b>. Chọn <b>Có mặt</b> hoặc <b>Muộn</b> cho những người đã đến rồi bấm Lưu.
             </p>
           )}
           <AttendanceFilter listId="attendance-list" />

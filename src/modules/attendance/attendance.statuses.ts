@@ -25,7 +25,8 @@ export const ATTENDANCE_STATUSES = [
 
 export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number]["value"];
 
-export const DEFAULT_STATUS: AttendanceStatus = "present";
+/** Trạng thái mặc định khi buổi điểm danh mới tạo (chưa lưu lần nào). */
+export const DEFAULT_STATUS: AttendanceStatus = "absent";
 
 export function isAttendanceStatus(value: unknown): value is AttendanceStatus {
   return ATTENDANCE_STATUSES.some((s) => s.value === value);
