@@ -1,6 +1,8 @@
 // Backend API dùng chung cho web người dùng, CMS quản trị và app điện thoại.
 // Chạy trên Vercel (Hono, không cần cấu hình): file này export default app.
 import { OpenAPIHono } from "@hono/zod-openapi";
+// Vercel nhận ra file khởi động nhờ dòng nạp "hono" này — đừng xóa (OpenAPIHono là lớp con của Hono).
+import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { loadUser, type AppEnv } from "./auth.js";
@@ -49,5 +51,7 @@ app.onError((err, c) => {
   console.error(err);
   return c.json({ error: { code: "server_error", message: "Có lỗi xảy ra ở máy chủ. Vui lòng thử lại." } }, 500);
 });
+
+if (!(app instanceof Hono)) throw new Error("app phải là Hono");
 
 export default app;
