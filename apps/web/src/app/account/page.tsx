@@ -7,6 +7,7 @@ import { AvatarForm, EmailNotificationsSwitch, NameForm, PasswordForm } from "@/
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { api } from "@/lib/api";
+import { getFeatures } from "@/lib/features";
 import { requireAccount } from "@/lib/session";
 import type { Preferences } from "@check-attendance/shared/api";
 import { logoutAction } from "@/modules/auth/auth.actions";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Tài khoản · Điểm danh" };
 
 export default async function AccountPage() {
-  const [user, prefs] = await Promise.all([requireAccount(), api<Preferences>("/v1/me/preferences")]);
+  const [user, prefs, features] = await Promise.all([requireAccount(), api<Preferences>("/v1/me/preferences"), getFeatures()]);
 
   return (
     <Box sx={{ maxWidth: 520, mx: "auto" }}>
@@ -36,12 +37,15 @@ export default async function AccountPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent sx={{ p: 2.5 }}>
-            <SectionTitle>Thông báo</SectionTitle>
-            <EmailNotificationsSwitch initial={prefs.notifications.email} />
-          </CardContent>
-        </Card>
+        {/* Chỉ hiện khi máy chủ đã bật gửi email */}
+        {features.email && (
+          <Card>
+            <CardContent sx={{ p: 2.5 }}>
+              <SectionTitle>Thông báo</SectionTitle>
+              <EmailNotificationsSwitch initial={prefs.notifications.email} />
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardContent sx={{ p: 2.5 }}>

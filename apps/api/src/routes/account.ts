@@ -3,6 +3,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import {
   AuthResultSchema,
   AvatarVersionSchema,
+  FeaturesSchema,
   ForgotPasswordInput,
   LoginInput,
   NameInput,
@@ -18,7 +19,7 @@ import { publicUser, requireUser, resolveRole } from "../auth.js";
 import { signSession } from "../core/lib/auth-token.js";
 import { runInBackground } from "../core/lib/background.js";
 import { renderEmail } from "../core/lib/email-templates.js";
-import { sendEmail } from "../core/lib/mailer.js";
+import { emailConfigured, sendEmail } from "../core/lib/mailer.js";
 import { webUrl } from "../core/lib/share.js";
 import {
   consumeOneTimeToken,
@@ -125,6 +126,18 @@ export const account = createApp()
     },
   )
 
+  .openapi(
+    createRoute({
+      method: "get",
+      path: "/features",
+      tags: TAG,
+      summary: "Tính năng đang bật trên máy chủ (vd. gửi email)",
+      security: PUBLIC,
+      responses: { 200: ok(FeaturesSchema) },
+    }),
+    (c) => c.json({ email: emailConfigured() }, 200),
+  )
+
   // ---------- Quên mật khẩu ----------
 
   // Luôn trả cùng một kết quả (không lộ email nào đã đăng ký); việc gửi email chạy phía sau
@@ -139,6 +152,7 @@ export const account = createApp()
       responses: { 202: { description: "Đã nhận yêu cầu" } },
     }),
     async (c) => {
+      if (!emailConfigured()) fail(503, "email_unavailable", "Chức năng gửi email chưa được bật. Vui lòng liên hệ quản trị viên.");
       const { email } = c.req.valid("json");
       runInBackground("password_reset", () => sendPasswordReset(email));
       return c.body(null, 202);

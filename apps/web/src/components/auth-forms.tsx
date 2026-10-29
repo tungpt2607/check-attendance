@@ -11,7 +11,15 @@ import { AppLink } from "./links";
 import { PasswordInput } from "./password-input";
 import { SubmitButton } from "./submit-button";
 
-export function LoginForm({ next, notice, defaultEmail }: { next?: string; notice?: string; defaultEmail?: string }) {
+type LoginProps = {
+  next?: string;
+  notice?: string;
+  defaultEmail?: string;
+  /** Máy chủ đã bật gửi email: hiện link "Quên mật khẩu?" */
+  canResetPassword?: boolean;
+};
+
+export function LoginForm({ next, notice, defaultEmail, canResetPassword }: LoginProps) {
   const [state, action] = useActionState(loginAction, undefined);
   return (
     // key: dựng lại form để giữ email đã gõ khi đăng nhập lỗi
@@ -29,11 +37,13 @@ export function LoginForm({ next, notice, defaultEmail }: { next?: string; notic
         defaultValue={state?.email ?? defaultEmail ?? ""}
       />
       <PasswordInput id="password" name="password" label="Mật khẩu" required autoComplete="current-password" />
-      <Box sx={{ textAlign: "right", mt: "-8px !important" }}>
-        <AppLink href="/forgot-password" variant="body2" fontWeight={500}>
-          Quên mật khẩu?
-        </AppLink>
-      </Box>
+      {canResetPassword && (
+        <Box sx={{ textAlign: "right", mt: "-8px !important" }}>
+          <AppLink href="/forgot-password" variant="body2" fontWeight={500}>
+            Quên mật khẩu?
+          </AppLink>
+        </Box>
+      )}
       <SubmitButton fullWidth size="large" pendingText="Đang đăng nhập...">
         Đăng nhập
       </SubmitButton>

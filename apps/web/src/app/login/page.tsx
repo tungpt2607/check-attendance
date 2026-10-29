@@ -1,5 +1,6 @@
 import { AuthShell } from "@/components/auth-shell";
 import { LoginForm } from "@/components/auth-forms";
+import { getFeatures } from "@/lib/features";
 import { safeNext } from "@/lib/url";
 
 export const metadata = { title: "Đăng nhập · Điểm danh" };
@@ -7,7 +8,7 @@ export const metadata = { title: "Đăng nhập · Điểm danh" };
 type Props = { searchParams: Promise<{ next?: string; reset?: string; email?: string }> };
 
 export default async function Page({ searchParams }: Props) {
-  const { next, reset, email } = await searchParams;
+  const [{ next, reset, email }, features] = await Promise.all([searchParams, getFeatures()]);
   const target = next ? safeNext(next, "") : "";
   return (
     <AuthShell
@@ -18,6 +19,7 @@ export default async function Page({ searchParams }: Props) {
         next={target || undefined}
         notice={reset ? "Đã đặt mật khẩu mới. Hãy đăng nhập bằng mật khẩu mới." : undefined}
         defaultEmail={email}
+        canResetPassword={features.email}
       />
     </AuthShell>
   );
