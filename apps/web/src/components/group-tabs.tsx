@@ -4,6 +4,7 @@ import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Tab, { type TabProps } from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { brand } from "@/theme/brand";
 import { useFastTap } from "./use-fast-tap";
@@ -112,6 +113,13 @@ export function GroupTabs({ tabs, initial }: { tabs: GroupTab[]; initial?: strin
       window.history.replaceState(window.history.state, "", url);
     }, 400);
   };
+
+  // Địa chỉ đổi ?tab=... khi vẫn đang ở trang này (vd. bấm thông báo trên chuông): chuyển sang tab đó
+  const urlTab = useSearchParams().get("tab");
+  useEffect(() => {
+    if (urlTab && urlTab !== activeRef.current && tabs.some((t) => t.key === urlTab)) change(urlTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlTab]);
 
   return (
     <>
