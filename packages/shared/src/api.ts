@@ -3,7 +3,7 @@
 //  - Web, CMS, app: kiểu dữ liệu nhận về (z.infer)
 // Ngày giờ luôn là chuỗi ISO 8601; ngày điểm danh gửi lên dạng YYYY-MM-DD.
 import { z } from "zod";
-import { STATUS_VALUES } from "./statuses.ts";
+import { STATUS_VALUES } from "@check-attendance/shared/statuses";
 
 // ---------- Dùng chung ----------
 
