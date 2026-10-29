@@ -2,7 +2,7 @@
 import mongoose, { type Model, type Types } from "mongoose";
 
 const { Schema, model, models } = mongoose;
-import { ATTENDANCE_METHODS, ATTENDANCE_STATUSES, type AttendanceMethod, type AttendanceStatus } from "./attendance.statuses.js";
+import { ATTENDANCE_METHODS, STATUS_VALUES, type AttendanceMethod, type AttendanceStatus } from "./attendance.statuses.js";
 
 /** Một buổi điểm danh của một nhóm */
 export interface AttendanceSessionRecord {
@@ -66,7 +66,7 @@ const recordSchema = new Schema<AttendanceRecordRecord>(
   {
     sessionId: { type: Schema.Types.ObjectId, ref: "AttendanceSession", required: true },
     memberId: { type: Schema.Types.ObjectId, ref: "Member", required: true, index: true },
-    status: { type: String, enum: ATTENDANCE_STATUSES.map((s) => s.value), required: true },
+    status: { type: String, enum: [...STATUS_VALUES], required: true },
     note: { type: String, trim: true },
     source: { type: String, enum: [...RECORD_SOURCES], default: "manual" },
     checkedInAt: { type: Date, default: null },

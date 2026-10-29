@@ -16,10 +16,10 @@ import { ListLink } from "@/components/links";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { RateSummary } from "@/components/rate";
 import { StatusChip } from "@/components/status-chip";
-import { formatDate, formatTime } from "@/lib/format";
+import { formatDate, formatTime } from "@check-attendance/shared/format";
 import { requireUser } from "@/lib/session";
-import { apiOrNull } from "@/lib/api-fetch";
-import type { MemberDetail } from "@/lib/api-types";
+import { apiOrNull } from "@/lib/api";
+import type { MemberDetail } from "@check-attendance/shared/api";
 
 export const dynamic = "force-dynamic";
 

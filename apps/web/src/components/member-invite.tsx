@@ -11,7 +11,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState, useTransition } from "react";
 import { createMemberInviteAction } from "@/modules/invites/invite.actions";
-import type { ShareLink } from "@/lib/api-types";
+import type { ShareLink } from "@check-attendance/shared/api";
 import { ShareLinkBox } from "./share-link";
 
 type Props = { memberId: string; name: string; groupName: string; open: boolean; onClose: () => void };

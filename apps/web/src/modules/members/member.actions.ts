@@ -3,15 +3,8 @@
 // Thành viên: gọi backend API (API kiểm tra quyền chủ nhóm).
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, enc, ignoreApiError } from "@/lib/api";
 import { requireUser } from "@/lib/session";
-
-const enc = (id: string) => encodeURIComponent(id);
-
-/** Lỗi nghiệp vụ (không tìm thấy, dữ liệu sai...) thì bỏ qua như trước; lỗi máy chủ ném tiếp */
-function ignoreApiError(err: unknown) {
-  if (!(err instanceof ApiError) || err.status >= 500) throw err;
-}
 
 export async function addMembersAction(formData: FormData) {
   await requireUser();

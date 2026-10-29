@@ -14,7 +14,7 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { Fragment, useMemo, useState } from "react";
-import { normalizeSearch } from "@/lib/search";
+import { normalizeSearch } from "@check-attendance/shared/search";
 import { saveAttendanceAction } from "@/modules/attendance/attendance.actions";
 import { ATTENDANCE_STATUSES, type AttendanceStatus } from "@/modules/attendance/attendance.statuses";
 import { brand } from "@/theme/brand";

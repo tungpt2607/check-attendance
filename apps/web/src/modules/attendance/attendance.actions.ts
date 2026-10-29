@@ -3,17 +3,10 @@
 // Buổi điểm danh: gọi backend API (API kiểm tra quyền chủ nhóm).
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
-import type { SessionDetail } from "@/lib/api-types";
+import { api, ApiError, enc, ignoreApiError } from "@/lib/api";
+import type { QrState, SessionDetail } from "@check-attendance/shared/api";
 import { requireUser } from "@/lib/session";
 import { DEFAULT_STATUS, isAttendanceStatus } from "./attendance.statuses";
-
-const sid = (id: string) => encodeURIComponent(id);
-
-/** Lỗi nghiệp vụ (không tìm thấy, dữ liệu sai...) thì bỏ qua như trước; lỗi máy chủ ném tiếp */
-function ignoreApiError(err: unknown) {
-  if (!(err instanceof ApiError) || err.status >= 500) throw err;
-}
 
 export async function createSessionAction(formData: FormData) {
   await requireUser();
@@ -24,7 +17,7 @@ export async function createSessionAction(formData: FormData) {
 
   let created: { id: string };
   try {
-    created = await api<{ id: string }>(`/v1/groups/${sid(groupId)}/sessions`, { method: "POST", body: { title, date } });
+    created = await api<{ id: string }>(`/v1/groups/${enc(groupId)}/sessions`, { method: "POST", body: { title, date } });
   } catch (err) {
     return ignoreApiError(err);
   }
@@ -41,7 +34,7 @@ export async function saveAttendanceAction(formData: FormData) {
   // người vừa tự điểm danh bằng QR trong lúc trang đang mở.
   let session: SessionDetail;
   try {
-    session = await api<SessionDetail>(`/v1/sessions/${sid(sessionId)}`);
+    session = await api<SessionDetail>(`/v1/sessions/${enc(sessionId)}`);
   } catch (err) {
     return ignoreApiError(err);
   }
@@ -61,7 +54,7 @@ export async function saveAttendanceAction(formData: FormData) {
 
   if (records.length > 0) {
     try {
-      await api(`/v1/sessions/${sid(sessionId)}/records`, { method: "PUT", body: { records } });
+      await api(`/v1/sessions/${enc(sessionId)}/records`, { method: "PUT", body: { records } });
     } catch (err) {
       return ignoreApiError(err);
     }
@@ -79,7 +72,7 @@ export async function updateSessionAction(formData: FormData) {
 
   let updated: { groupId: string };
   try {
-    updated = await api<{ groupId: string }>(`/v1/sessions/${sid(sessionId)}`, { method: "PATCH", body: { title, date } });
+    updated = await api<{ groupId: string }>(`/v1/sessions/${enc(sessionId)}`, { method: "PATCH", body: { title, date } });
   } catch (err) {
     return ignoreApiError(err);
   }
@@ -94,8 +87,8 @@ export async function deleteSessionAction(formData: FormData) {
 
   let groupId: string;
   try {
-    groupId = (await api<SessionDetail>(`/v1/sessions/${sid(sessionId)}`)).groupId;
-    await api(`/v1/sessions/${sid(sessionId)}`, { method: "DELETE" });
+    groupId = (await api<SessionDetail>(`/v1/sessions/${enc(sessionId)}`)).groupId;
+    await api(`/v1/sessions/${enc(sessionId)}`, { method: "DELETE" });
   } catch (err) {
     return ignoreApiError(err);
   }
@@ -110,7 +103,7 @@ export async function openSelfCheckInAction(formData: FormData) {
 
   let groupId: string;
   try {
-    groupId = (await api<{ groupId: string }>(`/v1/sessions/${sid(sessionId)}/self-checkin/open`, { method: "POST" })).groupId;
+    groupId = (await api<{ groupId: string }>(`/v1/sessions/${enc(sessionId)}/self-checkin/open`, { method: "POST" })).groupId;
   } catch (err) {
     return ignoreApiError(err);
   }
@@ -125,7 +118,7 @@ export async function closeSelfCheckInAction(formData: FormData) {
 
   let groupId: string;
   try {
-    groupId = (await api<{ groupId: string }>(`/v1/sessions/${sid(sessionId)}/self-checkin/close`, { method: "POST" })).groupId;
+    groupId = (await api<{ groupId: string }>(`/v1/sessions/${enc(sessionId)}/self-checkin/close`, { method: "POST" })).groupId;
   } catch (err) {
     return ignoreApiError(err);
   }
@@ -133,25 +126,13 @@ export async function closeSelfCheckInAction(formData: FormData) {
   redirect(`/groups/${groupId}/sessions/${sessionId}`);
 }
 
-export type QrState =
-  | {
-      open: true;
-      qrDataUrl: string;
-      url: string;
-      checkedIn: number;
-      total: number;
-      /** Thời điểm mã hiện tại đổi (ms, theo giờ máy chủ) */
-      windowEndsAt: number;
-      /** Giờ máy chủ lúc trả kết quả (ms), để bù lệch đồng hồ điện thoại */
-      serverNow: number;
-    }
-  | { open: false };
+export type { QrState };
 
 /** Màn hình trình chiếu gọi định kỳ để lấy mã QR mới nhất và số người đã điểm danh. */
 export async function getQrStateAction(sessionId: string): Promise<QrState> {
   await requireUser();
   try {
-    return await api<QrState>(`/v1/sessions/${sid(sessionId)}/qr`);
+    return await api<QrState>(`/v1/sessions/${enc(sessionId)}/qr`);
   } catch (err) {
     if (err instanceof ApiError && err.status < 500) return { open: false };
     throw err;

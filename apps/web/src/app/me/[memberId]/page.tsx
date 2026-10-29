@@ -14,11 +14,11 @@ import { GroupTabs } from "@/components/group-tabs";
 import { PagedList } from "@/components/paged-list";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { StatusChip, StatusCounts } from "@/components/status-chip";
-import { formatDate } from "@/lib/format";
-import { normalizeSearch } from "@/lib/search";
+import { formatDate } from "@check-attendance/shared/format";
+import { normalizeSearch } from "@check-attendance/shared/search";
 import { requireUser } from "@/lib/session";
-import { apiOrNull } from "@/lib/api-fetch";
-import type { MyMembership } from "@/lib/api-types";
+import { apiOrNull } from "@/lib/api";
+import type { MyMembership } from "@check-attendance/shared/api";
 import { brand } from "@/theme/brand";
 
 export const dynamic = "force-dynamic";

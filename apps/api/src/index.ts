@@ -1,16 +1,16 @@
 // Backend API dùng chung cho web người dùng, CMS quản trị và app điện thoại.
 // Chạy trên Vercel (Hono, không cần cấu hình): file này export default app.
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { loadUser, type AppEnv } from "./auth.js";
-import { DOCS_HTML, openApiSpec } from "./openapi.js";
+import { DOC_INFO, DOCS_HTML } from "./openapi.js";
 import { account } from "./routes/account.js";
 import { groups } from "./routes/groups.js";
 import { members } from "./routes/members.js";
 import { sessions } from "./routes/sessions.js";
 
-const app = new Hono<AppEnv>();
+const app = new OpenAPIHono<AppEnv>();
 
 // Trình duyệt chỉ được gọi API từ các trang trong danh sách CORS_ORIGINS (app và máy chủ thì không bị giới hạn này)
 const origins = (process.env.CORS_ORIGINS ?? "https://check-attendance-pi.vercel.app")
@@ -29,16 +29,18 @@ app.use(
 
 app.get("/", (c) => c.redirect("/docs"));
 app.get("/health", (c) => c.json({ ok: true }));
-app.get("/openapi.json", (c) => c.json(openApiSpec(new URL(c.req.url).origin)));
 app.get("/docs", (c) => c.html(DOCS_HTML));
 
-const v1 = new Hono<AppEnv>();
-v1.use("*", loadUser);
-v1.route("/", account);
-v1.route("/", groups);
-v1.route("/", members);
-v1.route("/", sessions);
-app.route("/v1", v1);
+// Mọi API dưới /v1: đọc token (nếu có) trước khi vào route
+app.use("/v1/*", loadUser);
+app.route("/v1", account);
+app.route("/v1", groups);
+app.route("/v1", members);
+app.route("/v1", sessions);
+
+// Đặc tả OpenAPI sinh từ các route
+app.openAPIRegistry.registerComponent("securitySchemes", "Bearer", { type: "http", scheme: "bearer", bearerFormat: "JWT" });
+app.doc31("/openapi.json", (c) => ({ openapi: "3.1.0", info: DOC_INFO, servers: [{ url: new URL(c.req.url).origin }] }));
 
 app.notFound((c) => c.json({ error: { code: "route_not_found", message: "Không có API này." } }, 404));
 

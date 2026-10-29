@@ -1,6 +1,7 @@
+// Định dạng ngày giờ theo giờ Việt Nam (dùng chung web, API, CMS, app).
 const TIME_ZONE = "Asia/Ho_Chi_Minh";
 
-/** API trả ngày giờ dạng chuỗi ISO; trong web có chỗ còn dùng Date */
+/** API trả ngày giờ dạng chuỗi ISO; trong máy chủ có chỗ còn dùng Date */
 function toDate(d: Date | string): Date {
   return typeof d === "string" ? new Date(d) : d;
 }

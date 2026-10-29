@@ -4,18 +4,11 @@
 // A. Link mời riêng (chủ nhóm tạo, người nhận xác nhận) · B. Link chung (người dùng xin nhận tên, chủ nhóm duyệt)
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
-import type { ShareLink } from "@/lib/api-types";
+import { api, ApiError, enc, ignoreApiError } from "@/lib/api";
+import type { ShareLink } from "@check-attendance/shared/api";
 import { requireUser } from "@/lib/session";
 
 export type ShareLinkResult = { ok: true; link: ShareLink } | { ok: false; error: string };
-
-const enc = (id: string) => encodeURIComponent(id);
-
-/** Lỗi nghiệp vụ thì bỏ qua như trước; lỗi máy chủ ném tiếp */
-function ignoreApiError(err: unknown) {
-  if (!(err instanceof ApiError) || err.status >= 500) throw err;
-}
 
 /** Mã lỗi API → mã lỗi trên địa chỉ trang (?error=...) mà trang link mời / link tham gia hiểu */
 function errorCode(err: unknown): string {

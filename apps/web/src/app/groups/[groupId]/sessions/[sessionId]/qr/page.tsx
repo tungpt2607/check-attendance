@@ -6,10 +6,10 @@ import { notFound, redirect } from "next/navigation";
 import { LinkButton } from "@/components/links";
 import { QrPresenter } from "@/components/qr-presenter";
 import { SubmitButton } from "@/components/submit-button";
-import { formatDate } from "@/lib/format";
+import { formatDate } from "@check-attendance/shared/format";
 import { requireUser } from "@/lib/session";
-import { apiOrNull } from "@/lib/api-fetch";
-import type { SessionDetail } from "@/lib/api-types";
+import { apiOrNull } from "@/lib/api";
+import type { SessionDetail } from "@check-attendance/shared/api";
 import { closeSelfCheckInAction } from "@/modules/attendance/attendance.actions";
 import { brand } from "@/theme/brand";
 

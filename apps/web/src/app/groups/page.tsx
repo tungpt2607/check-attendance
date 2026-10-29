@@ -16,7 +16,7 @@ import { PageHeader, SectionTitle } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/session";
 import { api } from "@/lib/api";
-import type { Membership } from "@/lib/api-types";
+import type { Membership } from "@check-attendance/shared/api";
 import { createGroupAction } from "@/modules/groups/group.actions";
 import { fetchGroupTree, type GroupTreeItem } from "@/modules/groups/group.api";
 import { brand } from "@/theme/brand";

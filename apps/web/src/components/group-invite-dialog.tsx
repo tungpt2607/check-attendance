@@ -13,7 +13,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useState, useTransition } from "react";
 import { createGroupInviteAction, disableGroupInviteAction } from "@/modules/invites/invite.actions";
-import type { ShareLink } from "@/lib/api-types";
+import type { ShareLink } from "@check-attendance/shared/api";
 import { ShareLinkBox } from "./share-link";
 import { toast } from "./toaster";
 

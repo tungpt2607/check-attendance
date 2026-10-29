@@ -6,8 +6,8 @@
 // API kiểm tra buổi đang mở, mã QR còn hạn, đúng tài khoản; web giữ thêm giới hạn "mỗi điện thoại 1 người/buổi" bằng cookie.
 import { cookies } from "next/headers";
 import { api, ApiError } from "@/lib/api";
-import type { CheckInInfo } from "@/lib/api-types";
-import { deviceCookieName } from "@/lib/checkin-token";
+import type { CheckInInfo } from "@check-attendance/shared/api";
+import { deviceCookieName } from "@check-attendance/shared/short-code";
 
 export type CheckInResult = { ok: true; name: string } | { ok: false; error: string };
 

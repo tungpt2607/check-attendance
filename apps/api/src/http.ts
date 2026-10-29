@@ -1,7 +1,7 @@
-// Tiện ích chung cho các route: lỗi chuẩn, đọc body, kiểm tra dữ liệu đầu vào.
-import type { Context } from "hono";
+// Tiện ích chung cho các route: tạo app có kiểm tra dữ liệu (zod), lỗi chuẩn, mô tả tài liệu.
+import { OpenAPIHono, z } from "@hono/zod-openapi";
 import { HTTPException } from "hono/http-exception";
-import { isValidId } from "./core/lib/db.js";
+import type { AppEnv } from "./auth.js";
 
 /** Mã lỗi máy đọc được (để app/CMS xử lý) kèm câu báo lỗi tiếng Việt (để hiện cho người dùng) */
 export type ErrorBody = { error: { code: string; message: string } };
@@ -11,35 +11,57 @@ export function fail(status: 400 | 401 | 403 | 404 | 409 | 410 | 413 | 415 | 422
   throw new HTTPException(status, { res: Response.json(body, { status }) });
 }
 
-export const notFound = (what = "dữ liệu"): never => fail(404, "not_found", `Không tìm thấy ${what}.`);
-
-/** Đọc body JSON; body hỏng thì báo lỗi 400 */
-export async function readJson(c: Context): Promise<Record<string, unknown>> {
-  try {
-    const data = await c.req.json();
-    return data && typeof data === "object" && !Array.isArray(data) ? (data as Record<string, unknown>) : {};
-  } catch {
-    return fail(400, "invalid_json", "Dữ liệu gửi lên không phải JSON hợp lệ.");
-  }
+export function notFound(what = "dữ liệu"): never {
+  return fail(404, "not_found", `Không tìm thấy ${what}.`);
 }
 
-/** Lấy chuỗi (đã cắt khoảng trắng); thiếu thì trả "" */
-export function str(body: Record<string, unknown>, key: string): string {
-  const v = body[key];
-  return typeof v === "string" ? v.trim() : typeof v === "number" ? String(v) : "";
+/**
+ * App con có kiểm tra dữ liệu gửi lên theo schema.
+ * Dữ liệu sai: trả 422 kèm câu báo lỗi đầu tiên; mã trên đường dẫn sai: trả 404 (như không tìm thấy).
+ */
+export function createApp() {
+  return new OpenAPIHono<AppEnv>({
+    defaultHook: (result) => {
+      if (result.success) return;
+      if (result.target === "param") notFound();
+      const issue = result.error.issues[0];
+      fail(422, "validation", issue?.message || "Dữ liệu không hợp lệ.");
+    },
+  });
 }
 
-/** Chuỗi bắt buộc, có giới hạn độ dài */
-export function requiredStr(body: Record<string, unknown>, key: string, label: string, max = 200): string {
-  const v = str(body, key);
-  if (!v) fail(422, "validation", `Vui lòng nhập ${label}.`);
-  if (v.length > max) fail(422, "validation", `${label[0].toUpperCase()}${label.slice(1)} quá dài.`);
-  return v;
+// ---------- Mô tả route cho tài liệu ----------
+
+/** Cần đăng nhập (Bearer token) */
+export const AUTH = [{ Bearer: [] }];
+/** Có token thì dùng, không có cũng được */
+export const OPTIONAL_AUTH = [{}, { Bearer: [] }];
+/** Công khai */
+export const PUBLIC: { [k: string]: string[] }[] = [];
+
+/** Phản hồi JSON thành công */
+export function ok<T extends z.ZodType>(schema: T, description = "Thành công") {
+  return { content: { "application/json": { schema } }, description };
 }
 
-/** Tham số id trên đường dẫn phải là ObjectId hợp lệ */
-export function idParam(c: Context, name: string, what: string): string {
-  const id = c.req.param(name);
-  if (!isValidId(id)) notFound(what);
-  return id as string;
+/** Body JSON gửi lên */
+export function jsonBody<T extends z.ZodType>(schema: T) {
+  return { body: { content: { "application/json": { schema } }, required: true } };
+}
+
+export const NO_CONTENT = { description: "Thành công, không có nội dung" };
+
+/** Tham số trên đường dẫn */
+const ObjectIdStr = z.string().regex(/^[a-f0-9]{24}$/i);
+export const IdParam = z.object({ id: ObjectIdStr });
+export const SessionIdParam = z.object({ sessionId: ObjectIdStr });
+export const MemberIdParam = z.object({ memberId: ObjectIdStr });
+export const TokenParam = z.object({ token: z.string().min(1).max(64) });
+
+/** Date → chuỗi ISO (schema API dùng chuỗi) */
+export function iso(d: Date | string): string;
+export function iso(d: Date | string | null | undefined): string | null;
+export function iso(d: Date | string | null | undefined): string | null {
+  if (!d) return null;
+  return typeof d === "string" ? d : d.toISOString();
 }

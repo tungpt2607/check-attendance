@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { normalizeSearch } from "@/lib/search";
+import { normalizeSearch } from "@check-attendance/shared/search";
 import { useFastTap } from "./use-fast-tap";
 
 const PAGE_SIZE = 20;

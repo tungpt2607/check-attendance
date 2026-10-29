@@ -15,7 +15,7 @@ import { useState } from "react";
 import { deleteSessionAction } from "@/modules/attendance/attendance.actions";
 import { createGroupAction, deleteGroupAction } from "@/modules/groups/group.actions";
 import { unlinkMemberAction } from "@/modules/invites/invite.actions";
-import type { ShareLink } from "@/lib/api-types";
+import type { ShareLink } from "@check-attendance/shared/api";
 import { addMembersAction, deleteMemberAction } from "@/modules/members/member.actions";
 import { ActionMenu } from "./action-menu";
 import { ConfirmDialog } from "./confirm-dialog";

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { decodeShortCode } from "@/lib/checkin-token";
+import { decodeShortCode } from "@check-attendance/shared/short-code";
 
 export const dynamic = "force-dynamic";
 

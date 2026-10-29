@@ -1,40 +1,14 @@
+// Trạng thái điểm danh khai báo ở gói dùng chung; file này chỉ thêm màu hiển thị cho web.
+// bg/fg: màu nền nhạt và màu chữ của nhãn (theo 3 màu logo).
+import { STATUS_LABELS, STATUS_VALUES, type AttendanceStatus } from "@check-attendance/shared/statuses";
 import { brand } from "@/theme/brand";
 
-// Danh sách trạng thái điểm danh. Thêm trạng thái mới (vd. "Vắng có phép") chỉ cần thêm vào đây.
-// bg/fg: màu nền nhạt và màu chữ của nhãn (theo 3 màu logo).
-export const ATTENDANCE_STATUSES = [
-  {
-    value: "present",
-    label: "Có mặt",
-    short: "Có",
-    bg: brand.tealLight,
-    fg: brand.tealDarker,
-  },
-  {
-    value: "late",
-    label: "Muộn",
-    short: "Muộn",
-    bg: brand.orangeLight,
-    fg: brand.orangeDark,
-  },
-  {
-    value: "absent",
-    label: "Vắng",
-    short: "Vắng",
-    bg: brand.redLight,
-    fg: brand.redDark,
-  },
-] as const;
+export { DEFAULT_STATUS, isAttendanceStatus, isAttended, type AttendanceStatus } from "@check-attendance/shared/statuses";
 
-export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number]["value"];
+const COLORS: Record<AttendanceStatus, { bg: string; fg: string }> = {
+  present: { bg: brand.tealLight, fg: brand.tealDarker },
+  late: { bg: brand.orangeLight, fg: brand.orangeDark },
+  absent: { bg: brand.redLight, fg: brand.redDark },
+};
 
-/** Trạng thái mặc định khi buổi điểm danh mới tạo (chưa lưu lần nào). */
-export const DEFAULT_STATUS: AttendanceStatus = "absent";
-
-export function isAttendanceStatus(value: unknown): value is AttendanceStatus {
-  return ATTENDANCE_STATUSES.some((s) => s.value === value);
-}
-
-// Cách điểm danh. Sau này thêm "qr", "gps"... và xử lý riêng cho từng cách.
-export const ATTENDANCE_METHODS = ["manual"] as const;
-export type AttendanceMethod = (typeof ATTENDANCE_METHODS)[number];
+export const ATTENDANCE_STATUSES = STATUS_VALUES.map((value) => ({ value, ...STATUS_LABELS[value], ...COLORS[value] }));

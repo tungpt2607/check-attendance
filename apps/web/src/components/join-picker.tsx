@@ -13,7 +13,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
-import { normalizeSearch } from "@/lib/search";
+import { normalizeSearch } from "@check-attendance/shared/search";
 import { requestLinkAction } from "@/modules/invites/invite.actions";
 import { brand } from "@/theme/brand";
 import { SubmitButton } from "./submit-button";

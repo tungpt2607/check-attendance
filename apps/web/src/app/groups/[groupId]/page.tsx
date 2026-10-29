@@ -29,13 +29,13 @@ import { PagedList } from "@/components/paged-list";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { StatusCounts } from "@/components/status-chip";
 import { SubmitButton } from "@/components/submit-button";
-import { formatDate, todayInputValue } from "@/lib/format";
-import { normalizeSearch } from "@/lib/search";
+import { formatDate, todayInputValue } from "@check-attendance/shared/format";
+import { normalizeSearch } from "@check-attendance/shared/search";
 import { requireUser } from "@/lib/session";
 import { createSessionAction } from "@/modules/attendance/attendance.actions";
 import { fetchGroup } from "@/modules/groups/group.api";
 import { api } from "@/lib/api";
-import type { LinkRequestRow, MemberRow, SessionSummary, ShareLink } from "@/lib/api-types";
+import type { LinkRequestRow, MemberRow, SessionSummary, ShareLink } from "@check-attendance/shared/api";
 import { approveRequestAction, rejectRequestAction } from "@/modules/invites/invite.actions";
 import { brand } from "@/theme/brand";
 

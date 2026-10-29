@@ -11,7 +11,7 @@ import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/session";
 import { api, ApiError } from "@/lib/api";
-import type { JoinInfo } from "@/lib/api-types";
+import type { JoinInfo } from "@check-attendance/shared/api";
 import { cancelLinkRequestAction } from "@/modules/invites/invite.actions";
 import { brand } from "@/theme/brand";
 

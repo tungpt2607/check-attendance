@@ -3,14 +3,9 @@
 // Thao tác với nhóm: gọi backend API (API kiểm tra quyền chủ nhóm).
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, enc, ignoreApiError } from "@/lib/api";
 import { requireUser } from "@/lib/session";
 import { fetchGroup } from "./group.api";
-
-/** Lỗi nghiệp vụ (nhóm không tồn tại, tên trống...) thì bỏ qua như trước; lỗi khác ném tiếp */
-function ignoreApiError(err: unknown) {
-  if (!(err instanceof ApiError) || err.status >= 500) throw err;
-}
 
 export async function createGroupAction(formData: FormData) {
   await requireUser();

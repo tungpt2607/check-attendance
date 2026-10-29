@@ -9,9 +9,9 @@ import { CheckInDone, CheckInList, SelfCheckInButton } from "@/components/checki
 import { LinkButton } from "@/components/links";
 import { getSession } from "@/lib/session";
 import { api, ApiError } from "@/lib/api";
-import type { CheckInInfo } from "@/lib/api-types";
-import { deviceCookieName } from "@/lib/checkin-token";
-import { formatDate } from "@/lib/format";
+import type { CheckInInfo } from "@check-attendance/shared/api";
+import { deviceCookieName } from "@check-attendance/shared/short-code";
+import { formatDate } from "@check-attendance/shared/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Tự điểm danh" };

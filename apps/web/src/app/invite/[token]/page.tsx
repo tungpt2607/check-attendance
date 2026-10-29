@@ -11,7 +11,7 @@ import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/session";
 import { api, ApiError } from "@/lib/api";
-import type { InviteInfo } from "@/lib/api-types";
+import type { InviteInfo } from "@check-attendance/shared/api";
 import { acceptInviteAction } from "@/modules/invites/invite.actions";
 
 export const dynamic = "force-dynamic";

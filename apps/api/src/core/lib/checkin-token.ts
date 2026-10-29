@@ -41,22 +41,5 @@ export function verifyCheckInToken(sessionId: string, secret: string, token: str
   return false;
 }
 
-/** Cookie đánh dấu điện thoại này đã điểm danh trong buổi */
-export function deviceCookieName(sessionId: string): string {
-  return `ci_${sessionId}`;
-}
-
-/**
- * Mã ngắn đặt trong QR: "<mã buổi base64url>.<token>", ngắn hơn link đầy đủ
- * để QR ít ô hơn, dễ quét hơn. Trang /c/[code] giải mã rồi chuyển sang /checkin.
- */
-export function encodeShortCode(sessionId: string, token: string): string {
-  return `${Buffer.from(sessionId, "hex").toString("base64url")}.${token}`;
-}
-
-export function decodeShortCode(code: string): { sessionId: string; token: string } | null {
-  const [sid, token] = code.split(".");
-  if (!sid || !token) return null;
-  const hex = Buffer.from(sid, "base64url").toString("hex");
-  return /^[0-9a-f]{24}$/.test(hex) ? { sessionId: hex, token } : null;
-}
+// Mã QR rút gọn và cookie thiết bị: dùng chung với web
+export { decodeShortCode, deviceCookieName, encodeShortCode } from "@check-attendance/shared/short-code";

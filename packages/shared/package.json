@@ -1,0 +1,20 @@
+{
+  "name": "@check-attendance/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Code dùng chung cho API, web, CMS, app: trạng thái điểm danh, định dạng, tìm kiếm, mã QR rút gọn, schema dữ liệu API (zod).",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0"
+  }
+}
