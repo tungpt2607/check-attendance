@@ -39,7 +39,7 @@ const notificationSchema = new Schema<NotificationRecord>(
     type: { type: String, enum: [...NOTIFICATION_TYPES], required: true },
     groupId: { type: Schema.Types.ObjectId, ref: "Group", default: null },
     actorId: { type: Schema.Types.ObjectId, ref: "User", default: null },
-    subjectKind: { type: String, enum: [...NOTIFICATION_SUBJECTS], default: null },
+    subjectKind: { type: String, enum: [...NOTIFICATION_SUBJECTS, null], default: null },
     subjectId: { type: Schema.Types.ObjectId, default: null },
     data: { type: Schema.Types.Mixed, default: {} },
     readAt: { type: Date, default: null },
