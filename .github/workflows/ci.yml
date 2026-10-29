@@ -1,0 +1,26 @@
+# Kiểm tra tự động mỗi lần đẩy code: kiểu dữ liệu (TypeScript) của API và build web.
+# Kết quả xem ở tab Actions trên GitHub (Claude đọc được qua `gh run view`).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cài thư viện (npm workspaces)
+        run: npm install --no-audit --no-fund
+      - name: Kiểm tra kiểu API
+        run: npm run typecheck -w @check-attendance/api
+      - name: Kiểm tra kiểu gói dùng chung
+        run: npm run typecheck -w @check-attendance/shared --if-present
+      - name: Build web
+        run: npm run build -w @check-attendance/web
+        env:
+          AUTH_SECRET: ci-only-not-a-real-secret
