@@ -64,11 +64,24 @@ export async function getSession(): Promise<CurrentUser | null> {
   }
 }
 
-/** Dùng trong trang/action cần đăng nhập. Chưa đăng nhập thì chuyển về /login. */
-export async function requireUser(): Promise<CurrentUser> {
+/** Người đăng nhập theo token phiên (kiểm tra tại chỗ, không gọi API) */
+export type SessionUser = { userId: string; name: string; tv: number };
+
+/**
+ * Dùng trong trang/action cần đăng nhập: chỉ kiểm tra chữ ký token tại web (nhanh, không đợi API).
+ * Token đã bị thu hồi (đổi mật khẩu ở thiết bị khác) sẽ bị API báo 401 ở lần gọi dữ liệu đầu tiên → /logout.
+ */
+export async function requireUser(): Promise<SessionUser> {
+  const store = await cookies();
+  const payload = await verifySession(store.get(SESSION_COOKIE)?.value);
+  if (!payload) redirect("/login");
+  return payload;
+}
+
+/** Như requireUser nhưng cần đủ thông tin tài khoản (email, ảnh): gọi API /v1/me */
+export async function requireAccount(): Promise<CurrentUser> {
   const result = await checkSession();
   if (result.status === "ok") return result.user;
-  // Phiên hết hiệu lực (vd. đã đổi mật khẩu ở thiết bị khác): xóa cookie rồi mới về /login,
-  // nếu không middleware sẽ thấy cookie và đẩy ngược về trong.
+  // Phiên hết hiệu lực: xóa cookie rồi mới về /login, nếu không middleware sẽ thấy cookie và đẩy ngược về trong.
   redirect(result.status === "invalid" ? "/logout" : "/login");
 }

@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { Fragment } from "react";
 import { ZoomableAvatar } from "@/components/avatar-zoom";
-import { MemberRowMenu } from "@/components/group-menus";
+import { MemberRowMenu } from "@/components/member-row-menu";
 import { ListLink } from "@/components/links";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { RateSummary } from "@/components/rate";

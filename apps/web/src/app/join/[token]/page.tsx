@@ -9,7 +9,7 @@ import { JoinPicker } from "@/components/join-picker";
 import { LinkButton } from "@/components/links";
 import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
-import { requireUser } from "@/lib/session";
+import { requireAccount } from "@/lib/session";
 import { api, ApiError } from "@/lib/api";
 import type { JoinInfo } from "@check-attendance/shared/api";
 import { cancelLinkRequestAction } from "@/modules/invites/invite.actions";
@@ -55,7 +55,7 @@ function Shell({ groupName, children }: { groupName?: string; children: ReactNod
 export default async function JoinPage({ params, searchParams }: Props) {
   const { token } = await params;
   const { error } = await searchParams;
-  const user = await requireUser();
+  const user = await requireAccount();
 
   let info: JoinInfo;
   try {

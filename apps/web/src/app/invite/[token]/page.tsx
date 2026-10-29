@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 import { LinkButton } from "@/components/links";
 import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
-import { requireUser } from "@/lib/session";
+import { requireAccount } from "@/lib/session";
 import { api, ApiError } from "@/lib/api";
 import type { InviteInfo } from "@check-attendance/shared/api";
 import { acceptInviteAction } from "@/modules/invites/invite.actions";
@@ -62,7 +62,7 @@ function Problem({ message }: { message: string }) {
 export default async function InvitePage({ params, searchParams }: Props) {
   const { token } = await params;
   const { error } = await searchParams;
-  const user = await requireUser();
+  const user = await requireAccount();
 
   let info: InviteInfo;
   try {

@@ -7,7 +7,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { AttendanceSheet, type SheetRow } from "@/components/attendance-sheet";
-import { SessionHeaderMenu } from "@/components/group-menus";
+import { SessionHeaderMenu } from "@/components/session-header-menu";
 import { LinkButton } from "@/components/links";
 import { PageHeader } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";

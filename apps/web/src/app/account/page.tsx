@@ -6,14 +6,14 @@ import Stack from "@mui/material/Stack";
 import { AvatarForm, NameForm, PasswordForm } from "@/components/account-forms";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
-import { requireUser } from "@/lib/session";
+import { requireAccount } from "@/lib/session";
 import { logoutAction } from "@/modules/auth/auth.actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Tài khoản · Điểm danh" };
 
 export default async function AccountPage() {
-  const user = await requireUser();
+  const user = await requireAccount();
 
   return (
     <Box sx={{ maxWidth: 520, mx: "auto" }}>

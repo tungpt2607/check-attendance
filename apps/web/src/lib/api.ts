@@ -1,6 +1,7 @@
 // Gọi backend API (apps/api) từ phía máy chủ của web.
 // Token gửi kèm chính là cookie phiên đăng nhập của web (cùng một JWT, ký bằng AUTH_SECRET).
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { API_URL } from "./api-url";
 import { SESSION_COOKIE } from "./auth-token";
 
@@ -25,11 +26,19 @@ type Options = {
   auth?: boolean;
 };
 
-/** Gọi API, trả về JSON (hoặc null khi 204). Lỗi thì ném ApiError. */
+/** Mã lỗi API khi phiên đăng nhập hỏng hoặc đã bị thu hồi (đổi mật khẩu ở thiết bị khác...) */
+const DEAD_SESSION = ["invalid_token", "session_revoked"];
+
+/**
+ * Gọi API, trả về JSON (hoặc null khi 204). Lỗi thì ném ApiError.
+ * Phiên đăng nhập trong cookie đã hết hiệu lực: chuyển sang /logout (xóa cookie rồi về trang đăng nhập).
+ */
 export async function api<T = unknown>(path: string, opts: Options = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
+  let cookieToken = false;
   if (opts.auth !== false) {
     const token = opts.token !== undefined ? opts.token : (await cookies()).get(SESSION_COOKIE)?.value;
+    cookieToken = opts.token === undefined && !!token;
     if (token) headers.Authorization = `Bearer ${token}`;
   }
   let body: BodyInit | undefined;
@@ -50,6 +59,7 @@ export async function api<T = unknown>(path: string, opts: Options = {}): Promis
   const data = (await res.json().catch(() => null)) as unknown;
   if (!res.ok) {
     const err = (data as { error?: { code?: string; message?: string } } | null)?.error;
+    if (res.status === 401 && cookieToken && DEAD_SESSION.includes(err?.code ?? "")) redirect("/logout");
     throw new ApiError(res.status, err?.code ?? "unknown", err?.message ?? "Có lỗi xảy ra. Vui lòng thử lại.");
   }
   return data as T;
