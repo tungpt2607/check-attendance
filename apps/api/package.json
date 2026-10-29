@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "npm run build --prefix ../../packages/shared"
   },
   "dependencies": {
     "@check-attendance/shared": "*",

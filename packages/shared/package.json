@@ -5,9 +5,13 @@
   "type": "module",
   "description": "Code dùng chung cho API, web, CMS, app: trạng thái điểm danh, định dạng, tìm kiếm, mã QR rút gọn, schema dữ liệu API (zod).",
   "exports": {
-    "./*": "./src/*.ts"
+    "./*": {
+      "types": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

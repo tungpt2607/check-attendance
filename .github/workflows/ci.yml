@@ -16,6 +16,8 @@ jobs:
           node-version: 22
       - name: Cài thư viện (npm workspaces)
         run: npm install --no-audit --no-fund
+      - name: Build gói dùng chung (ra JavaScript, như trên Vercel)
+        run: npm run build -w @check-attendance/shared
       - name: Kiểm tra kiểu API
         run: npm run typecheck -w @check-attendance/api
       - name: Kiểm tra kiểu gói dùng chung
