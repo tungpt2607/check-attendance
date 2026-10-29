@@ -6,7 +6,7 @@ import type { AppEnv } from "./auth.js";
 /** Mã lỗi máy đọc được (để app/CMS xử lý) kèm câu báo lỗi tiếng Việt (để hiện cho người dùng) */
 export type ErrorBody = { error: { code: string; message: string } };
 
-export function fail(status: 400 | 401 | 403 | 404 | 409 | 410 | 413 | 415 | 422 | 429, code: string, message: string): never {
+export function fail(status: 400 | 401 | 403 | 404 | 409 | 410 | 413 | 415 | 422 | 429 | 503, code: string, message: string): never {
   const body: ErrorBody = { error: { code, message } };
   throw new HTTPException(status, { res: Response.json(body, { status }) });
 }
