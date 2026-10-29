@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { api, ApiError } from "@/lib/api";
 import { requireUser, setSessionCookie } from "@/lib/session";
+import type { Preferences } from "@check-attendance/shared/api";
 
 /** Lỗi API thì trả câu báo lỗi để hiện trong form; lỗi khác ném tiếp */
 function apiErrorState(err: unknown): FormState {
@@ -79,4 +80,15 @@ export async function changePasswordAction(_prev: FormState, formData: FormData)
     return apiErrorState(err);
   }
   return { ok: "Đã đổi mật khẩu. Các thiết bị khác đã được đăng xuất." };
+}
+
+/** Đổi cài đặt cá nhân (vd. nhận email thông báo); trả cài đặt mới, lỗi thì null */
+export async function updatePreferencesAction(patch: { notifications?: { email?: boolean } }): Promise<Preferences | null> {
+  await requireUser();
+  try {
+    return await api<Preferences>("/v1/me/preferences", { method: "PATCH", body: patch });
+  } catch (err) {
+    if (err instanceof ApiError) return null;
+    throw err;
+  }
 }

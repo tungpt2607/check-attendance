@@ -82,6 +82,21 @@ export const PasswordInput = z.object({
 });
 export const AvatarVersionSchema = z.object({ avatarVersion: z.number().nullable() });
 
+/** Quên mật khẩu: gửi link đặt lại qua email */
+export const ForgotPasswordInput = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email("Email không hợp lệ.")),
+});
+export const ResetTokenInfoSchema = z.object({ email: z.string().describe("Email của tài khoản đang đặt lại mật khẩu") });
+export const ResetPasswordInput = z.object({ token: z.string().min(1).max(128), password: Password });
+
+/** Cài đặt cá nhân (mở rộng thêm trường khi cần) */
+export const PreferencesSchema = z.object({
+  notifications: z.object({ email: z.boolean().describe("Nhận email thông báo") }),
+});
+export const UpdatePreferencesInput = z.object({
+  notifications: z.object({ email: z.boolean().optional() }).optional(),
+});
+
 // ---------- Nhóm ----------
 
 const GroupName = z.string().trim().min(1, "Vui lòng nhập tên nhóm.").max(120, "Tên nhóm quá dài.");
@@ -343,6 +358,7 @@ export type ShareLink = z.infer<typeof ShareLinkSchema>;
 export type Rate = z.infer<typeof RateSchema>;
 export type BranchStat = z.infer<typeof BranchStatSchema>;
 export type User = z.infer<typeof UserSchema>;
+export type Preferences = z.infer<typeof PreferencesSchema>;
 export type AuthResult = z.infer<typeof AuthResultSchema>;
 export type GroupListItem = z.infer<typeof GroupListItemSchema>;
 export type GroupDetail = z.infer<typeof GroupDetailSchema>;

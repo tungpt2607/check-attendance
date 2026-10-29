@@ -1,13 +1,20 @@
 // Thông báo: một hàm gửi duy nhất notify(); mọi nơi cần báo đều gọi hàm này.
 // Sau này thêm kênh gửi (email, thông báo đẩy) chỉ cần sửa trong notify().
 import mongoose from "mongoose";
-import type {
-  NotificationData,
-  NotificationResolution,
-  NotificationSubjectKind,
-  NotificationType,
+import {
+  NOTIFICATION_CONFIG,
+  type NotificationData,
+  type NotificationLike,
+  type NotificationResolution,
+  type NotificationSubjectKind,
+  type NotificationType,
 } from "@check-attendance/shared/notifications";
+import { runInBackground } from "../../lib/background.js";
 import { connectDB, isValidId } from "../../lib/db.js";
+import { renderEmail } from "../../lib/email-templates.js";
+import { sendEmail } from "../../lib/mailer.js";
+import { webUrl } from "../../lib/share.js";
+import { getAccount, getEmailRecipients } from "../users/user.service.js";
 import { Notification, type NotificationRecord } from "./notification.model.js";
 
 const oid = (id: string) => new mongoose.Types.ObjectId(id);
@@ -42,9 +49,35 @@ export async function notify(input: NotifyInput): Promise<void> {
         data: input.data ?? {},
       })),
     );
+    if (NOTIFICATION_CONFIG[input.type].email) runInBackground(`email ${input.type}`, () => emailNotification(input, recipients));
   } catch (err) {
     console.error("notify failed", input.type, err);
   }
+}
+
+/** Gửi email thông báo cho người nhận còn bật "Nhận email thông báo" */
+async function emailNotification(input: NotifyInput, recipients: string[]): Promise<void> {
+  const config = NOTIFICATION_CONFIG[input.type];
+  if (!config.email) return;
+  const [people, actor] = await Promise.all([
+    getEmailRecipients(recipients),
+    input.actorId ? getAccount(input.actorId) : Promise.resolve(null),
+  ]);
+  if (people.length === 0) return;
+  const n: NotificationLike = {
+    type: input.type,
+    groupId: input.groupId ?? null,
+    actor: actor ? { name: actor.name } : null,
+    data: input.data ?? {},
+  };
+  const href = config.href(n);
+  const { html, text } = renderEmail({
+    heading: config.email.subject(n),
+    paragraphs: [config.text(n)],
+    button: { label: href ? "Mở để xem" : "Mở Điểm danh", url: `${webUrl()}${href ?? "/notifications"}` },
+    note: "Không muốn nhận email này? Tắt \"Nhận email thông báo\" trong trang Tài khoản.",
+  });
+  for (const p of people) await sendEmail({ to: p.email, subject: config.email.subject(n), html, text });
 }
 
 /**

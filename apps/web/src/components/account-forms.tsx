@@ -8,6 +8,8 @@ import Button from "@mui/material/Button";
 import ButtonBase from "@mui/material/ButtonBase";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -16,6 +18,7 @@ import {
   changePasswordAction,
   removeAvatarAction,
   updateNameAction,
+  updatePreferencesAction,
   uploadAvatarAction,
   type FormState,
 } from "@/modules/users/account.actions";
@@ -179,5 +182,45 @@ export function PasswordForm() {
         </Box>
       </Stack>
     </form>
+  );
+}
+
+/** Công tắc "Nhận email thông báo" (lưu ngay khi bật/tắt) */
+export function EmailNotificationsSwitch({ initial }: { initial: boolean }) {
+  const [on, setOn] = useState(initial);
+  const [pending, startTransition] = useTransition();
+  return (
+    <FormControlLabel
+      sx={{ alignItems: "flex-start", m: 0, gap: 1.5, width: "100%", justifyContent: "space-between" }}
+      labelPlacement="start"
+      control={
+        <Switch
+          checked={on}
+          disabled={pending}
+          onChange={(e) => {
+            const next = e.target.checked;
+            setOn(next);
+            startTransition(async () => {
+              const res = await updatePreferencesAction({ notifications: { email: next } }).catch(() => null);
+              if (!res) {
+                setOn(!next);
+                toast("Không lưu được. Vui lòng thử lại.", "error");
+                return;
+              }
+              setOn(res.notifications.email);
+              toast(res.notifications.email ? "Đã bật email thông báo" : "Đã tắt email thông báo");
+            });
+          }}
+        />
+      }
+      label={
+        <Box>
+          <Typography sx={{ fontWeight: 600 }}>Nhận email thông báo</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Gửi email khi có người xin nhận tên trong nhóm bạn quản lý.
+          </Typography>
+        </Box>
+      }
+    />
   );
 }

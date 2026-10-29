@@ -3,17 +3,19 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Stack from "@mui/material/Stack";
-import { AvatarForm, NameForm, PasswordForm } from "@/components/account-forms";
+import { AvatarForm, EmailNotificationsSwitch, NameForm, PasswordForm } from "@/components/account-forms";
 import { PageHeader, SectionTitle } from "@/components/page-header";
 import { SubmitButton } from "@/components/submit-button";
+import { api } from "@/lib/api";
 import { requireAccount } from "@/lib/session";
+import type { Preferences } from "@check-attendance/shared/api";
 import { logoutAction } from "@/modules/auth/auth.actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Tài khoản · Điểm danh" };
 
 export default async function AccountPage() {
-  const user = await requireAccount();
+  const [user, prefs] = await Promise.all([requireAccount(), api<Preferences>("/v1/me/preferences")]);
 
   return (
     <Box sx={{ maxWidth: 520, mx: "auto" }}>
@@ -31,6 +33,13 @@ export default async function AccountPage() {
           <CardContent sx={{ p: 2.5 }}>
             <SectionTitle>Họ tên</SectionTitle>
             <NameForm name={user.name} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent sx={{ p: 2.5 }}>
+            <SectionTitle>Thông báo</SectionTitle>
+            <EmailNotificationsSwitch initial={prefs.notifications.email} />
           </CardContent>
         </Card>
 

@@ -111,3 +111,44 @@ export async function getAccountsByIds(ids: string[]): Promise<Map<string, Publi
     ]),
   );
 }
+
+/** Đặt mật khẩu mới (quên mật khẩu): mọi phiên đăng nhập cũ hết hiệu lực */
+export async function resetPassword(userId: string, password: string): Promise<boolean> {
+  await connectDB();
+  const passwordHash = await hash(password, 10);
+  const res = await User.updateOne({ _id: userId }, { $set: { passwordHash }, $inc: { tokenVersion: 1 } });
+  return res.matchedCount === 1;
+}
+
+// ---------- Cài đặt cá nhân ----------
+
+export type Preferences = { notifications: { email: boolean } };
+
+function toPreferences(u: Pick<UserRecord, "notificationPrefs"> | null): Preferences {
+  return { notifications: { email: u?.notificationPrefs?.email !== false } };
+}
+
+export async function getPreferences(userId: string): Promise<Preferences> {
+  await connectDB();
+  const u = await User.findById(userId).select("notificationPrefs").lean<UserRecord>();
+  return toPreferences(u);
+}
+
+export async function updatePreferences(userId: string, patch: { notifications?: { email?: boolean } }): Promise<Preferences> {
+  await connectDB();
+  const set: Record<string, unknown> = {};
+  if (patch.notifications?.email !== undefined) set["notificationPrefs.email"] = patch.notifications.email;
+  if (Object.keys(set).length > 0) await User.updateOne({ _id: userId }, { $set: set });
+  return getPreferences(userId);
+}
+
+/** Người nhận email thông báo: bỏ những ai đã tắt "Nhận email thông báo" */
+export async function getEmailRecipients(ids: string[]): Promise<{ id: string; name: string; email: string }[]> {
+  const valid = [...new Set(ids)].filter((id) => isValidId(id));
+  if (valid.length === 0) return [];
+  await connectDB();
+  const list = await User.find({ _id: { $in: valid } }).select("name email notificationPrefs").lean<UserRecord[]>();
+  return list
+    .filter((u) => toPreferences(u).notifications.email)
+    .map((u) => ({ id: String(u._id), name: u.name, email: u.email }));
+}

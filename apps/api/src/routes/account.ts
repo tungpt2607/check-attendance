@@ -3,31 +3,79 @@ import { createRoute, z } from "@hono/zod-openapi";
 import {
   AuthResultSchema,
   AvatarVersionSchema,
+  ForgotPasswordInput,
   LoginInput,
   NameInput,
   PasswordInput,
+  PreferencesSchema,
   RegisterInput,
+  ResetPasswordInput,
+  ResetTokenInfoSchema,
+  UpdatePreferencesInput,
   UserSchema,
 } from "@check-attendance/shared/api";
 import { publicUser, requireUser, resolveRole } from "../auth.js";
 import { signSession } from "../core/lib/auth-token.js";
+import { runInBackground } from "../core/lib/background.js";
+import { renderEmail } from "../core/lib/email-templates.js";
+import { sendEmail } from "../core/lib/mailer.js";
+import { webUrl } from "../core/lib/share.js";
+import {
+  consumeOneTimeToken,
+  countRecentTokens,
+  createOneTimeToken,
+  peekOneTimeToken,
+  revokeTokens,
+} from "../core/modules/tokens/one-time-token.service.js";
 import {
   changePassword,
   createUser,
   findUserByEmail,
   getAccount,
+  getPreferences,
   getUserAvatar,
   removeUserAvatar,
+  resetPassword,
   setUserAvatar,
+  updatePreferences,
   updateUserName,
   verifyPassword,
 } from "../core/modules/users/user.service.js";
-import { AUTH, createApp, fail, IdParam, jsonBody, NO_CONTENT, notFound, ok, PUBLIC } from "../http.js";
+import { AUTH, createApp, fail, IdParam, jsonBody, NO_CONTENT, notFound, ok, PUBLIC, TokenParam } from "../http.js";
 
 const TAG = ["Tài khoản"];
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 /** Ảnh đã được cắt và thu nhỏ trên thiết bị (1024px), thường 150–400KB */
 const AVATAR_MAX_BYTES = 600 * 1024;
+
+/** Link đặt lại mật khẩu hết hạn sau 30 phút */
+const RESET_TTL_MS = 30 * 60 * 1000;
+/** Mỗi tài khoản tối đa 3 lần yêu cầu đặt lại mật khẩu mỗi giờ (giữ hạn mức gửi email) */
+const RESET_MAX_PER_HOUR = 3;
+const HOUR_MS = 60 * 60 * 1000;
+
+/** Tạo link đặt lại mật khẩu và gửi email (chạy sau khi đã trả kết quả) */
+async function sendPasswordReset(email: string): Promise<void> {
+  const user = await findUserByEmail(email);
+  if (!user) return;
+  const userId = String(user._id);
+  if ((await countRecentTokens(userId, "password_reset", HOUR_MS)) >= RESET_MAX_PER_HOUR) {
+    console.warn(`[password_reset] vượt giới hạn ${RESET_MAX_PER_HOUR}/giờ cho ${userId}`);
+    return;
+  }
+  const token = await createOneTimeToken(userId, "password_reset", RESET_TTL_MS);
+  const url = `${webUrl()}/reset-password/${token}`;
+  const { html, text } = renderEmail({
+    heading: "Đặt lại mật khẩu",
+    paragraphs: [
+      [{ text: "Xin chào " }, { text: user.name, bold: true }, { text: "," }],
+      "Bạn (hoặc ai đó) vừa yêu cầu đặt lại mật khẩu cho tài khoản Điểm danh dùng email này. Bấm nút bên dưới để đặt mật khẩu mới.",
+    ],
+    button: { label: "Đặt lại mật khẩu", url },
+    note: "Link chỉ dùng được 1 lần và hết hạn sau 30 phút. Nếu bạn không yêu cầu, cứ bỏ qua email này — mật khẩu của bạn vẫn giữ nguyên.",
+  });
+  await sendEmail({ to: user.email, subject: "Đặt lại mật khẩu · Điểm danh", html, text });
+}
 
 /** Cấp token mới cho tài khoản (đăng nhập, đăng ký, đổi mật khẩu) */
 async function issue(userId: string) {
@@ -77,6 +125,65 @@ export const account = createApp()
     },
   )
 
+  // ---------- Quên mật khẩu ----------
+
+  // Luôn trả cùng một kết quả (không lộ email nào đã đăng ký); việc gửi email chạy phía sau
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/auth/password-reset",
+      tags: TAG,
+      summary: "Quên mật khẩu: gửi link đặt lại qua email (luôn trả 202, kể cả email chưa đăng ký)",
+      security: PUBLIC,
+      request: jsonBody(ForgotPasswordInput),
+      responses: { 202: { description: "Đã nhận yêu cầu" } },
+    }),
+    async (c) => {
+      const { email } = c.req.valid("json");
+      runInBackground("password_reset", () => sendPasswordReset(email));
+      return c.body(null, 202);
+    },
+  )
+
+  .openapi(
+    createRoute({
+      method: "get",
+      path: "/auth/password-reset/{token}",
+      tags: TAG,
+      summary: "Kiểm tra link đặt lại mật khẩu còn dùng được không (404 = hết hạn hoặc đã dùng)",
+      security: PUBLIC,
+      request: { params: TokenParam },
+      responses: { 200: ok(ResetTokenInfoSchema) },
+    }),
+    async (c) => {
+      const userId = await peekOneTimeToken(c.req.valid("param").token, "password_reset");
+      const acc = userId ? await getAccount(userId) : null;
+      if (!acc) fail(404, "invalid_reset_token", "Link đặt lại mật khẩu đã hết hạn hoặc đã được dùng.");
+      return c.json({ email: acc!.email }, 200);
+    },
+  )
+
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/auth/password-reset/confirm",
+      tags: TAG,
+      summary: "Đặt mật khẩu mới bằng link trong email (mọi phiên đăng nhập cũ hết hiệu lực)",
+      security: PUBLIC,
+      request: jsonBody(ResetPasswordInput),
+      responses: { 204: NO_CONTENT },
+    }),
+    async (c) => {
+      const { token, password } = c.req.valid("json");
+      const userId = await consumeOneTimeToken(token, "password_reset");
+      if (!userId || !(await resetPassword(userId, password))) {
+        fail(404, "invalid_reset_token", "Link đặt lại mật khẩu đã hết hạn hoặc đã được dùng.");
+      }
+      await revokeTokens(userId!, "password_reset");
+      return c.body(null, 204);
+    },
+  )
+
   // Token không lưu trên máy chủ: đăng xuất là client xóa token. Muốn hủy mọi phiên thì đổi mật khẩu.
   .openapi(
     createRoute({
@@ -111,6 +218,31 @@ export const account = createApp()
       await updateUserName(user.userId, name);
       return c.json({ ...publicUser(user), name }, 200);
     },
+  )
+
+  .openapi(
+    createRoute({
+      method: "get",
+      path: "/me/preferences",
+      tags: TAG,
+      summary: "Cài đặt cá nhân (nhận email thông báo...)",
+      security: AUTH,
+      responses: { 200: ok(PreferencesSchema) },
+    }),
+    async (c) => c.json(await getPreferences(requireUser(c).userId), 200),
+  )
+
+  .openapi(
+    createRoute({
+      method: "patch",
+      path: "/me/preferences",
+      tags: TAG,
+      summary: "Đổi cài đặt cá nhân (chỉ gửi trường cần đổi)",
+      security: AUTH,
+      request: jsonBody(UpdatePreferencesInput),
+      responses: { 200: ok(PreferencesSchema) },
+    }),
+    async (c) => c.json(await updatePreferences(requireUser(c).userId, c.req.valid("json")), 200),
   )
 
   .openapi(

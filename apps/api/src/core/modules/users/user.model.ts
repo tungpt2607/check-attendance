@@ -23,6 +23,8 @@ export interface UserRecord {
   tokenVersion?: number;
   /** Vai trò: user (mặc định) hoặc admin (vào được CMS quản trị) */
   role?: "user" | "admin";
+  /** Cài đặt thông báo; tài khoản cũ chưa có trường này coi như bật hết */
+  notificationPrefs?: { email?: boolean };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +46,7 @@ const userSchema = new Schema<UserRecord>(
     avatar: { type: avatarSchema, default: null },
     tokenVersion: { type: Number, default: 0 },
     role: { type: String, enum: ["user", "admin"], default: "user" },
+    notificationPrefs: { email: { type: Boolean, default: true } },
   },
   { timestamps: true },
 );

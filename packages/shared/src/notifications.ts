@@ -59,6 +59,8 @@ export type NotificationConfig = {
   /** Trang mở khi bấm thông báo; null = không mở trang nào */
   href: (n: NotificationLike) => string | null;
   actions?: NotificationActions;
+  /** Có gửi thêm email không (người nhận tắt "Nhận email thông báo" thì không gửi) */
+  email?: { subject: (n: NotificationLike) => string };
 };
 
 const b = (text: string | undefined, fallback: string): TextPart => ({ text: text || fallback, bold: true });
@@ -71,6 +73,7 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     text: (n) => [b(n.actor?.name, "Một tài khoản"), t(" xin nhận tên "), b(n.data.memberName, "(đã xóa)"), t(" trong nhóm "), b(n.data.groupName, "(đã xóa)")],
     href: (n) => (n.groupId ? `/groups/${n.groupId}?tab=members` : null),
     actions: "approve_reject",
+    email: { subject: (n) => `Yêu cầu nhận tên mới · ${n.data.groupName || "nhóm của bạn"}` },
   },
   "link_request.approved": {
     icon: "check",

@@ -3,8 +3,8 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth-token";
 
 /** Trang đăng nhập/đăng ký: đã đăng nhập thì chuyển vào trong */
 const AUTH_PAGES = ["/login", "/register"];
-/** Trang công khai không cần đăng nhập (vd. tự điểm danh bằng QR) */
-const PUBLIC_PREFIXES = ["/checkin/", "/c/", "/api/avatar/"];
+/** Trang công khai không cần đăng nhập (vd. tự điểm danh bằng QR, quên mật khẩu) */
+const PUBLIC_PREFIXES = ["/checkin/", "/c/", "/api/avatar/", "/forgot-password", "/reset-password/"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
