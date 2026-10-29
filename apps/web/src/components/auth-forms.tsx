@@ -19,6 +19,12 @@ type LoginProps = {
   canResetPassword?: boolean;
 };
 
+/**
+ * Ô nhập ở trang đăng nhập/đăng ký/quên mật khẩu: nhãn luôn nằm trên viền.
+ * Safari tự điền email/mật khẩu làm nhãn nổi lệch với viền (viền hở mà nhãn vẫn nằm giữa ô).
+ */
+const FIXED_LABEL = { inputLabel: { shrink: true } } as const;
+
 export function LoginForm({ next, notice, defaultEmail, canResetPassword }: LoginProps) {
   const [state, action] = useActionState(loginAction, undefined);
   return (
@@ -35,10 +41,11 @@ export function LoginForm({ next, notice, defaultEmail, canResetPassword }: Logi
         required
         autoComplete="email"
         defaultValue={state?.email ?? defaultEmail ?? ""}
+        slotProps={FIXED_LABEL}
       />
-      <PasswordInput id="password" name="password" label="Mật khẩu" required autoComplete="current-password" />
+      <PasswordInput id="password" name="password" label="Mật khẩu" required autoComplete="current-password" fixedLabel />
       {canResetPassword && (
-        <Box sx={{ textAlign: "right", mt: "-8px !important" }}>
+        <Box sx={{ textAlign: "right", mt: "8px !important" }}>
           <AppLink href="/forgot-password" variant="body2" fontWeight={500}>
             Quên mật khẩu?
           </AppLink>
@@ -62,7 +69,7 @@ export function RegisterForm({ next }: { next?: string }) {
       <Stack spacing={2}>
       {next && <input type="hidden" name="next" value={next} />}
       {state?.error && <Alert severity="error">{state.error}</Alert>}
-      <TextField id="name" name="name" label="Họ tên" required autoComplete="name" defaultValue={state?.name ?? ""} />
+      <TextField id="name" name="name" label="Họ tên" required autoComplete="name" defaultValue={state?.name ?? ""} slotProps={FIXED_LABEL} />
       <TextField
         id="email"
         name="email"
@@ -71,9 +78,10 @@ export function RegisterForm({ next }: { next?: string }) {
         required
         autoComplete="email"
         defaultValue={state?.email ?? ""}
+        slotProps={FIXED_LABEL}
       />
-      <PasswordInput id="password" name="password" label="Mật khẩu" required minLength={6} autoComplete="new-password" />
-      <PasswordInput id="confirm" name="confirm" label="Nhập lại mật khẩu" required minLength={6} autoComplete="new-password" />
+      <PasswordInput id="password" name="password" label="Mật khẩu" required minLength={6} autoComplete="new-password" fixedLabel />
+      <PasswordInput id="confirm" name="confirm" label="Nhập lại mật khẩu" required minLength={6} autoComplete="new-password" fixedLabel />
       <SubmitButton fullWidth size="large" pendingText="Đang tạo tài khoản...">
         Đăng ký
       </SubmitButton>
@@ -106,7 +114,16 @@ export function ForgotPasswordForm() {
     <form action={action} key={state?.error ?? "forgot"}>
       <Stack spacing={2}>
         {state?.error && <Alert severity="error">{state.error}</Alert>}
-        <TextField id="email" name="email" type="email" label="Email" required autoComplete="email" defaultValue={state?.email ?? ""} />
+        <TextField
+          id="email"
+          name="email"
+          type="email"
+          label="Email"
+          required
+          autoComplete="email"
+          defaultValue={state?.email ?? ""}
+          slotProps={FIXED_LABEL}
+        />
         <SubmitButton fullWidth size="large" pendingText="Đang gửi...">
           Gửi link đặt lại mật khẩu
         </SubmitButton>
@@ -128,8 +145,8 @@ export function ResetPasswordForm({ token, email }: { token: string; email: stri
         {/* Giúp trình quản lý mật khẩu lưu đúng tài khoản */}
         <input type="text" name="username" value={email} autoComplete="username" readOnly hidden />
         {state?.error && <Alert severity="error">{state.error}</Alert>}
-        <PasswordInput id="password" name="password" label="Mật khẩu mới" required minLength={6} autoComplete="new-password" />
-        <PasswordInput id="confirm" name="confirm" label="Nhập lại mật khẩu mới" required minLength={6} autoComplete="new-password" />
+        <PasswordInput id="password" name="password" label="Mật khẩu mới" required minLength={6} autoComplete="new-password" fixedLabel />
+        <PasswordInput id="confirm" name="confirm" label="Nhập lại mật khẩu mới" required minLength={6} autoComplete="new-password" fixedLabel />
         <SubmitButton fullWidth size="large" pendingText="Đang lưu...">
           Đặt mật khẩu mới
         </SubmitButton>

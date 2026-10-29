@@ -14,10 +14,12 @@ type Props = {
   required?: boolean;
   minLength?: number;
   autoComplete?: string;
+  /** Nhãn luôn nằm trên viền (tránh lệch viền khi Safari tự điền) */
+  fixedLabel?: boolean;
 };
 
 /** Ô mật khẩu có nút con mắt để hiện/ẩn ký tự đã gõ. */
-export function PasswordInput({ id, name, label, required, minLength, autoComplete }: Props) {
+export function PasswordInput({ id, name, label, required, minLength, autoComplete, fixedLabel }: Props) {
   const [visible, setVisible] = useState(false);
   return (
     <TextField
@@ -28,6 +30,7 @@ export function PasswordInput({ id, name, label, required, minLength, autoComple
       autoComplete={autoComplete}
       type={visible ? "text" : "password"}
       slotProps={{
+        ...(fixedLabel ? { inputLabel: { shrink: true } } : {}),
         htmlInput: { minLength },
         input: {
           endAdornment: (
