@@ -110,7 +110,8 @@ export function GroupTabs({ tabs, initial }: { tabs: GroupTab[]; initial?: strin
     urlTimer.current = setTimeout(() => {
       const url = new URL(window.location.href);
       url.searchParams.set("tab", key);
-      window.history.replaceState(window.history.state, "", url);
+      // Ghi theo cách Next.js theo dõi được (state = null), để nó biết đang ở tab nào
+      window.history.replaceState(null, "", url);
     }, 400);
   };
 

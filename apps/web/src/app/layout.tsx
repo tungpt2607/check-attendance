@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { AppHeader } from "@/components/app-header";
 import { NavProgress } from "@/components/nav-progress";
 import { Providers } from "@/components/providers";
@@ -26,7 +26,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <AppRouterCacheProvider>
           <Providers>
-            <NavProgress />
+            {/* NavProgress đọc phần "?" của địa chỉ: Next.js yêu cầu bọc trong Suspense */}
+            <Suspense fallback={null}>
+              <NavProgress />
+            </Suspense>
             <AppHeader />
             <Box component="main" sx={{ maxWidth: 1000, mx: "auto", px: 2, py: 3 }}>
               {children}

@@ -2,7 +2,7 @@
 
 import Box from "@mui/material/Box";
 import { keyframes } from "@mui/material/styles";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { brand } from "@/theme/brand";
 
@@ -18,6 +18,8 @@ const grow = keyframes`
  */
 export function NavProgress() {
   const pathname = usePathname();
+  // Phần sau dấu "?" (vd. ?tab=members): đổi cũng tính là đã chuyển trang xong
+  const search = useSearchParams().toString();
   const [state, setState] = useState<"idle" | "loading" | "done">("idle");
   const safety = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -38,10 +40,10 @@ export function NavProgress() {
     return () => document.removeEventListener("click", onClick, true);
   }, []);
 
-  // Trang đã đổi (kể cả do chuyển hướng sau khi gửi biểu mẫu): hoàn tất
+  // Trang đã đổi (kể cả do chuyển hướng sau khi gửi biểu mẫu, hoặc chỉ đổi phần "?"): hoàn tất
   useEffect(() => {
     setState((s) => (s === "loading" ? "done" : s));
-  }, [pathname]);
+  }, [pathname, search]);
 
   useEffect(() => {
     if (state !== "done") return;
