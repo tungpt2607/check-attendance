@@ -32,12 +32,13 @@ export function createApp() {
 
 // ---------- Mô tả route cho tài liệu ----------
 
+type Security = { [scheme: string]: string[] }[];
 /** Cần đăng nhập (Bearer token) */
-export const AUTH = [{ Bearer: [] }];
+export const AUTH: Security = [{ Bearer: [] }];
 /** Có token thì dùng, không có cũng được */
-export const OPTIONAL_AUTH = [{}, { Bearer: [] }];
+export const OPTIONAL_AUTH: Security = [{}, { Bearer: [] }];
 /** Công khai */
-export const PUBLIC: { [k: string]: string[] }[] = [];
+export const PUBLIC: Security = [];
 
 /** Phản hồi JSON thành công */
 export function ok<T extends z.ZodType>(schema: T, description = "Thành công") {
