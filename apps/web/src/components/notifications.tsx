@@ -4,6 +4,7 @@
 // Câu chữ, biểu tượng, đường dẫn, nút thao tác của từng loại lấy từ cấu hình chung
 // @check-attendance/shared/notifications — thêm loại mới không cần sửa file này
 // (trừ khi có kiểu nút thao tác mới hoặc biểu tượng mới).
+import CampaignOutlined from "@mui/icons-material/CampaignOutlined";
 import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRounded";
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
@@ -51,6 +52,7 @@ const ICONS: Record<NotificationIcon, SvgIconComponent> = {
   person_add: PersonAddAlt1Rounded,
   check: CheckCircleOutlineRounded,
   close: HighlightOffRounded,
+  campaign: CampaignOutlined,
 };
 
 const TONES: Record<NotificationConfig["tone"], { fg: string; bg: string }> = {

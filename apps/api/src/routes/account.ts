@@ -15,19 +15,12 @@ import {
   UpdatePreferencesInput,
   UserSchema,
 } from "@check-attendance/shared/api";
-import { publicUser, requireUser, resolveRole } from "../auth.js";
+import { ACCOUNT_DISABLED_MESSAGE, publicUser, requireUser, resolveRole } from "../auth.js";
 import { signSession } from "../core/lib/auth-token.js";
 import { runInBackground } from "../core/lib/background.js";
-import { renderEmail } from "../core/lib/email-templates.js";
-import { emailConfigured, sendEmail } from "../core/lib/mailer.js";
-import { webUrl } from "../core/lib/share.js";
-import {
-  consumeOneTimeToken,
-  countRecentTokens,
-  createOneTimeToken,
-  peekOneTimeToken,
-  revokeTokens,
-} from "../core/modules/tokens/one-time-token.service.js";
+import { emailConfigured } from "../core/lib/mailer.js";
+import { sendPasswordReset } from "../core/modules/auth/password-reset.service.js";
+import { consumeOneTimeToken, peekOneTimeToken, revokeTokens } from "../core/modules/tokens/one-time-token.service.js";
 import {
   changePassword,
   createUser,
@@ -48,35 +41,6 @@ const TAG = ["Tài khoản"];
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 /** Ảnh đã được cắt và thu nhỏ trên thiết bị (1024px), thường 150–400KB */
 const AVATAR_MAX_BYTES = 600 * 1024;
-
-/** Link đặt lại mật khẩu hết hạn sau 30 phút */
-const RESET_TTL_MS = 30 * 60 * 1000;
-/** Mỗi tài khoản tối đa 3 lần yêu cầu đặt lại mật khẩu mỗi giờ (giữ hạn mức gửi email) */
-const RESET_MAX_PER_HOUR = 3;
-const HOUR_MS = 60 * 60 * 1000;
-
-/** Tạo link đặt lại mật khẩu và gửi email (chạy sau khi đã trả kết quả) */
-async function sendPasswordReset(email: string): Promise<void> {
-  const user = await findUserByEmail(email);
-  if (!user) return;
-  const userId = String(user._id);
-  if ((await countRecentTokens(userId, "password_reset", HOUR_MS)) >= RESET_MAX_PER_HOUR) {
-    console.warn(`[password_reset] vượt giới hạn ${RESET_MAX_PER_HOUR}/giờ cho ${userId}`);
-    return;
-  }
-  const token = await createOneTimeToken(userId, "password_reset", RESET_TTL_MS);
-  const url = `${webUrl()}/reset-password/${token}`;
-  const { html, text } = renderEmail({
-    heading: "Đặt lại mật khẩu",
-    paragraphs: [
-      [{ text: "Xin chào " }, { text: user.name, bold: true }, { text: "," }],
-      "Bạn (hoặc ai đó) vừa yêu cầu đặt lại mật khẩu cho tài khoản Điểm danh dùng email này. Bấm nút bên dưới để đặt mật khẩu mới.",
-    ],
-    button: { label: "Đặt lại mật khẩu", url },
-    note: "Link chỉ dùng được 1 lần và hết hạn sau 30 phút. Nếu bạn không yêu cầu, cứ bỏ qua email này — mật khẩu của bạn vẫn giữ nguyên.",
-  });
-  await sendEmail({ to: user.email, subject: "Đặt lại mật khẩu · Điểm danh", html, text });
-}
 
 /** Cấp token mới cho tài khoản (đăng nhập, đăng ký, đổi mật khẩu) */
 async function issue(userId: string) {
@@ -122,6 +86,7 @@ export const account = createApp()
       const { email, password } = c.req.valid("json");
       const user = await findUserByEmail(email);
       if (!user || !(await verifyPassword(user, password))) fail(401, "wrong_credentials", "Email hoặc mật khẩu không đúng.");
+      if (user.disabledAt) fail(403, "account_disabled", ACCOUNT_DISABLED_MESSAGE);
       return c.json(await issue(String(user._id)), 200);
     },
   )

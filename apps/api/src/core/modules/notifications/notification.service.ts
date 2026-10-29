@@ -27,6 +27,8 @@ export type NotifyInput = {
   actorId?: string | null;
   subject?: { kind: NotificationSubjectKind; id: string } | null;
   data?: NotificationData;
+  /** Gửi kèm email không; bỏ trống = theo cấu hình của loại thông báo (có `email` là gửi) */
+  email?: boolean;
 };
 
 /**
@@ -49,7 +51,8 @@ export async function notify(input: NotifyInput): Promise<void> {
         data: input.data ?? {},
       })),
     );
-    if (NOTIFICATION_CONFIG[input.type].email) runInBackground(`email ${input.type}`, () => emailNotification(input, recipients));
+    const wantEmail = !!NOTIFICATION_CONFIG[input.type].email && input.email !== false;
+    if (wantEmail) runInBackground(`email ${input.type}`, () => emailNotification(input, recipients));
   } catch (err) {
     console.error("notify failed", input.type, err);
   }

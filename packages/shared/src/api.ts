@@ -332,7 +332,14 @@ export const NotificationSchema = z.object({
   actor: PublicAccountSchema.nullable().describe("Người gây ra sự việc (vd. người xin nhận tên)"),
   subject: z.object({ kind: z.enum(NOTIFICATION_SUBJECTS), id: Id }).nullable().describe("Đối tượng thông báo nói tới"),
   data: z
-    .object({ groupName: z.string().optional(), memberId: z.string().optional(), memberName: z.string().optional() })
+    .object({
+      groupName: z.string().optional(),
+      memberId: z.string().optional(),
+      memberName: z.string().optional(),
+      title: z.string().optional(),
+      message: z.string().optional(),
+      href: z.string().optional(),
+    })
     .describe("Nội dung chụp lại lúc tạo"),
   read: z.boolean(),
   resolution: z.enum(NOTIFICATION_RESOLUTIONS).nullable().describe("Đối tượng đã được xử lý thế nào; null = chưa xử lý"),

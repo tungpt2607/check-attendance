@@ -22,6 +22,9 @@ function getTransport(): Transport {
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port,
     secure: port === 465,
+    // Giữ kết nối để gửi nhiều email liên tiếp (thông báo hệ thống) nhanh hơn
+    pool: true,
+    maxConnections: 1,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
   return transport;

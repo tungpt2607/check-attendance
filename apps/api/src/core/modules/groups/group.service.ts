@@ -130,16 +130,35 @@ export async function deleteGroup(groupId: string, userId: string): Promise<bool
   if (!group) return false;
   const childCount = await Group.countDocuments({ parentId: groupId });
   if (childCount > 0) return false;
-
-  const sessionIds = await AttendanceSession.find({ groupId }).distinct("_id");
-  await AttendanceRecord.deleteMany({ sessionId: { $in: sessionIds } });
-  await AttendanceSession.deleteMany({ groupId });
-  await Invite.deleteMany({ groupId });
-  // Yêu cầu đang chờ bị xóa theo: thông báo về chúng chuyển thành "Không còn hiệu lực"
-  const pendingIds = await LinkRequest.find({ groupId, status: "pending" }).distinct("_id");
-  await resolveSubject("link_request", pendingIds.map(String), "closed");
-  await LinkRequest.deleteMany({ groupId });
-  await Member.deleteMany({ groupId });
-  await Group.deleteOne({ _id: groupId });
+  await purgeGroups([group.id]);
   return true;
+}
+
+/** Xoá hẳn các nhóm và mọi dữ liệu của chúng (buổi, kết quả, lời mời, yêu cầu, thành viên). Không kiểm tra quyền. */
+async function purgeGroups(groupIds: string[]): Promise<{ groups: number; members: number; sessions: number }> {
+  await connectDB();
+  const ids = groupIds.filter(isValidId).map((id) => new mongoose.Types.ObjectId(id));
+  if (ids.length === 0) return { groups: 0, members: 0, sessions: 0 };
+  const inGroups = { groupId: { $in: ids } };
+  const sessionIds = await AttendanceSession.find(inGroups).distinct("_id");
+  await AttendanceRecord.deleteMany({ sessionId: { $in: sessionIds } });
+  await AttendanceSession.deleteMany(inGroups);
+  await Invite.deleteMany(inGroups);
+  // Yêu cầu đang chờ bị xóa theo: thông báo về chúng chuyển thành "Không còn hiệu lực"
+  const pendingIds = await LinkRequest.find({ ...inGroups, status: "pending" }).distinct("_id");
+  await resolveSubject("link_request", pendingIds.map(String), "closed");
+  await LinkRequest.deleteMany(inGroups);
+  const members = await Member.deleteMany(inGroups);
+  const groups = await Group.deleteMany({ _id: { $in: ids } });
+  return { groups: groups.deletedCount, members: members.deletedCount, sessions: sessionIds.length };
+}
+
+/** Quản trị: xoá một nhóm cùng mọi nhóm con các cấp bên trong. Không kiểm tra quyền (nơi gọi phải là admin). */
+export async function deleteGroupTree(groupId: string) {
+  if (!isValidId(groupId)) return null;
+  await connectDB();
+  const exists = await Group.exists({ _id: groupId });
+  if (!exists) return null;
+  const descendants = await Group.find({ ancestors: new mongoose.Types.ObjectId(groupId) }).distinct("_id");
+  return purgeGroups([groupId, ...descendants.map(String)]);
 }

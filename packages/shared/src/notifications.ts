@@ -9,6 +9,8 @@ export const NOTIFICATION_TYPES = [
   "link_request.approved",
   /** Yêu cầu nhận tên bị từ chối → người xin */
   "link_request.rejected",
+  /** Quản trị viên gửi thông báo tới mọi người (CMS) */
+  "system.announcement",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -32,6 +34,10 @@ export type NotificationData = {
   groupName?: string;
   memberId?: string;
   memberName?: string;
+  /** Thông báo hệ thống: tiêu đề, nội dung, đường dẫn trong web (tùy chọn) */
+  title?: string;
+  message?: string;
+  href?: string;
 };
 
 /** Thông tin tối thiểu để dựng câu chữ và đường dẫn của một thông báo */
@@ -46,7 +52,7 @@ export type NotificationLike = {
 export type TextPart = { text: string; bold?: boolean };
 
 /** Biểu tượng (mỗi nơi hiển thị tự đổi tên này ra hình của mình) */
-export type NotificationIcon = "person_add" | "check" | "close";
+export type NotificationIcon = "person_add" | "check" | "close" | "campaign";
 
 /** Thao tác ngay trên thông báo (khi đối tượng chưa được xử lý) */
 export type NotificationActions = "approve_reject";
@@ -86,6 +92,14 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     tone: "error",
     text: (n) => [t("Yêu cầu nhận tên "), b(n.data.memberName, "(đã xóa)"), t(" trong nhóm "), b(n.data.groupName, "(đã xóa)"), t(" không được duyệt")],
     href: () => null,
+  },
+  "system.announcement": {
+    icon: "campaign",
+    tone: "primary",
+    text: (n) => [b(n.data.title, "Thông báo"), t(n.data.message ? `: ${n.data.message}` : "")],
+    href: (n) => (n.data.href && n.data.href.startsWith("/") ? n.data.href : null),
+    // Gửi email hay không do người gửi chọn mỗi lần (notify({ email }))
+    email: { subject: (n) => n.data.title || "Thông báo từ Điểm danh" },
   },
 };
 

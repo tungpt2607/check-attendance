@@ -3,7 +3,10 @@
 import type { Context, MiddlewareHandler } from "hono";
 import { verifySession } from "./core/lib/auth-token.js";
 import { getAccount } from "./core/modules/users/user.service.js";
+import { adminEmails, resolveRole } from "./core/lib/roles.js";
 import { fail } from "./http.js";
+
+export { adminEmails, resolveRole };
 
 export type AuthUser = {
   userId: string;
@@ -14,24 +17,11 @@ export type AuthUser = {
   role: "user" | "admin";
 };
 
-type AuthProblem = { code: "invalid_token" | "session_revoked"; message: string } | null;
+type AuthProblem = { code: "invalid_token" | "session_revoked" | "account_disabled"; message: string } | null;
 
 export type AppEnv = { Variables: { user: AuthUser | null; authProblem: AuthProblem } };
 
-function adminEmails(): Set<string> {
-  return new Set(
-    (process.env.ADMIN_EMAILS ?? "")
-      .split(",")
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
-
-/** Vai trò thực tế của một tài khoản: admin nếu được đánh dấu trong DB hoặc có email trong ADMIN_EMAILS.
- *  Mọi chỗ (đăng nhập, đăng ký, đổi mật khẩu, các API cần token) đều dùng hàm này. */
-export function resolveRole(acc: { role: "user" | "admin"; email: string }): "user" | "admin" {
-  return acc.role === "admin" || adminEmails().has(acc.email.toLowerCase()) ? "admin" : "user";
-}
+export const ACCOUNT_DISABLED_MESSAGE = "Tài khoản đã bị khoá. Vui lòng liên hệ quản trị viên.";
 
 function bearer(c: Context): string | undefined {
   const h = c.req.header("authorization") ?? "";
@@ -58,6 +48,10 @@ export const loadUser: MiddlewareHandler<AppEnv> = async (c, next) => {
   const acc = await getAccount(payload.userId);
   if (!acc || acc.tokenVersion !== payload.tv) {
     c.set("authProblem", { code: "session_revoked", message: "Phiên đăng nhập đã hết hiệu lực. Hãy đăng nhập lại." });
+    return next();
+  }
+  if (acc.disabled) {
+    c.set("authProblem", { code: "account_disabled", message: ACCOUNT_DISABLED_MESSAGE });
     return next();
   }
   c.set("user", {

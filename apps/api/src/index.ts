@@ -8,6 +8,7 @@ import { HTTPException } from "hono/http-exception";
 import { loadUser, type AppEnv } from "./auth.js";
 import { DOC_INFO, DOCS_HTML } from "./openapi.js";
 import { account } from "./routes/account.js";
+import { admin } from "./routes/admin.js";
 import { groups } from "./routes/groups.js";
 import { members } from "./routes/members.js";
 import { notifications } from "./routes/notifications.js";
@@ -41,6 +42,7 @@ app.route("/v1", groups);
 app.route("/v1", members);
 app.route("/v1", sessions);
 app.route("/v1", notifications);
+app.route("/v1", admin);
 
 // Đặc tả OpenAPI sinh từ các route
 app.openAPIRegistry.registerComponent("securitySchemes", "Bearer", { type: "http", scheme: "bearer", bearerFormat: "JWT" });

@@ -33,6 +33,8 @@ export type AccountDTO = {
   role: "user" | "admin";
   /** Mốc thời gian ảnh đại diện (dùng làm phiên bản để trình duyệt tải ảnh mới); null = chưa có ảnh */
   avatarVersion: number | null;
+  /** Bị quản trị viên khoá */
+  disabled: boolean;
 };
 
 export async function getAccount(userId: string): Promise<AccountDTO | null> {
@@ -47,6 +49,7 @@ export async function getAccount(userId: string): Promise<AccountDTO | null> {
     tokenVersion: u.tokenVersion ?? 0,
     role: u.role === "admin" ? "admin" : "user",
     avatarVersion: u.avatar?.updatedAt ? new Date(u.avatar.updatedAt).getTime() : null,
+    disabled: !!u.disabledAt,
   };
 }
 
@@ -151,4 +154,29 @@ export async function getEmailRecipients(ids: string[]): Promise<{ id: string; n
   return list
     .filter((u) => toPreferences(u).notifications.email)
     .map((u) => ({ id: String(u._id), name: u.name, email: u.email }));
+}
+
+// ---------- Quản trị ----------
+
+/** Khoá / mở khoá tài khoản. Khoá thì mọi phiên đăng nhập hết hiệu lực ngay (tăng tokenVersion). */
+export async function setUserDisabled(userId: string, disabled: boolean): Promise<boolean> {
+  await connectDB();
+  const res = await User.updateOne(
+    { _id: userId },
+    disabled ? { $set: { disabledAt: new Date() }, $inc: { tokenVersion: 1 } } : { $set: { disabledAt: null } },
+  );
+  return res.matchedCount === 1;
+}
+
+export async function setUserRole(userId: string, role: "user" | "admin"): Promise<boolean> {
+  await connectDB();
+  const res = await User.updateOne({ _id: userId }, { $set: { role } });
+  return res.matchedCount === 1;
+}
+
+/** Đăng xuất mọi thiết bị: mọi token cũ hết hiệu lực */
+export async function revokeUserSessions(userId: string): Promise<boolean> {
+  await connectDB();
+  const res = await User.updateOne({ _id: userId }, { $inc: { tokenVersion: 1 } });
+  return res.matchedCount === 1;
 }
