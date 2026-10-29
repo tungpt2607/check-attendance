@@ -5,7 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { api, ApiError, enc, ignoreApiError } from "@/lib/api";
-import type { OwnerRequestRow, ShareLink } from "@check-attendance/shared/api";
+import type { ShareLink } from "@check-attendance/shared/api";
 import { requireUser } from "@/lib/session";
 
 export type ShareLinkResult = { ok: true; link: ShareLink } | { ok: false; error: string };
@@ -131,13 +131,18 @@ export async function rejectRequestAction(formData: FormData) {
   revalidatePath("/groups", "layout");
 }
 
-/** Chuông thông báo: yêu cầu chờ duyệt ở mọi nhóm tôi quản lý. API tạm lỗi thì trả null (giữ số cũ) */
-export async function getPendingRequestsAction(): Promise<OwnerRequestRow[] | null> {
+
+export type DecideResult = { ok: true } | { ok: false; error: string };
+
+/** Duyệt / từ chối và báo lại kết quả (dùng trong chuông thông báo, nơi cần biết thao tác có thành công không) */
+export async function decideRequestAction(requestId: string, approve: boolean): Promise<DecideResult> {
   await requireUser();
   try {
-    return (await api<{ requests: OwnerRequestRow[] }>("/v1/requests")).requests;
+    await api(`/v1/requests/${enc(requestId)}/${approve ? "approve" : "reject"}`, { method: "POST" });
   } catch (err) {
-    if (err instanceof ApiError) return null;
+    if (err instanceof ApiError && err.status < 500) return { ok: false, error: err.message };
     throw err;
   }
+  revalidatePath("/groups", "layout");
+  return { ok: true };
 }

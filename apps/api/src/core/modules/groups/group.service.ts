@@ -3,6 +3,7 @@ import { VI_COLLATION, connectDB, isValidId } from "../../lib/db.js";
 import { Invite, LinkRequest } from "../invites/invite.model.js";
 import { Member } from "../members/member.model.js";
 import { AttendanceRecord, AttendanceSession } from "../attendance/attendance.model.js";
+import { resolveSubject } from "../notifications/notification.service.js";
 import { Group, type GroupRecord } from "./group.model.js";
 
 export type GroupDTO = {
@@ -39,6 +40,17 @@ export async function getGroupName(groupId: string): Promise<string | null> {
   await connectDB();
   const g = await Group.findById(groupId).select("name").lean<Pick<GroupRecord, "name">>();
   return g?.name ?? null;
+}
+
+/**
+ * Những người quản lý nhóm (nhận thông báo, duyệt yêu cầu...). Hiện chỉ có chủ nhóm;
+ * sau này có đồng quản lý thì chỉ cần sửa ở đây.
+ */
+export async function getGroupManagerIds(groupId: string): Promise<string[]> {
+  if (!isValidId(groupId)) return [];
+  await connectDB();
+  const g = await Group.findById(groupId).select("ownerId").lean<Pick<GroupRecord, "ownerId">>();
+  return g ? [String(g.ownerId)] : [];
 }
 
 /** Toàn bộ nhóm của người dùng, dựng thành cây. */
@@ -123,6 +135,9 @@ export async function deleteGroup(groupId: string, userId: string): Promise<bool
   await AttendanceRecord.deleteMany({ sessionId: { $in: sessionIds } });
   await AttendanceSession.deleteMany({ groupId });
   await Invite.deleteMany({ groupId });
+  // Yêu cầu đang chờ bị xóa theo: thông báo về chúng chuyển thành "Không còn hiệu lực"
+  const pendingIds = await LinkRequest.find({ groupId, status: "pending" }).distinct("_id");
+  await resolveSubject("link_request", pendingIds.map(String), "closed");
   await LinkRequest.deleteMany({ groupId });
   await Member.deleteMany({ groupId });
   await Group.deleteOne({ _id: groupId });

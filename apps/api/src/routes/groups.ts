@@ -12,7 +12,6 @@ import {
   LinkRequestListSchema,
   MemberListSchema,
   NewLinkSchema,
-  OwnerRequestListSchema,
   RenameGroupInput,
   SessionListSchema,
   SessionSchema,
@@ -38,9 +37,8 @@ import {
   getGroupsWithActiveInvite,
   countPendingRequests,
   listPendingRequests,
-  listPendingRequestsOfGroups,
 } from "../core/modules/invites/invite.service.js";
-import { addMembersFromText, getMemberNames, listMembers } from "../core/modules/members/member.service.js";
+import { addMembersFromText, listMembers } from "../core/modules/members/member.service.js";
 import { getAccountsByIds } from "../core/modules/users/user.service.js";
 import { AUTH, createApp, fail, IdParam, iso, jsonBody, NO_CONTENT, ok } from "../http.js";
 import { ownedGroupOr404 } from "./owned.js";
@@ -79,41 +77,6 @@ export const groups = createApp()
             memberCount: g.memberCount,
             inviteActive: on.has(g.id),
             pendingRequestCount: pending.get(g.id) ?? 0,
-          })),
-        },
-        200,
-      );
-    },
-  )
-
-  .openapi(
-    createRoute({
-      method: "get",
-      path: "/requests",
-      tags: TAG,
-      summary: "Yêu cầu liên kết đang chờ duyệt ở mọi nhóm tôi quản lý (mới nhất trước)",
-      security: AUTH,
-      responses: { 200: ok(OwnerRequestListSchema) },
-    }),
-    async (c) => {
-      const user = requireUser(c);
-      const list = flatten(await getOwnedGroupTree(user.userId));
-      const groupNames = new Map(list.map((g) => [g.id, g.name]));
-      const requests = await listPendingRequestsOfGroups(list.map((g) => g.id));
-      const [accounts, memberNames] = await Promise.all([
-        getAccountsByIds(requests.map((r) => String(r.userId))),
-        getMemberNames(requests.map((r) => String(r.memberId))),
-      ]);
-      return c.json(
-        {
-          requests: requests.map((r) => ({
-            id: String(r._id),
-            groupId: String(r.groupId),
-            groupName: groupNames.get(String(r.groupId)) ?? "",
-            account: accounts.get(String(r.userId)) ?? null,
-            memberId: String(r.memberId),
-            memberName: memberNames.get(String(r.memberId)) ?? null,
-            createdAt: iso(r.createdAt),
           })),
         },
         200,

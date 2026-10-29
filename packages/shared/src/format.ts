@@ -31,3 +31,17 @@ export function formatDate(d: Date | string): string {
 export function formatTime(d: Date | string): string {
   return toDate(d).toLocaleTimeString("vi-VN", { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" });
 }
+
+/** "vừa xong", "5 phút trước", "3 giờ trước", "2 ngày trước", quá 7 ngày thì ghi ngày */
+export function timeAgo(d: Date | string, now: Date = new Date()): string {
+  const date = toDate(d);
+  const sec = Math.max(0, Math.round((now.getTime() - date.getTime()) / 1000));
+  if (sec < 60) return "vừa xong";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} phút trước`;
+  const hour = Math.floor(min / 60);
+  if (hour < 24) return `${hour} giờ trước`;
+  const day = Math.floor(hour / 24);
+  if (day < 7) return `${day} ngày trước`;
+  return date.toLocaleDateString("vi-VN", { timeZone: TIME_ZONE, day: "2-digit", month: "2-digit", year: "numeric" });
+}

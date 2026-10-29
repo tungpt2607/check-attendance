@@ -10,6 +10,7 @@ import { DOC_INFO, DOCS_HTML } from "./openapi.js";
 import { account } from "./routes/account.js";
 import { groups } from "./routes/groups.js";
 import { members } from "./routes/members.js";
+import { notifications } from "./routes/notifications.js";
 import { sessions } from "./routes/sessions.js";
 
 const app = new OpenAPIHono<AppEnv>();
@@ -39,6 +40,7 @@ app.route("/v1", account);
 app.route("/v1", groups);
 app.route("/v1", members);
 app.route("/v1", sessions);
+app.route("/v1", notifications);
 
 // Đặc tả OpenAPI sinh từ các route
 app.openAPIRegistry.registerComponent("securitySchemes", "Bearer", { type: "http", scheme: "bearer", bearerFormat: "JWT" });

@@ -322,7 +322,7 @@ export const members = createApp()
     async (c) => {
       const user = requireUser(c);
       const req = await ownedPendingRequest(c.req.valid("param").id, user.userId);
-      const result = await approveRequest(req);
+      const result = await approveRequest(req, user.userId);
       if (result !== "ok") fail(409, result, LINK_ERRORS[result]);
       return c.json({ status: "approved" as const }, 200);
     },
@@ -341,7 +341,7 @@ export const members = createApp()
     async (c) => {
       const user = requireUser(c);
       const req = await ownedPendingRequest(c.req.valid("param").id, user.userId);
-      await rejectRequest(String(req._id));
+      await rejectRequest(String(req._id), user.userId);
       return c.json({ status: "rejected" as const }, 200);
     },
   )

@@ -1,7 +1,9 @@
 import { randomBytes } from "node:crypto";
 import mongoose, { type Types } from "mongoose";
 import { connectDB, isValidId } from "../../lib/db.js";
+import { getGroupManagerIds, getGroupName } from "../groups/group.service.js";
 import { Member, type MemberRecord } from "../members/member.model.js";
+import { notify, resolveSubject } from "../notifications/notification.service.js";
 import { Invite, LinkRequest, type InviteRecord, type LinkRequestRecord } from "./invite.model.js";
 
 /** Link riêng hết hạn sau 7 ngày */
@@ -129,20 +131,45 @@ export async function disableGroupInvite(groupId: string) {
 
 export type RequestResult = "ok" | "member_taken" | "user_in_group" | "already_pending";
 
-/** Người dùng xin nhận một tên trong nhóm */
+/** Người dùng xin nhận một tên trong nhóm (báo cho người quản lý nhóm) */
 export async function createLinkRequest(groupId: string, memberId: string, userId: string): Promise<RequestResult> {
   await connectDB();
   const member = await Member.findOne({ _id: memberId, groupId }).lean<MemberRecord>();
   if (!member || member.userId) return "member_taken";
   if (await Member.exists({ groupId, userId })) return "user_in_group";
   if (await LinkRequest.exists({ groupId, userId, status: "pending" })) return "already_pending";
-  await LinkRequest.create({
+  const req = await LinkRequest.create({
     groupId: new mongoose.Types.ObjectId(groupId),
     memberId: new mongoose.Types.ObjectId(memberId),
     userId: new mongoose.Types.ObjectId(userId),
     status: "pending",
   });
+  const [managers, groupName] = await Promise.all([getGroupManagerIds(groupId), getGroupName(groupId)]);
+  await notify({
+    type: "link_request.created",
+    recipients: managers,
+    groupId,
+    actorId: userId,
+    subject: { kind: "link_request", id: String(req._id) },
+    data: { groupName: groupName ?? undefined, memberId, memberName: member.name },
+  });
   return "ok";
+}
+
+/** Báo cho người xin biết kết quả (duyệt / từ chối) */
+async function notifyRequester(req: LinkRequestRecord, approved: boolean, actorId: string | null) {
+  const [member, groupName] = await Promise.all([
+    Member.findById(req.memberId).select("name").lean<Pick<MemberRecord, "name">>(),
+    getGroupName(String(req.groupId)),
+  ]);
+  await notify({
+    type: approved ? "link_request.approved" : "link_request.rejected",
+    recipients: [String(req.userId)],
+    groupId: String(req.groupId),
+    actorId,
+    subject: { kind: "link_request", id: String(req._id) },
+    data: { groupName: groupName ?? undefined, memberId: String(req.memberId), memberName: member?.name },
+  });
 }
 
 export async function getPendingRequestOfUser(groupId: string, userId: string) {
@@ -152,20 +179,14 @@ export async function getPendingRequestOfUser(groupId: string, userId: string) {
 
 export async function cancelPendingRequest(groupId: string, userId: string) {
   await connectDB();
+  const pending = await LinkRequest.find({ groupId, userId, status: "pending" }).select("_id").lean<{ _id: Types.ObjectId }[]>();
   await LinkRequest.deleteMany({ groupId, userId, status: "pending" });
+  await resolveSubject("link_request", pending.map((r) => String(r._id)), "cancelled");
 }
 
 export async function listPendingRequests(groupId: string) {
   await connectDB();
   return LinkRequest.find({ groupId, status: "pending" }).sort({ createdAt: 1 }).lean<LinkRequestRecord[]>();
-}
-
-/** Yêu cầu chờ duyệt của nhiều nhóm một lúc, mới nhất trước */
-export async function listPendingRequestsOfGroups(groupIds: string[]) {
-  const ids = groupIds.filter(isValidId).map((id) => new mongoose.Types.ObjectId(id));
-  if (ids.length === 0) return [];
-  await connectDB();
-  return LinkRequest.find({ groupId: { $in: ids }, status: "pending" }).sort({ createdAt: -1 }).lean<LinkRequestRecord[]>();
 }
 
 /** Số yêu cầu chờ duyệt của từng nhóm */
@@ -186,29 +207,45 @@ export async function getLinkRequest(requestId: string) {
   return LinkRequest.findById(requestId).lean<LinkRequestRecord>();
 }
 
-/** Duyệt: gắn tài khoản, đồng thời từ chối các yêu cầu khác tranh cùng tên hoặc của cùng người */
-export async function approveRequest(req: LinkRequestRecord): Promise<LinkResult> {
+/**
+ * Duyệt: gắn tài khoản, đồng thời từ chối các yêu cầu khác tranh cùng tên hoặc của cùng người.
+ * Mọi người liên quan đều nhận thông báo kết quả. actorId = người duyệt.
+ */
+export async function approveRequest(req: LinkRequestRecord, actorId: string | null = null): Promise<LinkResult> {
   const result = await linkMember(String(req.memberId), String(req.userId));
   await connectDB();
   const now = new Date();
   if (result === "ok") {
     await LinkRequest.updateOne({ _id: req._id }, { $set: { status: "approved", decidedAt: now } });
-    await LinkRequest.updateMany(
-      {
-        groupId: req.groupId,
-        status: "pending",
-        _id: { $ne: req._id },
-        $or: [{ memberId: req.memberId }, { userId: req.userId }],
-      },
-      { $set: { status: "rejected", decidedAt: now } },
-    );
+    const losers = await LinkRequest.find({
+      groupId: req.groupId,
+      status: "pending",
+      _id: { $ne: req._id },
+      $or: [{ memberId: req.memberId }, { userId: req.userId }],
+    }).lean<LinkRequestRecord[]>();
+    if (losers.length > 0) {
+      await LinkRequest.updateMany({ _id: { $in: losers.map((r) => r._id) } }, { $set: { status: "rejected", decidedAt: now } });
+    }
+    await resolveSubject("link_request", String(req._id), "approved");
+    await notifyRequester(req, true, actorId);
+    await resolveSubject("link_request", losers.map((r) => String(r._id)), "rejected");
+    for (const r of losers) await notifyRequester(r, false, actorId);
   } else {
     await LinkRequest.updateOne({ _id: req._id }, { $set: { status: "rejected", decidedAt: now } });
+    await resolveSubject("link_request", String(req._id), "rejected");
+    await notifyRequester(req, false, actorId);
   }
   return result;
 }
 
-export async function rejectRequest(requestId: string) {
+export async function rejectRequest(requestId: string, actorId: string | null = null) {
   await connectDB();
-  await LinkRequest.updateOne({ _id: requestId, status: "pending" }, { $set: { status: "rejected", decidedAt: new Date() } });
+  const req = await LinkRequest.findOneAndUpdate(
+    { _id: requestId, status: "pending" },
+    { $set: { status: "rejected", decidedAt: new Date() } },
+    { new: true },
+  ).lean<LinkRequestRecord>();
+  if (!req) return;
+  await resolveSubject("link_request", String(req._id), "rejected");
+  await notifyRequester(req, false, actorId);
 }

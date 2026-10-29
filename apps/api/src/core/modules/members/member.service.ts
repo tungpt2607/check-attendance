@@ -2,6 +2,7 @@ import mongoose, { type Types } from "mongoose";
 import { VI_COLLATION, connectDB, isValidId } from "../../lib/db.js";
 import { AttendanceRecord } from "../attendance/attendance.model.js";
 import { Invite, LinkRequest } from "../invites/invite.model.js";
+import { resolveSubject } from "../notifications/notification.service.js";
 import { Member, type MemberRecord } from "./member.model.js";
 
 export type MemberDTO = {
@@ -51,15 +52,6 @@ export async function addMembersFromText(groupId: string, text: string): Promise
   return rows.length;
 }
 
-/** Tên của nhiều thành viên theo id (không kiểm tra quyền) */
-export async function getMemberNames(memberIds: string[]): Promise<Map<string, string>> {
-  const ids = memberIds.filter(isValidId);
-  if (ids.length === 0) return new Map();
-  await connectDB();
-  const list = await Member.find({ _id: { $in: ids } }, { name: 1 }).lean<Pick<MemberRecord, "_id" | "name">[]>();
-  return new Map(list.map((m) => [String(m._id), m.name]));
-}
-
 export async function getMember(memberId: string): Promise<MemberDTO | null> {
   if (!isValidId(memberId)) return null;
   await connectDB();
@@ -82,6 +74,9 @@ export async function deleteMember(memberId: string) {
   await connectDB();
   await AttendanceRecord.deleteMany({ memberId });
   await Invite.deleteMany({ memberId });
+  // Yêu cầu đang chờ bị xóa theo: thông báo về chúng chuyển thành "Không còn hiệu lực"
+  const pendingIds = await LinkRequest.find({ memberId, status: "pending" }).distinct("_id");
+  await resolveSubject("link_request", pendingIds.map(String), "closed");
   await LinkRequest.deleteMany({ memberId });
   await Member.deleteOne({ _id: memberId });
 }

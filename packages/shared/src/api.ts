@@ -3,6 +3,7 @@
 //  - Web, CMS, app: kiểu dữ liệu nhận về (z.infer)
 // Ngày giờ luôn là chuỗi ISO 8601; ngày điểm danh gửi lên dạng YYYY-MM-DD.
 import { z } from "zod";
+import { NOTIFICATION_RESOLUTIONS, NOTIFICATION_SUBJECTS, NOTIFICATION_TYPES } from "@check-attendance/shared/notifications";
 import { STATUS_VALUES } from "@check-attendance/shared/statuses";
 
 // ---------- Dùng chung ----------
@@ -128,10 +129,6 @@ export const LinkRequestSchema = z.object({
   createdAt: IsoDateTime,
 });
 export const LinkRequestListSchema = z.object({ requests: z.array(LinkRequestSchema) });
-
-/** Yêu cầu chờ duyệt ở mọi nhóm tôi quản lý (chuông thông báo) */
-export const OwnerRequestSchema = LinkRequestSchema.extend({ groupId: Id, groupName: z.string() });
-export const OwnerRequestListSchema = z.object({ requests: z.array(OwnerRequestSchema) });
 
 // ---------- Thành viên ----------
 
@@ -306,6 +303,38 @@ export const MyMembershipSchema = z.object({
   ),
 });
 
+// ---------- Thông báo ----------
+
+export const NotificationSchema = z.object({
+  id: Id,
+  type: z.enum(NOTIFICATION_TYPES).describe("Loại thông báo (xem packages/shared/src/notifications.ts)"),
+  groupId: Id.nullable(),
+  actor: PublicAccountSchema.nullable().describe("Người gây ra sự việc (vd. người xin nhận tên)"),
+  subject: z.object({ kind: z.enum(NOTIFICATION_SUBJECTS), id: Id }).nullable().describe("Đối tượng thông báo nói tới"),
+  data: z
+    .object({ groupName: z.string().optional(), memberId: z.string().optional(), memberName: z.string().optional() })
+    .describe("Nội dung chụp lại lúc tạo"),
+  read: z.boolean(),
+  resolution: z.enum(NOTIFICATION_RESOLUTIONS).nullable().describe("Đối tượng đã được xử lý thế nào; null = chưa xử lý"),
+  createdAt: IsoDateTime,
+});
+export const NotificationListSchema = z.object({
+  items: z.array(NotificationSchema),
+  nextCursor: z.string().nullable().describe("Gửi lại vào ?cursor= để lấy trang sau; null = hết"),
+  unreadCount: z.number().int(),
+});
+export const NotificationListQuery = z.object({
+  cursor: Id.optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+});
+export const UnreadCountSchema = z.object({ count: z.number().int() });
+export const MarkReadInput = z
+  .object({
+    ids: z.array(Id).max(100).optional().describe("Các thông báo cần đánh dấu đã đọc"),
+    all: z.boolean().optional().describe("true = đánh dấu tất cả"),
+  })
+  .refine((v) => v.all || (v.ids && v.ids.length > 0), "Cần ids hoặc all.");
+
 // ---------- Kiểu dữ liệu (cho web, CMS, app) ----------
 
 export type StatusCounts = z.infer<typeof StatusCountsSchema>;
@@ -318,7 +347,8 @@ export type AuthResult = z.infer<typeof AuthResultSchema>;
 export type GroupListItem = z.infer<typeof GroupListItemSchema>;
 export type GroupDetail = z.infer<typeof GroupDetailSchema>;
 export type LinkRequestRow = z.infer<typeof LinkRequestSchema>;
-export type OwnerRequestRow = z.infer<typeof OwnerRequestSchema>;
+export type NotificationItem = z.infer<typeof NotificationSchema>;
+export type NotificationList = z.infer<typeof NotificationListSchema>;
 export type MemberRow = z.infer<typeof MemberRowSchema>;
 export type MemberDetail = z.infer<typeof MemberDetailSchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
