@@ -6,7 +6,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import { CheckInDone, CheckInList, SelfCheckInButton } from "@/components/checkin-list";
-import { AppLink } from "@/components/links";
+import { LinkButton } from "@/components/links";
 import { getSession } from "@/lib/session";
 import { api, ApiError } from "@/lib/api";
 import type { CheckInInfo } from "@/lib/api-types";
@@ -123,16 +123,17 @@ export default async function CheckInPage({ params, searchParams }: Props) {
             </>
           ) : (
             <>
-              Tên của bạn có biểu tượng khóa?{" "}
-              <AppLink href={loginHref} fontWeight={700}>
-                Đăng nhập
-              </AppLink>{" "}
-              để điểm danh.
+              Tên của bạn có biểu tượng khóa? Hãy đăng nhập đúng tài khoản đã liên kết để điểm danh.
+              <Box sx={{ mt: 1 }}>
+                <LinkButton href={loginHref} variant="contained" size="small">
+                  Đăng nhập
+                </LinkButton>
+              </Box>
             </>
           )}
         </Alert>
       )}
-      <CheckInList sessionId={sessionId} token={t ?? ""} members={list} />
+      <CheckInList sessionId={sessionId} token={t ?? ""} members={list} loginHref={loginHref} loggedInEmail={user?.email ?? null} />
     </Box>
   );
 }
