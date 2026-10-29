@@ -22,7 +22,7 @@ import NextLink from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { normalizeSearch } from "@check-attendance/shared/search";
 import { selfCheckInAction } from "@/modules/attendance/checkin.actions";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 
 export type CheckInMember = {
   id: string;

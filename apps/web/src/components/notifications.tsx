@@ -28,9 +28,9 @@ import NextLink from "next/link";
 import { useCallback, useState, useTransition } from "react";
 import { decideRequestAction } from "@/modules/invites/invite.actions";
 import { listNotificationsAction, markNotificationsReadAction } from "@/modules/notifications/notification.actions";
-import { brand } from "@/theme/brand";
-import { Avatar } from "./avatar";
-import { toast } from "./toaster";
+import { brand } from "@check-attendance/ui/brand";
+import { Avatar } from "@check-attendance/ui/avatar";
+import { toast } from "@check-attendance/ui/toaster";
 
 // ---------- Báo cho chuông biết số chưa đọc đã đổi (thao tác ở trang khác) ----------
 

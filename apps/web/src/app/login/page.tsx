@@ -1,4 +1,4 @@
-import { AuthShell } from "@/components/auth-shell";
+import { AuthShell } from "@check-attendance/ui/auth-shell";
 import { LoginForm } from "@/components/auth-forms";
 import { getFeatures } from "@/lib/features";
 import { safeNext } from "@/lib/url";

@@ -2,7 +2,7 @@ import Box from "@mui/material/Box";
 import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
 import type { AttendanceStatus } from "@/modules/attendance/attendance.statuses";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 import { StatusCounts } from "./status-chip";
 
 /** Ngưỡng màu đã chốt với người dùng: dưới 80% cam, dưới 50% đỏ */

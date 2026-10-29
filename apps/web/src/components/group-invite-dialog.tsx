@@ -15,7 +15,7 @@ import { useState, useTransition } from "react";
 import { createGroupInviteAction, disableGroupInviteAction } from "@/modules/invites/invite.actions";
 import type { ShareLink } from "@check-attendance/shared/api";
 import { ShareLinkBox } from "./share-link";
-import { toast } from "./toaster";
+import { toast } from "@check-attendance/ui/toaster";
 
 type Props = {
   groupId: string;

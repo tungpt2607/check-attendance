@@ -15,8 +15,8 @@ import Typography from "@mui/material/Typography";
 import NextLink from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { logoutAction } from "@/modules/auth/auth.actions";
-import { brand } from "@/theme/brand";
-import { Avatar } from "./avatar";
+import { brand } from "@check-attendance/ui/brand";
+import { Avatar } from "@check-attendance/ui/avatar";
 
 type Props = { userId: string; name: string; email: string; avatarVersion: number | null };
 

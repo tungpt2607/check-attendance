@@ -8,8 +8,8 @@ import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import type { GroupDetail } from "@check-attendance/shared/api";
 import { CreateSubgroupButton } from "@/components/group-create-buttons";
-import { ListLink } from "@/components/links";
-import { SectionTitle } from "@/components/page-header";
+import { ListLink } from "@check-attendance/ui/links";
+import { SectionTitle } from "@check-attendance/ui/page-header";
 import { RateBadge } from "@/components/rate";
 
 export function SubgroupsTab({ groupId, subgroups }: { groupId: string; subgroups: GroupDetail["children"] }) {

@@ -11,17 +11,17 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { LinkRequestRow, MemberRow } from "@check-attendance/shared/api";
 import { normalizeSearch } from "@check-attendance/shared/search";
-import { ZoomableAvatar } from "@/components/avatar-zoom";
+import { ZoomableAvatar } from "@check-attendance/ui/avatar-zoom";
 import { AddMembersButton } from "@/components/group-create-buttons";
 import { MemberRowMenu } from "@/components/member-row-menu";
-import { ListLink } from "@/components/links";
+import { ListLink } from "@check-attendance/ui/links";
 import { MemberSortToggle, type MemberSort } from "@/components/member-sort";
-import { PagedList } from "@/components/paged-list";
-import { SectionTitle } from "@/components/page-header";
+import { PagedList } from "@check-attendance/ui/paged-list";
+import { SectionTitle } from "@check-attendance/ui/page-header";
 import { RateBadge } from "@/components/rate";
-import { SubmitButton } from "@/components/submit-button";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
 import { approveRequestAction, rejectRequestAction } from "@/modules/invites/invite.actions";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 
 /** Yêu cầu liên kết tài khoản chờ chủ nhóm duyệt (qua link tham gia nhóm) */
 function PendingRequests({ requests }: { requests: LinkRequestRow[] }) {

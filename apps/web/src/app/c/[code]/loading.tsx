@@ -1,4 +1,4 @@
-import { CenteredListSkeleton } from "@/components/skeleton";
+import { CenteredListSkeleton } from "@check-attendance/ui/skeleton";
 
 /** Màn hình đầu tiên sau khi quét QR: hiện ngay khung trang tự điểm danh trong lúc chuyển tiếp */
 export default function Loading() {

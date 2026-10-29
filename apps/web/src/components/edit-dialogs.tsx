@@ -11,8 +11,8 @@ import { type ReactNode } from "react";
 import { renameGroupAction } from "@/modules/groups/group.actions";
 import { updateMemberAction } from "@/modules/members/member.actions";
 import { updateSessionAction } from "@/modules/attendance/attendance.actions";
-import { SubmitButton } from "./submit-button";
-import { toast } from "./toaster";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
+import { toast } from "@check-attendance/ui/toaster";
 
 type DialogFormProps = {
   title: string;

@@ -1,8 +1,8 @@
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { AuthShell } from "@/components/auth-shell";
+import { AuthShell } from "@check-attendance/ui/auth-shell";
 import { ResetPasswordForm } from "@/components/auth-forms";
-import { AppLink, LinkButton } from "@/components/links";
+import { AppLink, LinkButton } from "@check-attendance/ui/links";
 import { api, ApiError, enc } from "@/lib/api";
 
 export const dynamic = "force-dynamic";

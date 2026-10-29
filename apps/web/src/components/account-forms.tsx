@@ -22,12 +22,12 @@ import {
   uploadAvatarAction,
   type FormState,
 } from "@/modules/users/account.actions";
-import { Avatar } from "./avatar";
+import { Avatar } from "@check-attendance/ui/avatar";
 import { AvatarCropper } from "./avatar-cropper";
-import { AvatarPhotoDialog } from "./avatar-zoom";
-import { PasswordInput } from "./password-input";
-import { SubmitButton } from "./submit-button";
-import { toast } from "./toaster";
+import { AvatarPhotoDialog } from "@check-attendance/ui/avatar-zoom";
+import { PasswordInput } from "@check-attendance/ui/password-input";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
+import { toast } from "@check-attendance/ui/toaster";
 
 /** Thành công: báo bằng thông báo nhỏ; lỗi: hiện ngay trong form */
 function useResultToast(state: FormState) {

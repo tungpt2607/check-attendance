@@ -15,8 +15,8 @@ import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
 import { normalizeSearch } from "@check-attendance/shared/search";
 import { requestLinkAction } from "@/modules/invites/invite.actions";
-import { brand } from "@/theme/brand";
-import { SubmitButton } from "./submit-button";
+import { brand } from "@check-attendance/ui/brand";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
 
 type Option = { id: string; name: string; code: string };
 

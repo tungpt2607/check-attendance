@@ -4,7 +4,7 @@ import Box from "@mui/material/Box";
 import { keyframes } from "@mui/material/styles";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { brand } from "@/theme/brand";
+import { brand } from "./brand";
 
 /** Chạy nhanh lúc đầu rồi chậm dần, dừng ở 85% đến khi trang mới hiện */
 const grow = keyframes`

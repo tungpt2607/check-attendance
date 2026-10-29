@@ -1,6 +1,6 @@
 import MuiAvatar from "@mui/material/Avatar";
-import { brand } from "@/theme/brand";
-import { avatarUrl } from "@/lib/api-url";
+import { brand } from "./brand";
+import { avatarUrl } from "./api-url";
 
 type Props = {
   userId: string;

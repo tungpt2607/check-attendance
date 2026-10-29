@@ -5,8 +5,8 @@ import DeleteOutline from "@mui/icons-material/DeleteOutline";
 import EditOutlined from "@mui/icons-material/EditOutlined";
 import { useState } from "react";
 import { deleteSessionAction } from "@/modules/attendance/attendance.actions";
-import { ActionMenu } from "./action-menu";
-import { ConfirmDialog } from "./confirm-dialog";
+import { ActionMenu } from "@check-attendance/ui/action-menu";
+import { ConfirmDialog } from "@check-attendance/ui/confirm-dialog";
 import { EditSessionDialog } from "./edit-dialogs";
 
 /** Menu "⋮" ở tiêu đề trang buổi điểm danh: Sửa buổi, Xóa buổi */

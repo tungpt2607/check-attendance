@@ -5,7 +5,7 @@ import ErrorRounded from "@mui/icons-material/ErrorRounded";
 import Snackbar from "@mui/material/Snackbar";
 import SnackbarContent from "@mui/material/SnackbarContent";
 import { useEffect, useState } from "react";
-import { brand } from "@/theme/brand";
+import { brand } from "./brand";
 
 type ToastKind = "success" | "error";
 type ToastItem = { id: number; message: string; kind: ToastKind };

@@ -15,7 +15,7 @@ import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getUnreadCountAction } from "@/modules/notifications/notification.actions";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 import { NotificationListView, onNotificationsChanged, useNotificationList } from "./notifications";
 
 const POLL_MS = 60_000;

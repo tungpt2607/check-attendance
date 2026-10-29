@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import { Bone } from "@/components/skeleton";
-import { brand } from "@/theme/brand";
+import { Bone } from "@check-attendance/ui/skeleton";
+import { brand } from "@check-attendance/ui/brand";
 
 /** Trang trình chiếu QR: phủ toàn màn hình như trang thật, ô vuông lớn giữ chỗ mã QR */
 export default function Loading() {

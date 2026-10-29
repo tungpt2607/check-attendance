@@ -17,8 +17,8 @@ import { Fragment, useMemo, useState } from "react";
 import { normalizeSearch } from "@check-attendance/shared/search";
 import { saveAttendanceAction } from "@/modules/attendance/attendance.actions";
 import { ATTENDANCE_STATUSES, type AttendanceStatus } from "@/modules/attendance/attendance.statuses";
-import { brand } from "@/theme/brand";
-import { SubmitButton } from "./submit-button";
+import { brand } from "@check-attendance/ui/brand";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
 
 export type SheetRow = {
   id: string;

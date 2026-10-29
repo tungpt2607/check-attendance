@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Stack from "@mui/material/Stack";
-import { Bone, TitleSkeleton } from "@/components/skeleton";
+import { Bone, TitleSkeleton } from "@check-attendance/ui/skeleton";
 
 /** Khung chờ trang Thông báo: tiêu đề + thẻ danh sách (ảnh tròn + 2 dòng chữ) */
 export default function Loading() {

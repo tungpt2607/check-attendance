@@ -1,7 +1,7 @@
 // Đường dẫn "← Nhóm của tôi / nhóm cha / …" ở đầu trang nhóm
 import ArrowBackRounded from "@mui/icons-material/ArrowBackRounded";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
-import { AppLink } from "@/components/links";
+import { AppLink } from "@check-attendance/ui/links";
 
 export function GroupBreadcrumbs({ ancestors }: { ancestors: { id: string; name: string }[] }) {
   return (

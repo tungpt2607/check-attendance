@@ -1,7 +1,7 @@
 // Trang tất cả thông báo (mở từ "Xem tất cả thông báo" trong chuông)
 import Box from "@mui/material/Box";
 import { NotificationFeed } from "@/components/notification-feed";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@check-attendance/ui/page-header";
 import { api } from "@/lib/api";
 import { requireUser } from "@/lib/session";
 import type { NotificationList } from "@check-attendance/shared/api";

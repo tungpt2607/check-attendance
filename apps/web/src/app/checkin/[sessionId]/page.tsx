@@ -6,7 +6,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import { CheckInDone, CheckInList, SelfCheckInButton } from "@/components/checkin-list";
-import { LinkButton } from "@/components/links";
+import { LinkButton } from "@check-attendance/ui/links";
 import { getSession } from "@/lib/session";
 import { api, ApiError } from "@/lib/api";
 import type { CheckInInfo } from "@check-attendance/shared/api";

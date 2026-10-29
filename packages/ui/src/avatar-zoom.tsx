@@ -8,7 +8,7 @@ import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { Avatar } from "./avatar";
-import { avatarUrl } from "@/lib/api-url";
+import { avatarUrl } from "./api-url";
 
 type PhotoProps = {
   open: boolean;

@@ -1,6 +1,6 @@
 /*
  * Giao diện dùng Material UI (theme ở src/theme). File này chỉ giữ vài quy tắc nền tảng.
- * Màu thương hiệu: src/theme/brand.ts
+ * Màu thương hiệu: packages/ui/src/brand.ts
  */
 
 :root {

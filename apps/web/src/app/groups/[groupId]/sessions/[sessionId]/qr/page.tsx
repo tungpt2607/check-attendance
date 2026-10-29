@@ -3,15 +3,15 @@ import LockOutlined from "@mui/icons-material/LockOutlined";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { notFound, redirect } from "next/navigation";
-import { LinkButton } from "@/components/links";
+import { LinkButton } from "@check-attendance/ui/links";
 import { QrPresenter } from "@/components/qr-presenter";
-import { SubmitButton } from "@/components/submit-button";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
 import { formatDate } from "@check-attendance/shared/format";
 import { requireUser } from "@/lib/session";
 import { apiOrNull } from "@/lib/api";
 import type { SessionDetail } from "@check-attendance/shared/api";
 import { closeSelfCheckInAction } from "@/modules/attendance/attendance.actions";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 
 export const dynamic = "force-dynamic";
 

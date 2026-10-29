@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { LinkButton } from "@/components/links";
+import { LinkButton } from "@check-attendance/ui/links";
 
 export default function NotFound() {
   return (

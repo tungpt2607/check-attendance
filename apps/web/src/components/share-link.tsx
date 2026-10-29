@@ -9,7 +9,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import type { ShareLink } from "@check-attendance/shared/api";
-import { toast } from "./toaster";
+import { toast } from "@check-attendance/ui/toaster";
 
 /** Hiện link mời: mã QR, ô link, nút Chia sẻ (Zalo, Messenger...) và Sao chép */
 export function ShareLinkBox({ link, shareTitle, showQr = true }: { link: ShareLink; shareTitle: string; showQr?: boolean }) {

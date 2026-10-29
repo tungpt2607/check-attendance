@@ -3,9 +3,9 @@ import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { getSession } from "@/lib/session";
-import { brand, logoStripe } from "@/theme/brand";
-import { AppLink } from "./links";
-import { Logo } from "./logo";
+import { brand, logoStripe } from "@check-attendance/ui/brand";
+import { AppLink } from "@check-attendance/ui/links";
+import { Logo } from "@check-attendance/ui/logo";
 import { NotificationBell } from "./notification-bell";
 import { UserMenu } from "./user-menu";
 

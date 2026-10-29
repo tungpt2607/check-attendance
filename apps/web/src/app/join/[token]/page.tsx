@@ -6,14 +6,14 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
 import { JoinPicker } from "@/components/join-picker";
-import { LinkButton } from "@/components/links";
-import { Logo } from "@/components/logo";
-import { SubmitButton } from "@/components/submit-button";
+import { LinkButton } from "@check-attendance/ui/links";
+import { Logo } from "@check-attendance/ui/logo";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
 import { requireAccount } from "@/lib/session";
 import { api, ApiError } from "@/lib/api";
 import type { JoinInfo } from "@check-attendance/shared/api";
 import { cancelLinkRequestAction } from "@/modules/invites/invite.actions";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Tham gia nhóm · Điểm danh" };

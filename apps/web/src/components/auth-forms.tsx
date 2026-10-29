@@ -7,9 +7,9 @@ import Typography from "@mui/material/Typography";
 import { useActionState } from "react";
 import Box from "@mui/material/Box";
 import { forgotPasswordAction, loginAction, registerAction, resetPasswordAction } from "@/modules/auth/auth.actions";
-import { AppLink } from "./links";
-import { PasswordInput } from "./password-input";
-import { SubmitButton } from "./submit-button";
+import { AppLink } from "@check-attendance/ui/links";
+import { PasswordInput } from "@check-attendance/ui/password-input";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
 
 type LoginProps = {
   next?: string;

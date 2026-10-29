@@ -3,10 +3,10 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import type { Metadata, Viewport } from "next";
 import { Suspense, type ReactNode } from "react";
 import { AppHeader } from "@/components/app-header";
-import { NavProgress } from "@/components/nav-progress";
-import { Providers } from "@/components/providers";
-import { Toaster } from "@/components/toaster";
-import { brand } from "@/theme/brand";
+import { NavProgress } from "@check-attendance/ui/nav-progress";
+import { Providers } from "@check-attendance/ui/providers";
+import { Toaster } from "@check-attendance/ui/toaster";
+import { brand } from "@check-attendance/ui/brand";
 import "./globals.css";
 
 export const metadata: Metadata = {

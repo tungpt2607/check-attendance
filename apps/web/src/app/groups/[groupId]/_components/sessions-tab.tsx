@@ -13,12 +13,12 @@ import Typography from "@mui/material/Typography";
 import { Fragment } from "react";
 import type { SessionSummary } from "@check-attendance/shared/api";
 import { formatDate, todayInputValue } from "@check-attendance/shared/format";
-import { ListLink } from "@/components/links";
-import { SectionTitle } from "@/components/page-header";
+import { ListLink } from "@check-attendance/ui/links";
+import { SectionTitle } from "@check-attendance/ui/page-header";
 import { StatusCounts } from "@/components/status-chip";
-import { SubmitButton } from "@/components/submit-button";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
 import { createSessionAction } from "@/modules/attendance/attendance.actions";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 
 type Props = { groupId: string; memberCount: number; sessions: SessionSummary[] };
 

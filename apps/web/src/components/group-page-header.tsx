@@ -9,13 +9,13 @@ import Chip from "@mui/material/Chip";
 import { useState } from "react";
 import { deleteGroupAction } from "@/modules/groups/group.actions";
 import type { ShareLink } from "@check-attendance/shared/api";
-import { ActionMenu } from "./action-menu";
-import { ConfirmDialog } from "./confirm-dialog";
+import { ActionMenu } from "@check-attendance/ui/action-menu";
+import { ConfirmDialog } from "@check-attendance/ui/confirm-dialog";
 import { RenameGroupDialog } from "./edit-dialogs";
 import { GroupInviteDialog } from "./group-invite-dialog";
-import { PageHeader } from "./page-header";
+import { PageHeader } from "@check-attendance/ui/page-header";
 import { RateBadge } from "./rate";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 
 /**
  * Tiêu đề trang nhóm: tên, mô tả, nhãn "Link tham gia đang bật" (bấm để mở link)

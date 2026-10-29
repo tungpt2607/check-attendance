@@ -2,7 +2,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Stack from "@mui/material/Stack";
-import { Bone } from "@/components/skeleton";
+import { Bone } from "@check-attendance/ui/skeleton";
 
 /** Trang quên mật khẩu: logo, tiêu đề, thẻ form (1 ô email + nút) */
 export default function Loading() {

@@ -8,8 +8,8 @@ import PersonAddAltRounded from "@mui/icons-material/PersonAddAltRounded";
 import { useState } from "react";
 import { unlinkMemberAction } from "@/modules/invites/invite.actions";
 import { deleteMemberAction } from "@/modules/members/member.actions";
-import { ActionMenu } from "./action-menu";
-import { ConfirmDialog } from "./confirm-dialog";
+import { ActionMenu } from "@check-attendance/ui/action-menu";
+import { ConfirmDialog } from "@check-attendance/ui/confirm-dialog";
 import { EditMemberDialog } from "./edit-dialogs";
 import { MemberInviteDialog } from "./member-invite";
 

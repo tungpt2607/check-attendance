@@ -6,8 +6,8 @@ import Tab, { type TabProps } from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { brand } from "@/theme/brand";
-import { useFastTap } from "./use-fast-tap";
+import { brand } from "@check-attendance/ui/brand";
+import { useFastTap } from "@check-attendance/ui/use-fast-tap";
 
 /** Chiều cao thanh tiêu đề trên cùng: thanh tab dính ngay dưới */
 const STICKY_TOP = 59;

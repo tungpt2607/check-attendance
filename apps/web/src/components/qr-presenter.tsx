@@ -5,7 +5,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getQrStateAction, type QrState } from "@/modules/attendance/attendance.actions";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 
 /** Mỗi mã hiển thị 30 giây (khớp QR_WINDOW_MS phía máy chủ) */
 const WINDOW_MS = 30_000;

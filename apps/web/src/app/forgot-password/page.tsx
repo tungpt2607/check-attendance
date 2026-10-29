@@ -1,9 +1,9 @@
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { AuthShell } from "@/components/auth-shell";
+import { AuthShell } from "@check-attendance/ui/auth-shell";
 import { ForgotPasswordForm } from "@/components/auth-forms";
-import { AppLink } from "@/components/links";
+import { AppLink } from "@check-attendance/ui/links";
 import { getFeatures } from "@/lib/features";
 
 export const dynamic = "force-dynamic";

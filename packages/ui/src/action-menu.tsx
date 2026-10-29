@@ -8,7 +8,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { Fragment, useState, type ReactNode } from "react";
-import { brand } from "@/theme/brand";
+import { brand } from "./brand";
 
 export type MenuAction = {
   label: string;

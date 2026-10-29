@@ -8,16 +8,16 @@ import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { AttendanceSheet, type SheetRow } from "@/components/attendance-sheet";
 import { SessionHeaderMenu } from "@/components/session-header-menu";
-import { LinkButton } from "@/components/links";
-import { PageHeader } from "@/components/page-header";
-import { SubmitButton } from "@/components/submit-button";
+import { LinkButton } from "@check-attendance/ui/links";
+import { PageHeader } from "@check-attendance/ui/page-header";
+import { SubmitButton } from "@check-attendance/ui/submit-button";
 import { dateInputValue, formatDate, formatTime } from "@check-attendance/shared/format";
 import { requireUser } from "@/lib/session";
 import { apiOrNull } from "@/lib/api";
 import type { SessionDetail } from "@check-attendance/shared/api";
 import { closeSelfCheckInAction, openSelfCheckInAction } from "@/modules/attendance/attendance.actions";
 import { DEFAULT_STATUS } from "@/modules/attendance/attendance.statuses";
-import { brand } from "@/theme/brand";
+import { brand } from "@check-attendance/ui/brand";
 
 export const dynamic = "force-dynamic";
 
