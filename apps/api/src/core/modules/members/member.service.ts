@@ -51,6 +51,15 @@ export async function addMembersFromText(groupId: string, text: string): Promise
   return rows.length;
 }
 
+/** Tên của nhiều thành viên theo id (không kiểm tra quyền) */
+export async function getMemberNames(memberIds: string[]): Promise<Map<string, string>> {
+  const ids = memberIds.filter(isValidId);
+  if (ids.length === 0) return new Map();
+  await connectDB();
+  const list = await Member.find({ _id: { $in: ids } }, { name: 1 }).lean<Pick<MemberRecord, "_id" | "name">[]>();
+  return new Map(list.map((m) => [String(m._id), m.name]));
+}
+
 export async function getMember(memberId: string): Promise<MemberDTO | null> {
   if (!isValidId(memberId)) return null;
   await connectDB();

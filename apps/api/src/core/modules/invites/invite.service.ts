@@ -160,6 +160,26 @@ export async function listPendingRequests(groupId: string) {
   return LinkRequest.find({ groupId, status: "pending" }).sort({ createdAt: 1 }).lean<LinkRequestRecord[]>();
 }
 
+/** Yêu cầu chờ duyệt của nhiều nhóm một lúc, mới nhất trước */
+export async function listPendingRequestsOfGroups(groupIds: string[]) {
+  const ids = groupIds.filter(isValidId).map((id) => new mongoose.Types.ObjectId(id));
+  if (ids.length === 0) return [];
+  await connectDB();
+  return LinkRequest.find({ groupId: { $in: ids }, status: "pending" }).sort({ createdAt: -1 }).lean<LinkRequestRecord[]>();
+}
+
+/** Số yêu cầu chờ duyệt của từng nhóm */
+export async function countPendingRequests(groupIds: string[]): Promise<Map<string, number>> {
+  const ids = groupIds.filter(isValidId).map((id) => new mongoose.Types.ObjectId(id));
+  if (ids.length === 0) return new Map();
+  await connectDB();
+  const rows = await LinkRequest.aggregate<{ _id: Types.ObjectId; n: number }>([
+    { $match: { groupId: { $in: ids }, status: "pending" } },
+    { $group: { _id: "$groupId", n: { $sum: 1 } } },
+  ]);
+  return new Map(rows.map((r) => [String(r._id), r.n]));
+}
+
 export async function getLinkRequest(requestId: string) {
   if (!isValidId(requestId)) return null;
   await connectDB();

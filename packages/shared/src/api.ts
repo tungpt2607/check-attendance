@@ -100,6 +100,7 @@ export const GroupListItemSchema = z.object({
   parentId: Id.nullable(),
   memberCount: z.number().int(),
   inviteActive: z.boolean().describe("Đang bật link tham gia nhóm"),
+  pendingRequestCount: z.number().int().describe("Số yêu cầu liên kết đang chờ duyệt"),
 });
 export const GroupListSchema = z.object({ groups: z.array(GroupListItemSchema) });
 
@@ -127,6 +128,10 @@ export const LinkRequestSchema = z.object({
   createdAt: IsoDateTime,
 });
 export const LinkRequestListSchema = z.object({ requests: z.array(LinkRequestSchema) });
+
+/** Yêu cầu chờ duyệt ở mọi nhóm tôi quản lý (chuông thông báo) */
+export const OwnerRequestSchema = LinkRequestSchema.extend({ groupId: Id, groupName: z.string() });
+export const OwnerRequestListSchema = z.object({ requests: z.array(OwnerRequestSchema) });
 
 // ---------- Thành viên ----------
 
@@ -313,6 +318,7 @@ export type AuthResult = z.infer<typeof AuthResultSchema>;
 export type GroupListItem = z.infer<typeof GroupListItemSchema>;
 export type GroupDetail = z.infer<typeof GroupDetailSchema>;
 export type LinkRequestRow = z.infer<typeof LinkRequestSchema>;
+export type OwnerRequestRow = z.infer<typeof OwnerRequestSchema>;
 export type MemberRow = z.infer<typeof MemberRowSchema>;
 export type MemberDetail = z.infer<typeof MemberDetailSchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;

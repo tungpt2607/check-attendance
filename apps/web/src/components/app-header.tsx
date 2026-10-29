@@ -6,6 +6,7 @@ import { getSession } from "@/lib/session";
 import { brand, logoStripe } from "@/theme/brand";
 import { AppLink } from "./links";
 import { Logo } from "./logo";
+import { RequestBell } from "./request-bell";
 import { UserMenu } from "./user-menu";
 
 /** Dải mảnh 4 màu của logo chạy dưới thanh tiêu đề */
@@ -34,7 +35,12 @@ export async function AppHeader() {
             Điểm danh
           </Typography>
         </AppLink>
-        {user && <UserMenu userId={user.userId} name={user.name} email={user.email} avatarVersion={user.avatarVersion} />}
+        {user && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <RequestBell />
+            <UserMenu userId={user.userId} name={user.name} email={user.email} avatarVersion={user.avatarVersion} />
+          </Box>
+        )}
       </Toolbar>
       <BrandStripe />
     </AppBar>

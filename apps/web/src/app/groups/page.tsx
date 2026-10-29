@@ -3,6 +3,7 @@ import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
 import FolderOutlined from "@mui/icons-material/FolderOutlined";
 import HowToRegOutlined from "@mui/icons-material/HowToRegOutlined";
 import LinkRounded from "@mui/icons-material/LinkRounded";
+import PersonAddAlt1Outlined from "@mui/icons-material/PersonAddAlt1Outlined";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -51,6 +52,15 @@ function GroupTree({ nodes, depth = 0 }: { nodes: GroupTreeItem[]; depth?: numbe
                     >
                       <LinkRounded sx={{ fontSize: 16 }} />
                       Link tham gia đang bật
+                    </Box>
+                  )}
+                  {node.pendingRequestCount > 0 && (
+                    <Box
+                      component="span"
+                      sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, ml: 1, color: brand.red, fontWeight: 600, verticalAlign: "bottom" }}
+                    >
+                      <PersonAddAlt1Outlined sx={{ fontSize: 16 }} />
+                      {node.pendingRequestCount} yêu cầu chờ duyệt
                     </Box>
                   )}
                 </>
