@@ -1,4 +1,4 @@
-# Kiểm tra tự động mỗi lần đẩy code: kiểu dữ liệu (TypeScript) của API và build web.
+# Kiểm tra tự động mỗi lần đẩy code: kiểu dữ liệu (TypeScript) của API, build web và CMS.
 # Kết quả xem ở tab Actions trên GitHub (Claude đọc được qua `gh run view`).
 name: CI
 
@@ -24,5 +24,9 @@ jobs:
         run: npm run typecheck -w @check-attendance/shared --if-present
       - name: Build web
         run: npm run build -w @check-attendance/web
+        env:
+          AUTH_SECRET: ci-only-not-a-real-secret
+      - name: Build CMS
+        run: npm run build -w @check-attendance/cms
         env:
           AUTH_SECRET: ci-only-not-a-real-secret

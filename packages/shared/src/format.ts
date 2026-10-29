@@ -45,3 +45,10 @@ export function timeAgo(d: Date | string, now: Date = new Date()): string {
   if (day < 7) return `${day} ngày trước`;
   return date.toLocaleDateString("vi-VN", { timeZone: TIME_ZONE, day: "2-digit", month: "2-digit", year: "numeric" });
 }
+
+/** Ngày giờ theo giờ Việt Nam: "29/10/2026 14:05" */
+export function formatDateTime(d: Date | string): string {
+  const date = toDate(d);
+  const day = date.toLocaleDateString("vi-VN", { timeZone: TIME_ZONE, day: "2-digit", month: "2-digit", year: "numeric" });
+  return `${day} ${formatTime(date)}`;
+}
