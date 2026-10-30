@@ -8,3 +8,6 @@ next-env.d.ts
 *.tsbuildinfo
 .DS_Store
 packages/shared/dist
+
+# Multi-agent
+.agents/state/tool_log.jsonl
