@@ -45,6 +45,9 @@ const sessionSchema = new Schema<AttendanceSessionRecord>(
   { timestamps: true },
 );
 
+// Danh sách buổi của nhóm, mới nhất trước (listSessionsWithCounts, lịch sử thành viên)
+sessionSchema.index({ groupId: 1, date: -1, createdAt: -1 });
+
 export const AttendanceSession: Model<AttendanceSessionRecord> =
   (models.AttendanceSession as Model<AttendanceSessionRecord>) ||
   model<AttendanceSessionRecord>("AttendanceSession", sessionSchema);

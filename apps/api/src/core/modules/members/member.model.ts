@@ -1,6 +1,8 @@
 // mongoose là thư viện CommonJS: trong ES Module của Node phải nạp mặc định rồi mới lấy từng phần
 import mongoose, { type Model, type Types } from "mongoose";
 
+import { VI_COLLATION } from "../../lib/db.js";
+
 const { Schema, model, models } = mongoose;
 
 export interface MemberRecord {
@@ -29,6 +31,9 @@ memberSchema.index(
   { groupId: 1, userId: 1 },
   { unique: true, partialFilterExpression: { userId: { $type: "objectId" } } },
 );
+
+// Danh sách thành viên của nhóm theo tên, đúng thứ tự tiếng Việt (listMembers dùng cùng collation thì mới dùng được index)
+memberSchema.index({ groupId: 1, name: 1 }, { collation: VI_COLLATION });
 
 export const Member: Model<MemberRecord> =
   (models.Member as Model<MemberRecord>) || model<MemberRecord>("Member", memberSchema);

@@ -64,6 +64,12 @@ export async function getCheckInSecret(sessionId: string): Promise<string | null
   return s?.selfCheckIn?.open && s.selfCheckIn.secret ? s.selfCheckIn.secret : null;
 }
 
+/** Số buổi điểm danh của nhóm (không tải cả danh sách) */
+export async function countSessions(groupId: string): Promise<number> {
+  await connectDB();
+  return AttendanceSession.countDocuments({ groupId });
+}
+
 /** Các buổi của một nhóm, mới nhất trước, kèm số lượng theo trạng thái. */
 export async function listSessionsWithCounts(groupId: string) {
   await connectDB();

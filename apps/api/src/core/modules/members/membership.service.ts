@@ -8,6 +8,7 @@ import {
   type AttendanceSessionRecord,
 } from "../attendance/attendance.model.js";
 import type { AttendanceStatus } from "../attendance/attendance.statuses.js";
+import { rateOf } from "../attendance/rate.js";
 import { Group, type GroupRecord } from "../groups/group.model.js";
 import { getAccountsByIds } from "../users/user.service.js";
 import { Member, type MemberRecord } from "./member.model.js";
@@ -70,19 +71,9 @@ export async function getMyHistory(memberId: string, userId: string): Promise<My
     return { sessionId: String(s._id), title: s.title, date: s.date, status: r?.status ?? null, note: r?.note ?? "" };
   });
 
-  const counts: Partial<Record<AttendanceStatus, number>> = {};
-  for (const it of items) if (it.status) counts[it.status] = (counts[it.status] ?? 0) + 1;
-  const recorded = items.filter((it) => it.status).length;
-  const attended = (counts.present ?? 0) + (counts.late ?? 0);
-
-  return {
-    memberName: member.name,
-    groupName: group?.name ?? "",
-    items,
-    counts,
-    recorded,
-    rate: recorded > 0 ? attended / recorded : null,
-  };
+  // Cùng cách tính với trang của chủ nhóm (rate.ts)
+  const { counts, recorded, rate } = rateOf(items.map((it) => it.status));
+  return { memberName: member.name, groupName: group?.name ?? "", items, counts, recorded, rate };
 }
 
 export type RosterItem = {

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vercel dev",
     "typecheck": "tsc --noEmit",
-    "build": "npm run build --prefix ../../packages/shared"
+    "build": "npm run build --prefix ../../packages/shared",
+    "test": "node --test test/*.test.ts"
   },
   "dependencies": {
     "@check-attendance/shared": "*",

@@ -5,7 +5,7 @@ import type { LinkRequestRow, MemberRow, SessionSummary, ShareLink } from "@chec
 import { GroupPageHeader } from "@/components/group-page-header";
 import { GroupTabs } from "@/components/group-tabs";
 import type { MemberSort } from "@/components/member-sort";
-import { api, enc } from "@/lib/api";
+import { apiOrNull, enc } from "@/lib/api";
 import { requireUser } from "@/lib/session";
 import { fetchGroup } from "@/modules/groups/group.api";
 import { GroupBreadcrumbs } from "./_components/group-breadcrumbs";
@@ -23,18 +23,21 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const sort: MemberSort = sortParam === "rate" ? "rate" : "name";
   await requireUser();
 
-  // Thông tin nhóm, nhóm cha, nhóm con kèm thống kê
-  const group = await fetchGroup(groupId);
-  if (!group) notFound();
-
-  // Thành viên (kèm tài khoản liên kết, % chuyên cần), buổi điểm danh, yêu cầu chờ duyệt, link tham gia
-  const gid = enc(group.id);
-  const [{ members }, { sessions }, { requests }, { link }] = await Promise.all([
-    api<{ members: MemberRow[] }>(`/v1/groups/${gid}/members${sort === "rate" ? "?sort=rate" : ""}`),
-    api<{ sessions: SessionSummary[] }>(`/v1/groups/${gid}/sessions`),
-    api<{ requests: LinkRequestRow[] }>(`/v1/groups/${gid}/requests`),
-    api<{ link: ShareLink | null }>(`/v1/groups/${gid}/invite`),
+  // Gọi song song: thông tin nhóm (nhóm cha, nhóm con kèm thống kê), thành viên (kèm tài khoản liên kết,
+  // % chuyên cần), buổi điểm danh, yêu cầu chờ duyệt, link tham gia. Không thuộc quyền thì mọi API đều 404.
+  const gid = enc(groupId);
+  const [group, membersRes, sessionsRes, requestsRes, inviteRes] = await Promise.all([
+    fetchGroup(groupId),
+    apiOrNull<{ members: MemberRow[] }>(`/v1/groups/${gid}/members${sort === "rate" ? "?sort=rate" : ""}`),
+    apiOrNull<{ sessions: SessionSummary[] }>(`/v1/groups/${gid}/sessions`),
+    apiOrNull<{ requests: LinkRequestRow[] }>(`/v1/groups/${gid}/requests`),
+    apiOrNull<{ link: ShareLink | null }>(`/v1/groups/${gid}/invite`),
   ]);
+  if (!group || !membersRes || !sessionsRes || !requestsRes || !inviteRes) notFound();
+  const { members } = membersRes;
+  const { sessions } = sessionsRes;
+  const { requests } = requestsRes;
+  const { link } = inviteRes;
   const { children } = group;
 
   return (

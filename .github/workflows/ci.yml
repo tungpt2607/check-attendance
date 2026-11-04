@@ -26,6 +26,8 @@ jobs:
         run: npm run build -w @check-attendance/shared
       - name: Kiểm tra kiểu API
         run: npm run typecheck -w @check-attendance/api
+      - name: Kiểm thử API (cách tính chuyên cần...)
+        run: npm test -w @check-attendance/api
       - name: Kiểm tra kiểu gói dùng chung
         run: npm run typecheck -w @check-attendance/shared --if-present
       - name: Build web

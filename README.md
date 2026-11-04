@@ -113,7 +113,8 @@ Lỗi hiện ở tab **Actions** trên GitHub (và trong chú thích của lần
   - `DELETE /v1/members/:id/face`: chủ nhóm xóa khuôn mặt lưu riêng của thành viên (trang thành viên)
 - Khi so khớp, mỗi thành viên dùng khuôn mặt của tài khoản đã liên kết nếu có, không thì khuôn mặt lưu riêng ở thành viên.
 - Xóa thành viên/nhóm thì khuôn mặt lưu riêng của thành viên bị xóa theo; khuôn mặt của tài khoản thuộc về người dùng.
-- Đổi model: đổi `FACE_MODEL` trong `face.service.ts` (vector của model cũ không được so nữa).
+- Đổi model: đổi `FACE_MODEL` trong `face.service.ts` (vector của model cũ không được so nữa) và đặt file model vào **thư mục mới**
+  (vd. `public/models/face-v2`, sửa `MODEL_URL`), vì `/models/*` được trình duyệt lưu đệm 1 năm (`next.config.mjs`).
 - Dữ liệu khuôn mặt là dữ liệu cá nhân nhạy cảm: cần thông báo và có sự đồng ý của người được quét trước khi dùng.
 
 ## Giao diện
