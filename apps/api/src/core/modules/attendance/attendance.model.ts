@@ -2,7 +2,14 @@
 import mongoose, { type Model, type Types } from "mongoose";
 
 const { Schema, model, models } = mongoose;
-import { ATTENDANCE_METHODS, STATUS_VALUES, type AttendanceMethod, type AttendanceStatus } from "./attendance.statuses.js";
+import {
+  ATTENDANCE_METHODS,
+  RECORD_SOURCES,
+  STATUS_VALUES,
+  type AttendanceMethod,
+  type AttendanceStatus,
+  type RecordSource,
+} from "./attendance.statuses.js";
 
 /** Một buổi điểm danh của một nhóm */
 export interface AttendanceSessionRecord {
@@ -42,9 +49,7 @@ export const AttendanceSession: Model<AttendanceSessionRecord> =
   (models.AttendanceSession as Model<AttendanceSessionRecord>) ||
   model<AttendanceSessionRecord>("AttendanceSession", sessionSchema);
 
-/** Ai ghi kết quả: chủ nhóm chấm tay, hay thành viên tự điểm danh */
-export const RECORD_SOURCES = ["manual", "self"] as const;
-export type RecordSource = (typeof RECORD_SOURCES)[number];
+export { RECORD_SOURCES, type RecordSource };
 
 /** Kết quả điểm danh của một thành viên trong một buổi */
 export interface AttendanceRecordRecord {
@@ -54,7 +59,7 @@ export interface AttendanceRecordRecord {
   status: AttendanceStatus;
   note?: string;
   source?: RecordSource;
-  /** Thời điểm tự điểm danh (chỉ có khi source = "self") */
+  /** Thời điểm tự điểm danh / quét khuôn mặt (có khi source = "self" hoặc "face") */
   checkedInAt?: Date | null;
   /** Chủ nhóm ghi (null khi thành viên tự điểm danh) */
   markedBy?: Types.ObjectId | null;

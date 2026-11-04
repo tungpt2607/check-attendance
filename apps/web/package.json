@@ -17,6 +17,7 @@
     "@mui/icons-material": "^7.3.0",
     "@mui/material": "^7.3.0",
     "@mui/material-nextjs": "^7.3.0",
+    "@vladmandic/face-api": "^1.7.15",
     "jose": "^6.0.11",
     "next": "^15.5.9",
     "react": "^19.2.3",

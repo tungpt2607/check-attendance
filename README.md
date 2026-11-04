@@ -10,6 +10,8 @@ Web điểm danh theo nhóm nhiều cấp. Next.js (App Router) + Material UI + 
 - Mỗi người dùng tự tạo nhóm điểm danh; nhóm có thể chia nhiều cấp (nhóm con)
 - Nhóm ở cấp nào cũng có thể có thành viên; thêm nhanh nhiều người (mỗi dòng một người, dán được từ Excel)
 - Tạo buổi điểm danh, chấm Có mặt / Muộn / Vắng kèm ghi chú, xem lại lịch sử
+- Tự điểm danh bằng mã QR động
+- Điểm danh bằng khuôn mặt: chủ nhóm mở camera trên điện thoại, đi quét từng người (xem mục bên dưới)
 
 ## Cấu trúc (monorepo)
 
@@ -76,7 +78,27 @@ Lỗi hiện ở tab **Actions** trên GitHub (và trong chú thích của lần
 | `groups` | Nhóm; `parentId` trỏ nhóm cha, `ancestors` lưu đường dẫn từ gốc |
 | `members` | Người trong nhóm; `userId` để trống ở bản đầu, sau này liên kết tài khoản |
 | `attendancesessions` | Buổi điểm danh; `method` để sau này thêm QR, GPS... |
-| `attendancerecords` | Kết quả của từng thành viên trong một buổi |
+| `attendancerecords` | Kết quả của từng thành viên trong một buổi; `source`: `manual` (chủ nhóm chấm), `self` (tự quét QR), `face` (quét khuôn mặt) |
+| `faceprofiles` | Dữ liệu khuôn mặt: chỉ vector đặc trưng 128 số, **không lưu ảnh**. Thuộc về một tài khoản (`userId`, dùng chung mọi nhóm) hoặc một thành viên chưa liên kết (`memberId`, tối đa 5 mẫu) |
+
+## Điểm danh bằng khuôn mặt
+
+- Trang `/groups/:groupId/sessions/:sessionId/face` (nút **Mở camera** ở trang buổi điểm danh). Chủ nhóm đưa camera vào từng người.
+- Model nhận diện ([`@vladmandic/face-api`](https://github.com/vladmandic/face-api)) chạy **trên trình duyệt**; file model để trong
+  `apps/web/public/models/face` (tiny_face_detector, face_landmark_68, face_recognition, khoảng 7MB, tải một lần rồi trình duyệt lưu đệm).
+  Ảnh camera không gửi đi; chỉ gửi 128 con số lên API.
+- API so khớp phía máy chủ (`src/core/modules/faces/face.service.ts`, ngưỡng `MATCH_THRESHOLD`), vector của người khác không bao giờ trả ra ngoài:
+  - `POST /v1/sessions/:id/face/scan`: nhận ra thì ghi Có mặt ngay; không thì trả `unknown`
+  - `POST /v1/sessions/:id/face/assign`: chủ nhóm chọn tên cho khuôn mặt chưa nhận ra → ghi Có mặt và lưu khuôn mặt:
+    thành viên đã liên kết tài khoản → lưu vào tài khoản nếu tài khoản **chưa có** khuôn mặt (có rồi thì giữ nguyên);
+    chưa liên kết → thêm mẫu cho thành viên
+  - `POST /v1/sessions/:id/face/undo`: nút **Sai người** (trả kết quả về như trước lượt quét)
+  - `GET/DELETE /v1/me/face`: người dùng xem/xóa khuôn mặt của mình (trang Tài khoản)
+  - `DELETE /v1/members/:id/face`: chủ nhóm xóa khuôn mặt lưu riêng của thành viên (trang thành viên)
+- Khi so khớp, mỗi thành viên dùng khuôn mặt của tài khoản đã liên kết nếu có, không thì khuôn mặt lưu riêng ở thành viên.
+- Xóa thành viên/nhóm thì khuôn mặt lưu riêng của thành viên bị xóa theo; khuôn mặt của tài khoản thuộc về người dùng.
+- Đổi model: đổi `FACE_MODEL` trong `face.service.ts` (vector của model cũ không được so nữa).
+- Dữ liệu khuôn mặt là dữ liệu cá nhân nhạy cảm: cần thông báo và có sự đồng ý của người được quét trước khi dùng.
 
 ## Giao diện
 
@@ -87,7 +109,7 @@ Lỗi hiện ở tab **Actions** trên GitHub (và trong chú thích của lần
 ## Mở rộng sau này
 
 - Thêm trạng thái điểm danh: sửa `src/modules/attendance/attendance.statuses.ts`
-- Thêm cách điểm danh (QR, GPS...): thêm vào `ATTENDANCE_METHODS` và xử lý tương ứng
+- Thêm cách điểm danh (GPS...): thêm vào `RECORD_SOURCES` (`packages/shared/src/statuses.ts`) và xử lý tương ứng
 - Cho thành viên tự đăng nhập: liên kết `members.userId` với `users`
 
 ## Biến môi trường

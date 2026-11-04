@@ -12,7 +12,7 @@ import {
   type AttendanceSessionRecord,
   type RecordSource,
 } from "./attendance.model.js";
-import type { AttendanceStatus } from "./attendance.statuses.js";
+import { hasCheckInTime, type AttendanceStatus } from "./attendance.statuses.js";
 
 export type Rate = {
   counts: Partial<Record<AttendanceStatus, number>>;
@@ -138,7 +138,7 @@ export async function getMemberHistory(memberId: string, groupId: string): Promi
       status: r?.status ?? null,
       note: r?.note ?? "",
       source: r?.source ?? null,
-      checkedInAt: r?.source === "self" ? (r.checkedInAt ?? null) : null,
+      checkedInAt: hasCheckInTime(r?.source) ? (r?.checkedInAt ?? null) : null,
     };
   });
   return { items, rate: finish(rate) };

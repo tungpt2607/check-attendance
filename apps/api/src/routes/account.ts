@@ -3,6 +3,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import {
   AuthResultSchema,
   AvatarVersionSchema,
+  FaceStatusSchema,
   FeaturesSchema,
   ForgotPasswordInput,
   LoginInput,
@@ -20,6 +21,7 @@ import { signSession } from "../core/lib/auth-token.js";
 import { runInBackground } from "../core/lib/background.js";
 import { emailConfigured } from "../core/lib/mailer.js";
 import { sendPasswordReset } from "../core/modules/auth/password-reset.service.js";
+import { deleteUserFace, getUserFace } from "../core/modules/faces/face.service.js";
 import { consumeOneTimeToken, peekOneTimeToken, revokeTokens } from "../core/modules/tokens/one-time-token.service.js";
 import {
   changePassword,
@@ -35,7 +37,7 @@ import {
   updateUserName,
   verifyPassword,
 } from "../core/modules/users/user.service.js";
-import { AUTH, createApp, fail, IdParam, jsonBody, NO_CONTENT, notFound, ok, PUBLIC, TokenParam } from "../http.js";
+import { AUTH, createApp, fail, IdParam, iso, jsonBody, NO_CONTENT, notFound, ok, PUBLIC, TokenParam } from "../http.js";
 
 const TAG = ["Tài khoản"];
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -257,6 +259,36 @@ export const account = createApp()
     async (c) => {
       const user = requireUser(c);
       await removeUserAvatar(user.userId);
+      return c.body(null, 204);
+    },
+  )
+
+  .openapi(
+    createRoute({
+      method: "get",
+      path: "/me/face",
+      tags: TAG,
+      summary: "Tài khoản đã có dữ liệu khuôn mặt (để chủ nhóm điểm danh bằng khuôn mặt) chưa",
+      security: AUTH,
+      responses: { 200: ok(FaceStatusSchema) },
+    }),
+    async (c) => {
+      const face = await getUserFace(requireUser(c).userId);
+      return c.json({ hasFace: !!face, updatedAt: iso(face?.updatedAt) }, 200);
+    },
+  )
+
+  .openapi(
+    createRoute({
+      method: "delete",
+      path: "/me/face",
+      tags: TAG,
+      summary: "Xóa dữ liệu khuôn mặt của tài khoản",
+      security: AUTH,
+      responses: { 204: NO_CONTENT },
+    }),
+    async (c) => {
+      await deleteUserFace(requireUser(c).userId);
       return c.body(null, 204);
     },
   )

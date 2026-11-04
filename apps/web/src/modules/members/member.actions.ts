@@ -54,3 +54,17 @@ export async function deleteMemberAction(formData: FormData) {
   // Xóa từ trang thống kê của chính thành viên: quay về danh sách thành viên của nhóm
   if (formData.get("back") === "group") redirect(`/groups/${groupId}?tab=members`);
 }
+
+/** Xóa khuôn mặt lưu riêng cho thành viên (dùng khi điểm danh bằng khuôn mặt) */
+export async function deleteMemberFaceAction(formData: FormData) {
+  await requireUser();
+  const memberId = String(formData.get("memberId") ?? "");
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!memberId) return;
+  try {
+    await api(`/v1/members/${enc(memberId)}/face`, { method: "DELETE" });
+  } catch (err) {
+    return ignoreApiError(err);
+  }
+  if (groupId) revalidatePath(`/groups/${groupId}/members/${memberId}`);
+}

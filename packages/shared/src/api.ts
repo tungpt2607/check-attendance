@@ -4,7 +4,7 @@
 // Ngày giờ luôn là chuỗi ISO 8601; ngày điểm danh gửi lên dạng YYYY-MM-DD.
 import { z } from "zod";
 import { NOTIFICATION_RESOLUTIONS, NOTIFICATION_SUBJECTS, NOTIFICATION_TYPES } from "@check-attendance/shared/notifications";
-import { STATUS_VALUES } from "@check-attendance/shared/statuses";
+import { RECORD_SOURCES, STATUS_VALUES } from "@check-attendance/shared/statuses";
 
 // ---------- Dùng chung ----------
 
@@ -13,6 +13,7 @@ export const IsoDateTime = z.string().describe("Thời điểm, ISO 8601");
 export const DateInput = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày không hợp lệ (định dạng YYYY-MM-DD).").describe("YYYY-MM-DD");
 
 export const StatusSchema = z.enum(STATUS_VALUES).describe("present = Có mặt, late = Muộn, absent = Vắng");
+export const RecordSourceSchema = z.enum(RECORD_SOURCES).describe("manual = chủ nhóm chấm, self = tự quét QR, face = quét khuôn mặt");
 export const StatusCountsSchema = z.partialRecord(StatusSchema, z.number().int());
 
 export const ErrorSchema = z.object({
@@ -177,8 +178,8 @@ export const MemberHistoryItemSchema = z.object({
   date: IsoDateTime,
   status: StatusSchema.nullable(),
   note: z.string(),
-  source: z.enum(["manual", "self"]).nullable(),
-  checkedInAt: IsoDateTime.nullable().describe("Giờ tự điểm danh bằng QR"),
+  source: RecordSourceSchema.nullable(),
+  checkedInAt: IsoDateTime.nullable().describe("Giờ điểm danh bằng QR hoặc khuôn mặt"),
 });
 
 export const MemberDetailSchema = z.object({
@@ -188,6 +189,10 @@ export const MemberDetailSchema = z.object({
   name: z.string(),
   code: z.string(),
   linkedAccount: PublicAccountSchema.nullable(),
+  face: z
+    .enum(["account", "member"])
+    .nullable()
+    .describe("Khuôn mặt dùng để nhận diện: của tài khoản đã liên kết, lưu riêng ở thành viên, hoặc null = chưa có"),
   stats: RateSchema,
   history: z.array(MemberHistoryItemSchema),
 });
@@ -217,7 +222,7 @@ export const SessionRowSchema = z.object({
   linked: z.boolean(),
   status: StatusSchema.nullable().describe("null = chưa có kết quả"),
   note: z.string(),
-  source: z.enum(["manual", "self"]).nullable(),
+  source: RecordSourceSchema.nullable(),
   checkedInAt: IsoDateTime.nullable(),
 });
 export const SessionDetailSchema = SessionSchema.extend({
@@ -274,6 +279,44 @@ export const CheckInInfoSchema = z.object({
 });
 export const CheckInInput = z.object({ token: z.string().min(1), memberId: Id });
 export const CheckInResultSchema = z.object({ ok: z.literal(true), memberId: Id, name: z.string() });
+
+// ---------- Điểm danh bằng khuôn mặt (chủ nhóm quét) ----------
+
+/** Số chiều của vector đặc trưng khuôn mặt (model face_recognition của face-api) */
+export const FACE_DESCRIPTOR_LENGTH = 128;
+
+export const FaceDescriptor = z
+  .array(z.number())
+  .length(FACE_DESCRIPTOR_LENGTH, "Dữ liệu khuôn mặt không hợp lệ.")
+  .describe("Vector đặc trưng khuôn mặt (128 số) do trình duyệt tính; máy chủ không nhận ảnh");
+
+export const FaceScanInput = z.object({ descriptor: FaceDescriptor });
+export const FaceScanResultSchema = z.discriminatedUnion("result", [
+  z.object({
+    result: z.literal("checked_in"),
+    memberId: Id,
+    name: z.string(),
+    previousStatus: StatusSchema.nullable().describe("Trạng thái trước khi ghi, dùng để hoàn tác khi nhận nhầm"),
+    distance: z.number().describe("Khoảng cách tới khuôn mặt đã lưu (càng nhỏ càng giống)"),
+  }),
+  z.object({ result: z.literal("already"), memberId: Id, name: z.string(), distance: z.number() }),
+  z.object({ result: z.literal("unknown") }),
+]);
+
+export const FaceAssignInput = z.object({ memberId: Id, descriptor: FaceDescriptor });
+export const FaceAssignResultSchema = z.object({
+  memberId: Id,
+  name: z.string(),
+  already: z.boolean().describe("Thành viên này đã được điểm danh từ trước"),
+  previousStatus: StatusSchema.nullable(),
+  faceSaved: z
+    .enum(["account", "member"])
+    .nullable()
+    .describe("Đã lưu khuôn mặt vào tài khoản đã liên kết / vào thành viên; null = không lưu (tài khoản đã có khuôn mặt)"),
+});
+
+export const FaceUndoInput = z.object({ memberId: Id, previousStatus: StatusSchema.nullable() });
+export const FaceStatusSchema = z.object({ hasFace: z.boolean(), updatedAt: IsoDateTime.nullable() });
 
 // ---------- Liên kết tài khoản ----------
 
@@ -384,6 +427,9 @@ export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 export type SessionDetail = z.infer<typeof SessionDetailSchema>;
 export type QrState = z.infer<typeof QrStateSchema>;
 export type CheckInInfo = z.infer<typeof CheckInInfoSchema>;
+export type FaceScanResult = z.infer<typeof FaceScanResultSchema>;
+export type FaceAssignResult = z.infer<typeof FaceAssignResultSchema>;
+export type FaceStatus = z.infer<typeof FaceStatusSchema>;
 export type InviteInfo = z.infer<typeof InviteInfoSchema>;
 export type JoinInfo = z.infer<typeof JoinInfoSchema>;
 export type Membership = z.infer<typeof MembershipSchema>;

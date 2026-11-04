@@ -1,3 +1,4 @@
+import FaceRetouchingNaturalRounded from "@mui/icons-material/FaceRetouchingNaturalRounded";
 import LockOutlined from "@mui/icons-material/LockOutlined";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import Box from "@mui/material/Box";
@@ -43,7 +44,7 @@ export default async function AttendanceSessionPage({ params }: Props) {
     note: r.note,
     origStatus: r.status ?? "",
     origNote: r.note,
-    selfCheckInTime: r.source === "self" && r.checkedInAt ? formatTime(r.checkedInAt) : null,
+    checkIn: (r.source === "self" || r.source === "face") && r.checkedInAt ? { source: r.source, time: formatTime(r.checkedInAt) } : null,
   }));
   // Dữ liệu đã lưu thay đổi (sau khi Lưu hoặc có người tự điểm danh) thì dựng lại bảng theo dữ liệu mới
   const sheetKey = rows.map((r) => `${r.id}:${r.origStatus}:${r.origNote}`).join("|");
@@ -98,6 +99,29 @@ export default async function AttendanceSessionPage({ params }: Props) {
                   </SubmitButton>
                 </form>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {members.length > 0 && (
+          <Card>
+            <CardContent sx={{ p: 2.5, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
+              <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", minWidth: 0 }}>
+                <FaceRetouchingNaturalRounded sx={{ color: brand.tealDark, mt: 0.25 }} />
+                <Box>
+                  <Typography variant="h2">Điểm danh bằng khuôn mặt</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Mở camera và đưa vào khuôn mặt từng người. Người chưa nhận ra thì chọn tên một lần, lần sau tự nhận ra.
+                  </Typography>
+                </Box>
+              </Box>
+              <LinkButton
+                href={`/groups/${group.id}/sessions/${session.id}/face`}
+                variant="contained"
+                startIcon={<FaceRetouchingNaturalRounded />}
+              >
+                Mở camera
+              </LinkButton>
             </CardContent>
           </Card>
         )}

@@ -184,6 +184,54 @@ export async function recordSelfCheckIn(sessionId: string, memberId: string): Pr
   }
 }
 
+/**
+ * Chủ nhóm điểm danh bằng khuôn mặt: ghi Có mặt (nguồn "face").
+ * Trả về trạng thái trước đó (để hoàn tác), hoặc "already" nếu người này đã Có mặt/Muộn.
+ */
+export async function recordFaceCheckIn(
+  sessionId: string,
+  memberId: string,
+  markedBy: string,
+): Promise<{ previousStatus: AttendanceStatus | null } | "already"> {
+  await connectDB();
+  try {
+    const before = await AttendanceRecord.findOneAndUpdate(
+      {
+        sessionId: new mongoose.Types.ObjectId(sessionId),
+        memberId: new mongoose.Types.ObjectId(memberId),
+        status: { $nin: ["present", "late"] },
+      },
+      {
+        $set: { status: "present", source: "face", checkedInAt: new Date(), markedBy: new mongoose.Types.ObjectId(markedBy) },
+      },
+      { upsert: true, new: false },
+    ).lean<AttendanceRecordRecord>();
+    return { previousStatus: before?.status ?? null };
+  } catch (err) {
+    // Đã có bản ghi Có mặt/Muộn: upsert đụng chỉ mục duy nhất
+    if (typeof err === "object" && err !== null && (err as { code?: number }).code === 11000) return "already";
+    throw err;
+  }
+}
+
+/**
+ * Hoàn tác một lượt quét khuôn mặt nhận nhầm người: trả về trạng thái trước đó.
+ * Chỉ hoàn tác khi kết quả hiện tại vẫn là do quét khuôn mặt (không đè lên chỉnh sửa khác).
+ */
+export async function undoFaceCheckIn(sessionId: string, memberId: string, previousStatus: AttendanceStatus | null) {
+  await connectDB();
+  const filter = {
+    sessionId: new mongoose.Types.ObjectId(sessionId),
+    memberId: new mongoose.Types.ObjectId(memberId),
+    source: "face" as const,
+  };
+  if (previousStatus === null) {
+    await AttendanceRecord.deleteOne(filter);
+  } else {
+    await AttendanceRecord.updateOne(filter, { $set: { status: previousStatus, source: "manual", checkedInAt: null } });
+  }
+}
+
 export async function updateAttendanceSession(sessionId: string, data: { title: string; date: Date }) {
   await connectDB();
   await AttendanceSession.updateOne({ _id: sessionId }, { $set: { title: data.title.trim(), date: data.date } });
