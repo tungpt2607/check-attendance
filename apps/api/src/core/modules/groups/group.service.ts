@@ -1,6 +1,7 @@
 import mongoose, { type Types } from "mongoose";
 import { VI_COLLATION, connectDB, isValidId } from "../../lib/db.js";
 import { Invite, LinkRequest } from "../invites/invite.model.js";
+import { FaceProfile } from "../faces/face.model.js";
 import { Member } from "../members/member.model.js";
 import { AttendanceRecord, AttendanceSession } from "../attendance/attendance.model.js";
 import { resolveSubject } from "../notifications/notification.service.js";
@@ -134,7 +135,7 @@ export async function deleteGroup(groupId: string, userId: string): Promise<bool
   return true;
 }
 
-/** Xoá hẳn các nhóm và mọi dữ liệu của chúng (buổi, kết quả, lời mời, yêu cầu, thành viên). Không kiểm tra quyền. */
+/** Xoá hẳn các nhóm và mọi dữ liệu của chúng (buổi, kết quả, lời mời, yêu cầu, thành viên, khuôn mặt của thành viên). Không kiểm tra quyền. */
 async function purgeGroups(groupIds: string[]): Promise<{ groups: number; members: number; sessions: number }> {
   await connectDB();
   const ids = groupIds.filter(isValidId).map((id) => new mongoose.Types.ObjectId(id));
@@ -148,6 +149,9 @@ async function purgeGroups(groupIds: string[]): Promise<{ groups: number; member
   const pendingIds = await LinkRequest.find({ ...inGroups, status: "pending" }).distinct("_id");
   await resolveSubject("link_request", pendingIds.map(String), "closed");
   await LinkRequest.deleteMany(inGroups);
+  // Khuôn mặt lưu riêng ở thành viên chưa liên kết (khuôn mặt của tài khoản thì giữ, thuộc về người dùng)
+  const memberIds = await Member.find(inGroups).distinct("_id");
+  await FaceProfile.deleteMany({ memberId: { $in: memberIds } });
   const members = await Member.deleteMany(inGroups);
   const groups = await Group.deleteMany({ _id: { $in: ids } });
   return { groups: groups.deletedCount, members: members.deletedCount, sessions: sessionIds.length };

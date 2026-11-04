@@ -1,5 +1,6 @@
 "use client";
 
+import FaceRetouchingNaturalRounded from "@mui/icons-material/FaceRetouchingNaturalRounded";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import SaveRounded from "@mui/icons-material/SaveRounded";
 import SearchRounded from "@mui/icons-material/SearchRounded";
@@ -31,7 +32,8 @@ export type SheetRow = {
   origStatus: string;
   origNote: string;
   /** Giờ tự điểm danh (đã định dạng), nếu người này tự quét QR */
-  selfCheckInTime: string | null;
+  /** Giờ tự điểm danh QR / quét khuôn mặt */
+  checkIn: { source: "self" | "face"; time: string } | null;
 };
 
 type Props = { sessionId: string; rows: SheetRow[]; isNew: boolean };
@@ -158,11 +160,11 @@ export function AttendanceSheet({ sessionId, rows, isNew }: Props) {
                   <Typography component="span" sx={{ fontWeight: 600 }}>
                     {r.name}
                   </Typography>
-                  {r.selfCheckInTime && (
+                  {r.checkIn && (
                     <Chip
                       size="small"
-                      icon={<QrCode2Rounded />}
-                      label={`Tự điểm danh ${r.selfCheckInTime}`}
+                      icon={r.checkIn.source === "face" ? <FaceRetouchingNaturalRounded /> : <QrCode2Rounded />}
+                      label={`${r.checkIn.source === "face" ? "Khuôn mặt" : "Tự điểm danh"} ${r.checkIn.time}`}
                       sx={{ ml: 1, height: 22, bgcolor: brand.tealLighter, color: brand.tealDarker, "& .MuiChip-icon": { color: brand.tealDark, fontSize: 16 } }}
                     />
                   )}

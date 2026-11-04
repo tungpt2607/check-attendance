@@ -1,4 +1,5 @@
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
+import FaceRetouchingNaturalRounded from "@mui/icons-material/FaceRetouchingNaturalRounded";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -11,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { Fragment } from "react";
 import { ZoomableAvatar } from "@check-attendance/ui/avatar-zoom";
+import { FaceDataCard } from "@/components/face-data-card";
 import { MemberRowMenu } from "@/components/member-row-menu";
 import { ListLink } from "@check-attendance/ui/links";
 import { PageHeader, SectionTitle } from "@check-attendance/ui/page-header";
@@ -20,6 +22,7 @@ import { formatDate, formatTime } from "@check-attendance/shared/format";
 import { requireUser } from "@/lib/session";
 import { apiOrNull } from "@/lib/api";
 import type { MemberDetail } from "@check-attendance/shared/api";
+import { deleteMemberFaceAction } from "@/modules/members/member.actions";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +75,20 @@ export default async function MemberStatsPage({ params }: Props) {
           </CardContent>
         </Card>
 
+        <FaceDataCard
+          status={
+            member.face === "account"
+              ? "Dùng khuôn mặt của tài khoản đã liên kết. Chỉ chủ tài khoản xóa được."
+              : member.face === "member"
+                ? "Đã lưu khuôn mặt để điểm danh bằng camera."
+                : "Chưa có. Lần đầu điểm danh bằng khuôn mặt, chọn tên người này để lưu."
+          }
+          canDelete={member.face === "member"}
+          action={deleteMemberFaceAction}
+          fields={{ memberId: member.id, groupId: group.id }}
+          confirmMessage={`Xóa dữ liệu khuôn mặt của ${member.name}? Lần sau điểm danh bằng khuôn mặt sẽ phải chọn tên lại.`}
+        />
+
         <Card>
           <CardContent sx={{ p: 2.5 }}>
             <SectionTitle>Lịch sử ({items.length} buổi)</SectionTitle>
@@ -95,8 +112,12 @@ export default async function MemberStatsPage({ params }: Props) {
                             {it.checkedInAt && (
                               <>
                                 {" · "}
-                                <QrCode2Rounded sx={{ fontSize: 14 }} />
-                                tự điểm danh {formatTime(it.checkedInAt)}
+                                {it.source === "face" ? (
+                                  <FaceRetouchingNaturalRounded sx={{ fontSize: 14 }} />
+                                ) : (
+                                  <QrCode2Rounded sx={{ fontSize: 14 }} />
+                                )}
+                                {it.source === "face" ? "khuôn mặt" : "tự điểm danh"} {formatTime(it.checkedInAt)}
                               </>
                             )}
                           </Typography>

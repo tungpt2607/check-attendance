@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, ignoreApiError } from "@/lib/api";
 import { requireUser, setSessionCookie } from "@/lib/session";
 import type { Preferences } from "@check-attendance/shared/api";
 
@@ -91,4 +91,15 @@ export async function updatePreferencesAction(patch: { notifications?: { email?:
     if (err instanceof ApiError) return null;
     throw err;
   }
+}
+
+/** Xóa dữ liệu khuôn mặt của tài khoản (chủ nhóm dùng để điểm danh bằng camera) */
+export async function deleteMyFaceAction(): Promise<void> {
+  await requireUser();
+  try {
+    await api("/v1/me/face", { method: "DELETE" });
+  } catch (err) {
+    return ignoreApiError(err);
+  }
+  revalidatePath("/account");
 }

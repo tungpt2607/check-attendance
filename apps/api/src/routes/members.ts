@@ -17,6 +17,7 @@ import {
 import { requireUser } from "../auth.js";
 import { buildShareLink } from "../core/lib/share.js";
 import { getMemberHistory } from "../core/modules/attendance/stats.service.js";
+import { deleteMemberFace, getMemberFaceSource } from "../core/modules/faces/face.service.js";
 import { getGroupName, getOwnedGroup } from "../core/modules/groups/group.service.js";
 import {
   approveRequest,
@@ -85,10 +86,11 @@ export const members = createApp()
     async (c) => {
       const user = requireUser(c);
       const m = await ownedMemberOr404(c.req.valid("param").id, user.userId);
-      const [{ items, rate }, accounts, groupName] = await Promise.all([
+      const [{ items, rate }, accounts, groupName, face] = await Promise.all([
         getMemberHistory(m.id, m.groupId),
         getAccountsByIds(m.linkedUserId ? [m.linkedUserId] : []),
         getGroupName(m.groupId),
+        getMemberFaceSource(m),
       ]);
       return c.json(
         {
@@ -98,6 +100,7 @@ export const members = createApp()
           name: m.name,
           code: m.code,
           linkedAccount: m.linkedUserId ? (accounts.get(m.linkedUserId) ?? null) : null,
+          face,
           stats: rate,
           history: items.map((it) => ({ ...it, date: iso(it.date), checkedInAt: iso(it.checkedInAt) })),
         },
@@ -140,6 +143,24 @@ export const members = createApp()
       const user = requireUser(c);
       const m = await ownedMemberOr404(c.req.valid("param").id, user.userId);
       await deleteMember(m.id);
+      return c.body(null, 204);
+    },
+  )
+
+  .openapi(
+    createRoute({
+      method: "delete",
+      path: "/members/{id}/face",
+      tags: MEMBER_TAG,
+      summary: "Xóa khuôn mặt đã lưu riêng cho thành viên (khuôn mặt của tài khoản chỉ chủ tài khoản xóa được)",
+      security: AUTH,
+      request: { params: IdParam },
+      responses: { 204: NO_CONTENT },
+    }),
+    async (c) => {
+      const user = requireUser(c);
+      const m = await ownedMemberOr404(c.req.valid("param").id, user.userId);
+      await deleteMemberFace(m.id);
       return c.body(null, 204);
     },
   )

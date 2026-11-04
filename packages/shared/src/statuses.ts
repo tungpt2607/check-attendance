@@ -24,3 +24,12 @@ export function isAttended(status: AttendanceStatus | null | undefined): boolean
 // Cách điểm danh. Sau này thêm "qr", "gps"... và xử lý riêng cho từng cách.
 export const ATTENDANCE_METHODS = ["manual"] as const;
 export type AttendanceMethod = (typeof ATTENDANCE_METHODS)[number];
+
+/** Ai/cách nào ghi kết quả: chủ nhóm chấm tay, thành viên tự quét QR, chủ nhóm quét khuôn mặt */
+export const RECORD_SOURCES = ["manual", "self", "face"] as const;
+export type RecordSource = (typeof RECORD_SOURCES)[number];
+
+/** Nguồn có ghi giờ điểm danh (hiện giờ trên bảng kết quả) */
+export function hasCheckInTime(source: RecordSource | null | undefined): boolean {
+  return source === "self" || source === "face";
+}

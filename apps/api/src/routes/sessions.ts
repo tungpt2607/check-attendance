@@ -1,10 +1,16 @@
 // /v1/sessions: buổi điểm danh, kết quả, mở/đóng tự điểm danh QR
+// /v1/sessions/:id/face/*: chủ nhóm điểm danh bằng khuôn mặt
 // /v1/checkin: thành viên tự điểm danh bằng QR (công khai)
 import { createRoute, z } from "@hono/zod-openapi";
 import {
   CheckInInfoSchema,
   CheckInInput,
   CheckInResultSchema,
+  FaceAssignInput,
+  FaceAssignResultSchema,
+  FaceScanInput,
+  FaceScanResultSchema,
+  FaceUndoInput,
   QrStateSchema,
   SavedSchema,
   SaveRecordsInput,
@@ -26,12 +32,15 @@ import {
   getCheckInSecret,
   getSessionRecords,
   openSelfCheckIn,
+  recordFaceCheckIn,
   recordSelfCheckIn,
   saveSessionRecords,
+  undoFaceCheckIn,
   updateAttendanceSession,
   type AttendanceSessionDTO,
 } from "../core/modules/attendance/attendance.service.js";
-import { DEFAULT_STATUS, isAttended } from "../core/modules/attendance/attendance.statuses.js";
+import { DEFAULT_STATUS, hasCheckInTime, isAttended } from "../core/modules/attendance/attendance.statuses.js";
+import { findFaceMatch, saveFaceForMember } from "../core/modules/faces/face.service.js";
 import { getGroupName } from "../core/modules/groups/group.service.js";
 import { getMember, listMembers } from "../core/modules/members/member.service.js";
 import { AUTH, createApp, fail, IdParam, iso, jsonBody, NO_CONTENT, ok, OPTIONAL_AUTH, SessionIdParam } from "../http.js";
@@ -39,6 +48,7 @@ import { ownedSessionOr404 } from "./owned.js";
 
 const TAG = ["Điểm danh"];
 const CHECKIN_TAG = ["Tự điểm danh"];
+const FACE_TAG = ["Điểm danh bằng khuôn mặt"];
 
 /** Buổi điểm danh → dữ liệu trả về (ngày dạng chuỗi ISO) */
 export function sessionOut(s: AttendanceSessionDTO) {
@@ -95,7 +105,7 @@ export const sessions = createApp()
               status: r?.status ?? null,
               note: r?.note ?? "",
               source: r?.source ?? null,
-              checkedInAt: r?.source === "self" ? iso(r.checkedInAt) : null,
+              checkedInAt: hasCheckInTime(r?.source) ? iso(r?.checkedInAt) : null,
             };
           }),
         },
@@ -239,6 +249,85 @@ export const sessions = createApp()
         },
         200,
       );
+    },
+  )
+
+  // ---------- Điểm danh bằng khuôn mặt (chủ nhóm cầm camera đi quét từng người) ----------
+
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/sessions/{id}/face/scan",
+      tags: FACE_TAG,
+      summary: "Gửi vector khuôn mặt vừa quét: nhận ra thành viên thì ghi Có mặt ngay; không nhận ra thì trả unknown",
+      security: AUTH,
+      request: { params: IdParam, ...jsonBody(FaceScanInput) },
+      responses: { 200: ok(FaceScanResultSchema) },
+    }),
+    async (c) => {
+      const user = requireUser(c);
+      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const members = await listMembers(session.groupId);
+      const match = await findFaceMatch(members, c.req.valid("json").descriptor);
+      if (!match) return c.json({ result: "unknown" as const }, 200);
+      const { member, distance } = match;
+      const recorded = await recordFaceCheckIn(session.id, member.id, user.userId);
+      if (recorded === "already") return c.json({ result: "already" as const, memberId: member.id, name: member.name, distance }, 200);
+      return c.json(
+        { result: "checked_in" as const, memberId: member.id, name: member.name, previousStatus: recorded.previousStatus, distance },
+        200,
+      );
+    },
+  )
+
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/sessions/{id}/face/assign",
+      tags: FACE_TAG,
+      summary:
+        "Không nhận ra khuôn mặt: chủ nhóm chọn tên → ghi Có mặt và lưu khuôn mặt (vào tài khoản đã liên kết nếu tài khoản chưa có, không thì vào thành viên)",
+      security: AUTH,
+      request: { params: IdParam, ...jsonBody(FaceAssignInput) },
+      responses: { 200: ok(FaceAssignResultSchema) },
+    }),
+    async (c) => {
+      const user = requireUser(c);
+      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const { memberId, descriptor } = c.req.valid("json");
+      const member = await getMember(memberId);
+      if (!member || member.groupId !== session.groupId) return fail(404, "not_found", "Không tìm thấy thành viên này trong nhóm.");
+      const recorded = await recordFaceCheckIn(session.id, member.id, user.userId);
+      const faceSaved = await saveFaceForMember(member, descriptor, user.userId);
+      return c.json(
+        {
+          memberId: member.id,
+          name: member.name,
+          already: recorded === "already",
+          previousStatus: recorded === "already" ? null : recorded.previousStatus,
+          faceSaved,
+        },
+        200,
+      );
+    },
+  )
+
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/sessions/{id}/face/undo",
+      tags: FACE_TAG,
+      summary: "Nhận nhầm người: trả kết quả của thành viên về trạng thái trước lượt quét",
+      security: AUTH,
+      request: { params: IdParam, ...jsonBody(FaceUndoInput) },
+      responses: { 204: NO_CONTENT },
+    }),
+    async (c) => {
+      const user = requireUser(c);
+      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const { memberId, previousStatus } = c.req.valid("json");
+      await undoFaceCheckIn(session.id, memberId, previousStatus);
+      return c.body(null, 204);
     },
   )
 

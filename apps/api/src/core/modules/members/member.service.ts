@@ -1,6 +1,7 @@
 import mongoose, { type Types } from "mongoose";
 import { VI_COLLATION, connectDB, isValidId } from "../../lib/db.js";
 import { AttendanceRecord } from "../attendance/attendance.model.js";
+import { FaceProfile } from "../faces/face.model.js";
 import { Invite, LinkRequest } from "../invites/invite.model.js";
 import { resolveSubject } from "../notifications/notification.service.js";
 import { Member, type MemberRecord } from "./member.model.js";
@@ -73,6 +74,7 @@ export async function updateMember(memberId: string, data: { name: string; code:
 export async function deleteMember(memberId: string) {
   await connectDB();
   await AttendanceRecord.deleteMany({ memberId });
+  await FaceProfile.deleteMany({ memberId });
   await Invite.deleteMany({ memberId });
   // Yêu cầu đang chờ bị xóa theo: thông báo về chúng chuyển thành "Không còn hiệu lực"
   const pendingIds = await LinkRequest.find({ memberId, status: "pending" }).distinct("_id");
