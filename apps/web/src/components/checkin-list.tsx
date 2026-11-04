@@ -220,7 +220,8 @@ export function CheckInList({ sessionId, token, members, loginHref, loggedInEmai
             </Alert>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+        {/* Điện thoại: xếp 2 nút thành 2 hàng (nút điểm danh ở trên) để chữ và icon không bị tràn ra ngoài nút */}
+        <DialogActions disableSpacing sx={{ px: 3, pb: 2.5, gap: 1, flexDirection: { xs: "column-reverse", sm: "row" } }}>
           <Button variant="outlined" color="inherit" fullWidth disabled={pending} onClick={close}>
             Không phải
           </Button>
