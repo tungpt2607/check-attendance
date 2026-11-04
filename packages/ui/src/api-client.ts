@@ -77,7 +77,25 @@ export function createApiClient({ cookieName, deadSessionPath }: { cookieName: s
     }
   }
 
-  return { api, apiOrNull };
+  /**
+   * Dùng trong server action: gọi API; lỗi nghiệp vụ (4xx: dữ liệu sai, không tìm thấy...) trả undefined để action
+   * dừng êm, lỗi máy chủ ném tiếp. API thành công mà không trả dữ liệu (204) thì trả null.
+   */
+  async function apiAction<T = null>(path: string, opts?: ApiOptions): Promise<T | undefined> {
+    try {
+      return await api<T>(path, opts);
+    } catch (err) {
+      ignoreApiError(err);
+      return undefined;
+    }
+  }
+
+  /** Như apiAction khi chỉ cần biết thành công hay không */
+  async function apiActionOk(path: string, opts?: ApiOptions): Promise<boolean> {
+    return (await apiAction(path, opts)) !== undefined;
+  }
+
+  return { api, apiOrNull, apiAction, apiActionOk };
 }
 
 /** Dùng trong action: lỗi nghiệp vụ (không tìm thấy, dữ liệu sai...) thì bỏ qua; lỗi máy chủ ném tiếp */

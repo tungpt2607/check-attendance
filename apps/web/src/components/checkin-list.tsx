@@ -2,27 +2,24 @@
 
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import LockOutlined from "@mui/icons-material/LockOutlined";
-import SearchRounded from "@mui/icons-material/SearchRounded";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import InputAdornment from "@mui/material/InputAdornment";
-import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import NextLink from "next/link";
-import { useMemo, useState, useTransition } from "react";
-import { normalizeSearch } from "@check-attendance/shared/search";
+import { useState, useTransition } from "react";
 import { selfCheckInAction } from "@/modules/attendance/checkin.actions";
+import { BottomSheetDialog } from "@check-attendance/ui/bottom-sheet-dialog";
 import { brand } from "@check-attendance/ui/brand";
+import { NameWithCode } from "@check-attendance/ui/name-with-code";
+import { SearchList } from "@check-attendance/ui/search-list";
 
 export type CheckInMember = {
   id: string;
@@ -55,19 +52,12 @@ export function CheckInDone({ title, name }: { title: string; name?: string }) {
 }
 
 export function CheckInList({ sessionId, token, members, loginHref, loggedInEmail }: Props) {
-  const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<CheckInMember | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [doneName, setDoneName] = useState<string | null>(null);
   // Tên đã liên kết tài khoản vừa được bấm: hiện hộp hướng dẫn đăng nhập
   const [lockedMember, setLockedMember] = useState<CheckInMember | null>(null);
   const [pending, startTransition] = useTransition();
-
-  const filtered = useMemo(() => {
-    const q = normalizeSearch(query);
-    if (!q) return members;
-    return members.filter((m) => normalizeSearch(`${m.name} ${m.code}`).includes(q));
-  }, [members, query]);
 
   if (doneName) return <CheckInDone title="Điểm danh thành công" name={doneName} />;
 
@@ -89,88 +79,48 @@ export function CheckInList({ sessionId, token, members, loginHref, loggedInEmai
 
   return (
     <Stack spacing={1.5}>
-      <TextField
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Tìm tên của bạn..."
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchRounded fontSize="small" />
-              </InputAdornment>
-            ),
-          },
-        }}
-      />
-
       {error && !selected && <Alert severity="error">{error}</Alert>}
 
-      <Card>
-        <List disablePadding>
-          {filtered.length === 0 && (
-            <Typography sx={{ py: 3, textAlign: "center" }} variant="body2" color="text.secondary">
-              Không tìm thấy tên phù hợp.
-            </Typography>
-          )}
-          {filtered.map((m, i) => (
-            <ListItemButton
-              key={m.id}
-              divider={i < filtered.length - 1}
-              disabled={m.checkedIn}
-              onClick={() => {
-                setError(null);
-                if (m.locked) setLockedMember(m);
-                else setSelected(m);
+      <SearchList
+        items={members}
+        keyOf={(m) => m.id}
+        placeholder="Tìm tên của bạn..."
+        renderItem={(m, { divider }) => (
+          <ListItemButton
+            divider={divider}
+            disabled={m.checkedIn}
+            onClick={() => {
+              setError(null);
+              if (m.locked) setLockedMember(m);
+              else setSelected(m);
+            }}
+            sx={{ py: 1.5, "&.Mui-disabled": { opacity: 1 } }}
+          >
+            <ListItemText
+              primary={<NameWithCode name={m.name} code={m.code} />}
+              slotProps={{
+                primary: { fontWeight: m.checkedIn || m.locked ? 400 : 600, color: m.checkedIn || m.locked ? "text.disabled" : "text.primary" },
               }}
-              sx={{ py: 1.5, "&.Mui-disabled": { opacity: 1 } }}
-            >
-              <ListItemText
-                primary={
-                  <>
-                    {m.code && (
-                      <Typography component="span" variant="caption" color="text.secondary" sx={{ mr: 1 }}>
-                        {m.code}
-                      </Typography>
-                    )}
-                    {m.name}
-                  </>
-                }
-                slotProps={{
-                  primary: { fontWeight: m.checkedIn || m.locked ? 400 : 600, color: m.checkedIn || m.locked ? "text.disabled" : "text.primary" },
-                }}
-              />
-              {!m.checkedIn && m.locked && (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}
-                >
-                  <LockOutlined sx={{ fontSize: 15 }} /> Cần đăng nhập
-                </Typography>
-              )}
-              {m.checkedIn && (
-                <Typography
-                  variant="caption"
-                  sx={{ color: brand.tealDark, fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}
-                >
-                  <CheckCircleRounded sx={{ fontSize: 16 }} /> Đã điểm danh
-                </Typography>
-              )}
-            </ListItemButton>
-          ))}
-        </List>
-      </Card>
+            />
+            {!m.checkedIn && m.locked && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+                <LockOutlined sx={{ fontSize: 15 }} /> Cần đăng nhập
+              </Typography>
+            )}
+            {m.checkedIn && (
+              <Typography
+                variant="caption"
+                sx={{ color: brand.tealDark, fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}
+              >
+                <CheckCircleRounded sx={{ fontSize: 16 }} /> Đã điểm danh
+              </Typography>
+            )}
+          </ListItemButton>
+        )}
+      />
 
       {/* Tên đã liên kết tài khoản: hướng dẫn đăng nhập */}
-      <Dialog
-        open={!!lockedMember}
-        onClose={() => setLockedMember(null)}
-        fullWidth
-        maxWidth="xs"
-        sx={{ "& .MuiDialog-container": { alignItems: { xs: "flex-end", sm: "center" } } }}
-      >
+      <BottomSheetDialog open={!!lockedMember} onClose={() => setLockedMember(null)}>
         <DialogContent sx={{ pt: 3 }}>
           <Typography sx={{ fontWeight: 700, fontSize: 19, display: "flex", alignItems: "center", gap: 1 }}>
             <LockOutlined sx={{ color: brand.tealDark }} /> {lockedMember?.name}
@@ -199,16 +149,10 @@ export function CheckInList({ sessionId, token, members, loginHref, loggedInEmai
             </Button>
           )}
         </DialogActions>
-      </Dialog>
+      </BottomSheetDialog>
 
       {/* Xác nhận đúng người */}
-      <Dialog
-        open={!!selected}
-        onClose={close}
-        fullWidth
-        maxWidth="xs"
-        sx={{ "& .MuiDialog-container": { alignItems: { xs: "flex-end", sm: "center" } } }}
-      >
+      <BottomSheetDialog open={!!selected} onClose={close}>
         <DialogContent sx={{ pt: 3 }}>
           <Typography variant="body2" color="text.secondary">
             Xác nhận điểm danh
@@ -235,7 +179,7 @@ export function CheckInList({ sessionId, token, members, loginHref, loggedInEmai
             {pending ? "Đang ghi..." : "Đúng, điểm danh"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </BottomSheetDialog>
     </Stack>
   );
 }
@@ -244,8 +188,6 @@ export function CheckInList({ sessionId, token, members, loginHref, loggedInEmai
 export function SelfCheckInButton({ sessionId, token, memberId, name }: { sessionId: string; token: string; memberId: string; name: string }) {
   const [error, setError] = useState<string | null>(null);
   const [doneName, setDoneName] = useState<string | null>(null);
-  // Tên đã liên kết tài khoản vừa được bấm: hiện hộp hướng dẫn đăng nhập
-  const [lockedMember, setLockedMember] = useState<CheckInMember | null>(null);
   const [pending, startTransition] = useTransition();
 
   if (doneName) return <CheckInDone title="Điểm danh thành công" name={doneName} />;

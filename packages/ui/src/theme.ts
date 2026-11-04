@@ -68,6 +68,8 @@ export const theme = createTheme({
       styleOverrides: { root: { textTransform: "none", fontWeight: 500, paddingBlock: 6 } },
     },
     MuiDialog: { styleOverrides: { paper: { borderRadius: 16 } } },
+    // Tiêu đề hộp thoại thống nhất mọi nơi (không cần viết lại sx ở từng hộp thoại)
+    MuiDialogTitle: { styleOverrides: { root: { fontSize: 18, fontWeight: 600 } } },
     MuiLinearProgress: {
       styleOverrides: { bar: { backgroundColor: brand.teal }, root: { backgroundColor: "#E6EEEE" } },
     },

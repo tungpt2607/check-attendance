@@ -52,7 +52,7 @@ export function GroupInviteDialog({ groupId, groupName, link, onLinkChange: setL
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ fontSize: 18, fontWeight: 600, pb: 0.5, display: "flex", alignItems: "center", gap: 1 }}>
+      <DialogTitle sx={{ pb: 0.5, display: "flex", alignItems: "center", gap: 1 }}>
         <LinkRounded color="primary" />
         Link tham gia nhóm
       </DialogTitle>

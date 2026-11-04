@@ -231,7 +231,7 @@ export function AvatarCropper({ file, onCancel, onConfirm }: Props) {
 
   return (
     <Dialog open={!!file} onClose={() => !saving && onCancel()} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ fontSize: 18, fontWeight: 600, pb: 0.5 }}>Chỉnh ảnh đại diện</DialogTitle>
+      <DialogTitle sx={{ pb: 0.5 }}>Chỉnh ảnh đại diện</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Kéo để đặt khuôn mặt vào khung tròn. Chụm hai ngón hoặc kéo thanh trượt để phóng to.

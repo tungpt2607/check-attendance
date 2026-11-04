@@ -1,7 +1,6 @@
 import FaceRetouchingNaturalRounded from "@mui/icons-material/FaceRetouchingNaturalRounded";
 import LockOutlined from "@mui/icons-material/LockOutlined";
 import QrCode2Rounded from "@mui/icons-material/QrCode2Rounded";
-import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Stack from "@mui/material/Stack";
@@ -9,6 +8,7 @@ import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { AttendanceSheet, type SheetRow } from "@/components/attendance-sheet";
 import { SessionHeaderMenu } from "@/components/session-header-menu";
+import { FeatureCard } from "@check-attendance/ui/feature-card";
 import { LinkButton } from "@check-attendance/ui/links";
 import { PageHeader } from "@check-attendance/ui/page-header";
 import { SubmitButton } from "@check-attendance/ui/submit-button";
@@ -18,7 +18,6 @@ import { apiOrNull } from "@/lib/api";
 import type { SessionDetail } from "@check-attendance/shared/api";
 import { closeSelfCheckInAction, openSelfCheckInAction } from "@/modules/attendance/attendance.actions";
 import { DEFAULT_STATUS } from "@/modules/attendance/attendance.statuses";
-import { brand } from "@check-attendance/ui/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -66,20 +65,17 @@ export default async function AttendanceSessionPage({ params }: Props) {
 
       <Stack spacing={2}>
         {members.length > 0 && (
-          <Card sx={session.selfCheckInOpen ? { borderColor: brand.teal, bgcolor: brand.tealLighter } : undefined}>
-            <CardContent sx={{ p: 2.5, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-              <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", minWidth: 0 }}>
-                <QrCode2Rounded sx={{ color: brand.tealDark, mt: 0.25 }} />
-                <Box>
-                  <Typography variant="h2">Tự điểm danh bằng QR</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {session.selfCheckInOpen
-                      ? "Đang mở. Mọi người quét mã và chọn tên mình."
-                      : "Mọi người tự quét mã QR và chọn tên mình để điểm danh."}
-                  </Typography>
-                </Box>
-              </Box>
-              {session.selfCheckInOpen ? (
+          <FeatureCard
+            icon={<QrCode2Rounded />}
+            title="Tự điểm danh bằng QR"
+            description={
+              session.selfCheckInOpen
+                ? "Đang mở. Mọi người quét mã và chọn tên mình."
+                : "Mọi người tự quét mã QR và chọn tên mình để điểm danh."
+            }
+            highlighted={session.selfCheckInOpen}
+            actions={
+              session.selfCheckInOpen ? (
                 <Stack direction="row" spacing={1}>
                   <LinkButton href={`/groups/${group.id}/sessions/${session.id}/qr`} variant="contained" startIcon={<QrCode2Rounded />}>
                     Hiện mã QR
@@ -98,23 +94,17 @@ export default async function AttendanceSessionPage({ params }: Props) {
                     Mở tự điểm danh
                   </SubmitButton>
                 </form>
-              )}
-            </CardContent>
-          </Card>
+              )
+            }
+          />
         )}
 
         {members.length > 0 && (
-          <Card>
-            <CardContent sx={{ p: 2.5, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-              <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", minWidth: 0 }}>
-                <FaceRetouchingNaturalRounded sx={{ color: brand.tealDark, mt: 0.25 }} />
-                <Box>
-                  <Typography variant="h2">Điểm danh bằng khuôn mặt</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Mở camera và đưa vào khuôn mặt từng người. Người chưa nhận ra thì chọn tên một lần, lần sau tự nhận ra.
-                  </Typography>
-                </Box>
-              </Box>
+          <FeatureCard
+            icon={<FaceRetouchingNaturalRounded />}
+            title="Điểm danh bằng khuôn mặt"
+            description="Mở camera và đưa vào khuôn mặt từng người. Người chưa nhận ra thì chọn tên một lần, lần sau tự nhận ra."
+            actions={
               <LinkButton
                 href={`/groups/${group.id}/sessions/${session.id}/face`}
                 variant="contained"
@@ -122,8 +112,8 @@ export default async function AttendanceSessionPage({ params }: Props) {
               >
                 Mở camera
               </LinkButton>
-            </CardContent>
-          </Card>
+            }
+          />
         )}
 
         {members.length === 0 ? (

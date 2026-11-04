@@ -2,15 +2,13 @@
 
 import ExpandLessRounded from "@mui/icons-material/ExpandLessRounded";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
-import SearchRounded from "@mui/icons-material/SearchRounded";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { normalizeSearch } from "@check-attendance/shared/search";
+import { SearchField } from "./search-field";
 import { useFastTap } from "./use-fast-tap";
 
 const PAGE_SIZE = 20;
@@ -91,24 +89,14 @@ export function PagedList({ children, searchable = false, placeholder = "Tìm th
     >
       {searchable && (
         <Box sx={{ mb: 1 }}>
-          <TextField
-            type="search"
+          <SearchField
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
+            onChange={(v) => {
+              setQuery(v);
               setLimit(PAGE_SIZE);
             }}
             placeholder={placeholder}
-            slotProps={{
-              htmlInput: { form: "__none__" },
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchRounded fontSize="small" />
-                  </InputAdornment>
-                ),
-              },
-            }}
+            insideForm
           />
           {query && (
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>

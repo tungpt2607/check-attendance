@@ -44,7 +44,7 @@ export function ConfirmDialog({ open, onClose, message, confirmLabel, pendingTex
         {Object.entries(fields).map(([k, v]) => (
           <input key={k} type="hidden" name={k} value={v} />
         ))}
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 600 }}>Xác nhận</DialogTitle>
+        <DialogTitle>Xác nhận</DialogTitle>
         <DialogContent>
           <DialogContentText>{message}</DialogContentText>
         </DialogContent>
