@@ -25,6 +25,7 @@
     "./paged-list": "./src/paged-list.tsx",
     "./password-input": "./src/password-input.tsx",
     "./providers": "./src/providers.tsx",
+    "./quick-actions": "./src/quick-actions.tsx",
     "./search-field": "./src/search-field.tsx",
     "./search-list": "./src/search-list.tsx",
     "./session-token": "./src/session-token.ts",
