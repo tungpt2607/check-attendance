@@ -108,8 +108,22 @@ Mỗi phần có **phiên bản riêng** (semver `X.Y.Z`), ghi ở trường `ve
 
 ## Kiểm tra tự động (CI)
 
-GitHub Actions (`.github/workflows/ci.yml`) chạy mỗi lần đẩy code: kiểm tra kiểu API và gói dùng chung, build web.
-Lỗi hiện ở tab **Actions** trên GitHub (và trong chú thích của lần chạy).
+GitHub Actions (`.github/workflows/ci.yml`) chạy mỗi lần đẩy code. Lỗi hiện ở tab **Actions** trên GitHub (và trong chú thích của lần chạy).
+
+| Bước | Lệnh | Kiểm tra gì |
+|---|---|---|
+| Phiên bản (chỉ PR) | `node scripts/check-versions.mjs origin/main` | Phần có thay đổi đã tăng phiên bản |
+| Kiểu dữ liệu | `npm run typecheck -w @check-attendance/api` | TypeScript của API, gói dùng chung |
+| Kiểm thử API | `npm test -w @check-attendance/api` | Phép tính (`test/rate.test.ts`) và **API với MongoDB thật** (`test/api.int.test.ts`) |
+| Build | `npm run build -w @check-attendance/web` / `cms` | Web và CMS build được |
+| Đầu-cuối | `npm run test:e2e` | **Trình duyệt thật** (`e2e/`): đăng ký, trang nhóm, bảng điểm danh, tự điểm danh QR, điểm danh bằng khuôn mặt với camera giả |
+
+- CI chạy kèm một **MongoDB riêng cho kiểm thử** (không phải database của web); mỗi lần chạy dùng database mới và xóa khi xong.
+- Trên máy: kiểm thử tích hợp và đầu-cuối cần MongoDB: đặt `MONGODB_TEST_URI=mongodb://localhost:27017/`
+  (không có thì kiểm thử tích hợp tự bỏ qua). Đầu-cuối cần thêm: build web với `NEXT_PUBLIC_API_URL=http://localhost:8787`,
+  `ffmpeg` (tạo video camera giả từ `e2e/fixtures/*.jpg`), `npx -w @check-attendance/e2e playwright install chromium`.
+- API chạy như máy chủ Node thường (không cần Vercel): `npx tsx apps/api/scripts/serve.ts`.
+- Kiểm thử đầu-cuối lỗi: CI lưu ảnh chụp + trace ở mục **Artifacts** của lần chạy (`playwright-report`).
 
 ## Dữ liệu
 
