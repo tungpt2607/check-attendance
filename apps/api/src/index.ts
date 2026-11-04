@@ -7,6 +7,7 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { loadUser, type AppEnv } from "./auth.js";
 import { DOC_INFO, DOCS_HTML } from "./openapi.js";
+import { API_VERSION } from "./version.js";
 import { account } from "./routes/account.js";
 import { admin } from "./routes/admin.js";
 import { groups } from "./routes/groups.js";
@@ -32,7 +33,7 @@ app.use(
 );
 
 app.get("/", (c) => c.redirect("/docs"));
-app.get("/health", (c) => c.json({ ok: true }));
+app.get("/health", (c) => c.json({ ok: true, version: API_VERSION }));
 app.get("/docs", (c) => c.html(DOCS_HTML));
 
 // Mọi API dưới /v1: đọc token (nếu có) trước khi vào route

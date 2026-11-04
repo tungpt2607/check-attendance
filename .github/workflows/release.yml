@@ -1,0 +1,46 @@
+# Mỗi lần merge vào main: phần nào (web, CMS, API) có phiên bản mới thì tạo tag <phần>-v<phiên bản> và GitHub Release.
+# Phiên bản đặt trong apps/<phần>/package.json, tăng thủ công trong PR (CI kiểm tra, xem scripts/check-versions.mjs).
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # cần toàn bộ lịch sử và tag để viết ghi chú thay đổi
+      - name: Tạo tag và Release cho phần có phiên bản mới
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release() {
+            local key="$1" label="$2"; shift 2
+            local dirs=("$@")
+            local version tag prev notes
+            version=$(node -p "require('./apps/$key/package.json').version")
+            tag="$key-v$version"
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              echo "$label $version: đã có tag $tag, bỏ qua"
+              return
+            fi
+            # Ghi chú: các commit chạm vào phần này kể từ tag trước của nó
+            prev=$(git tag --list "$key-v*" --sort=-v:refname | head -n 1)
+            if [ -n "$prev" ]; then
+              notes=$(git log --format='- %s' "$prev..HEAD" -- "${dirs[@]}")
+            else
+              notes="Phiên bản đầu tiên được đánh số."
+            fi
+            gh release create "$tag" --target "$GITHUB_SHA" --title "$label $version" --notes "${notes:-Không có ghi chú.}"
+            echo "$label $version: đã tạo $tag"
+          }
+          release web "Web" apps/web packages/shared packages/ui
+          release cms "CMS" apps/cms packages/shared packages/ui
+          release api "API" apps/api packages/shared

@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { getSession } from "@/lib/session";
+import { getApiVersion, versionLabel } from "@/lib/versions";
 import { brand, logoStripe } from "@check-attendance/ui/brand";
 import { AppLink } from "@check-attendance/ui/links";
 import { Logo } from "@check-attendance/ui/logo";
@@ -21,7 +22,7 @@ function BrandStripe() {
 }
 
 export async function AppHeader() {
-  const user = await getSession();
+  const [user, apiVersion] = await Promise.all([getSession(), getApiVersion()]);
   return (
     <AppBar position="sticky" sx={{ zIndex: 30 }}>
       <Toolbar sx={{ width: "100%", maxWidth: 1000, mx: "auto", minHeight: { xs: 56, sm: 56 }, px: 2, justifyContent: "space-between" }}>
@@ -38,7 +39,13 @@ export async function AppHeader() {
         {user && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <NotificationBell />
-            <UserMenu userId={user.userId} name={user.name} email={user.email} avatarVersion={user.avatarVersion} />
+            <UserMenu
+              userId={user.userId}
+              name={user.name}
+              email={user.email}
+              avatarVersion={user.avatarVersion}
+              version={versionLabel(apiVersion)}
+            />
           </Box>
         )}
       </Toolbar>

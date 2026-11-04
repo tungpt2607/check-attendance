@@ -124,6 +124,10 @@ export function AdminShell({ user, webUrl, children }: Props) {
           </ListItemIcon>
           <ListItemText primary={leaving ? "Đang đăng xuất..." : "Đăng xuất"} slotProps={{ primary: { fontSize: 14 } }} />
         </ListItemButton>
+        {/* Phiên bản CMS đang chạy (lấy lúc build từ apps/cms/package.json) */}
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ px: 1, pt: 1 }}>
+          CMS phiên bản {process.env.NEXT_PUBLIC_APP_VERSION}
+        </Typography>
       </Box>
     </Box>
   );
