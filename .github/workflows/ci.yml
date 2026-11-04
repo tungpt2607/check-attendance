@@ -1,4 +1,6 @@
-# Kiểm tra tự động mỗi lần đẩy code: kiểu dữ liệu (TypeScript) của API, build web và CMS;
+# Kiểm tra tự động mỗi lần đẩy code: kiểu dữ liệu (TypeScript) của API, build web và CMS,
+# kiểm thử API với MongoDB thật (chạy kèm trong CI, database riêng, xóa khi xong),
+# kiểm thử đầu-cuối bằng trình duyệt (e2e/: web + API + MongoDB + camera giả);
 # với pull request: phần nào có thay đổi phải tăng phiên bản (scripts/check-versions.mjs).
 # Kết quả xem ở tab Actions trên GitHub (Claude đọc được qua `gh run view`).
 name: CI
@@ -10,6 +12,14 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # MongoDB thật chỉ dùng cho kiểm thử (không phải database của web)
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    env:
+      MONGODB_TEST_URI: mongodb://localhost:27017/
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,7 +36,7 @@ jobs:
         run: npm run build -w @check-attendance/shared
       - name: Kiểm tra kiểu API
         run: npm run typecheck -w @check-attendance/api
-      - name: Kiểm thử API (cách tính chuyên cần...)
+      - name: Kiểm thử API (cách tính chuyên cần, các API với MongoDB thật)
         run: npm test -w @check-attendance/api
       - name: Kiểm tra kiểu gói dùng chung
         run: npm run typecheck -w @check-attendance/shared --if-present
@@ -34,7 +44,24 @@ jobs:
         run: npm run build -w @check-attendance/web
         env:
           AUTH_SECRET: ci-only-not-a-real-secret
+          # Bản build này dùng luôn cho kiểm thử đầu-cuối (API chạy ở máy CI)
+          NEXT_PUBLIC_API_URL: http://localhost:8787
       - name: Build CMS
         run: npm run build -w @check-attendance/cms
         env:
           AUTH_SECRET: ci-only-not-a-real-secret
+      - name: Cài trình duyệt và ffmpeg cho kiểm thử đầu-cuối
+        run: |
+          npx -w @check-attendance/e2e playwright install --with-deps chromium
+          command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - name: Kiểm thử đầu-cuối (trình duyệt + API + MongoDB + camera giả)
+        run: npm run test:e2e
+      - name: Lưu báo cáo kiểm thử đầu-cuối khi lỗi (ảnh chụp, trace)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7

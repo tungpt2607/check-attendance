@@ -1,0 +1,13 @@
+{
+  "name": "@check-attendance/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Kiểm thử đầu-cuối bằng trình duyệt: web thật + API thật + MongoDB + camera giả (chạy trong CI).",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

@@ -7,7 +7,7 @@
     "dev": "vercel dev",
     "typecheck": "tsc --noEmit",
     "build": "npm run build --prefix ../../packages/shared",
-    "test": "node --test test/*.test.ts"
+    "test": "node --import tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@check-attendance/shared": "*",
@@ -22,8 +22,10 @@
     "zod": "^4.1.0"
   },
   "devDependencies": {
+    "@hono/node-server": "^1.13.7",
     "@types/node": "^22.15.0",
     "@types/qrcode": "^1.5.5",
+    "tsx": "^4.19.2",
     "typescript": "^5.8.0"
   }
 }
