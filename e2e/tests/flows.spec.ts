@@ -24,7 +24,8 @@ test("trang nhóm và bảng điểm danh: tìm không dấu, chọn trạng th�
   await expect(page.getByText(/3 thành viên/).first()).toBeVisible();
 
   await page.goto(`/groups/${g.groupId}/sessions/${g.sessionId}`);
-  await expect(page.getByText("Điểm danh bằng khuôn mặt")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Khuôn mặt" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mở QR" })).toBeVisible();
   await page.getByPlaceholder("Tìm theo tên hoặc mã...").fill("binh");
   await expect(page.locator("li:visible")).toHaveCount(1);
   await expect(page.getByText("Đang hiện 1/3")).toBeVisible();

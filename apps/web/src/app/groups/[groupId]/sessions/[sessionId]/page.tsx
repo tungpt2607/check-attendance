@@ -8,8 +8,8 @@ import Typography from "@mui/material/Typography";
 import { notFound } from "next/navigation";
 import { AttendanceSheet, type SheetRow } from "@/components/attendance-sheet";
 import { SessionHeaderMenu } from "@/components/session-header-menu";
-import { FeatureCard } from "@check-attendance/ui/feature-card";
 import { LinkButton } from "@check-attendance/ui/links";
+import { QuickAction, QuickActions } from "@check-attendance/ui/quick-actions";
 import { PageHeader } from "@check-attendance/ui/page-header";
 import { SubmitButton } from "@check-attendance/ui/submit-button";
 import { dateInputValue, formatDate, formatTime } from "@check-attendance/shared/format";
@@ -64,56 +64,49 @@ export default async function AttendanceSessionPage({ params }: Props) {
       />
 
       <Stack spacing={2}>
+        {/* Các cách điểm danh: gọn trong một hàng để bảng điểm danh hiện ngay phía trên màn hình */}
         {members.length > 0 && (
-          <FeatureCard
-            icon={<QrCode2Rounded />}
-            title="Tự điểm danh bằng QR"
-            description={
-              session.selfCheckInOpen
-                ? "Đang mở. Mọi người quét mã và chọn tên mình."
-                : "Mọi người tự quét mã QR và chọn tên mình để điểm danh."
-            }
+          <QuickActions
+            label="Cách điểm danh"
             highlighted={session.selfCheckInOpen}
-            actions={
-              session.selfCheckInOpen ? (
-                <Stack direction="row" spacing={1}>
-                  <LinkButton href={`/groups/${group.id}/sessions/${session.id}/qr`} variant="contained" startIcon={<QrCode2Rounded />}>
-                    Hiện mã QR
-                  </LinkButton>
-                  <form action={closeSelfCheckInAction}>
-                    <input type="hidden" name="sessionId" value={session.id} />
-                    <SubmitButton variant="danger" pendingText="Đang đóng..." startIcon={<LockOutlined />} successMessage="Đã đóng tự điểm danh">
-                      Đóng
-                    </SubmitButton>
-                  </form>
-                </Stack>
-              ) : (
-                <form action={openSelfCheckInAction}>
+            status={session.selfCheckInOpen ? "Đang mở tự điểm danh QR" : undefined}
+            statusAction={
+              session.selfCheckInOpen && (
+                <form action={closeSelfCheckInAction}>
                   <input type="hidden" name="sessionId" value={session.id} />
-                  <SubmitButton pendingText="Đang mở..." startIcon={<QrCode2Rounded />}>
-                    Mở tự điểm danh
+                  <SubmitButton variant="danger" size="small" pendingText="Đang đóng..." startIcon={<LockOutlined />} successMessage="Đã đóng tự điểm danh">
+                    Đóng
                   </SubmitButton>
                 </form>
               )
             }
-          />
-        )}
-
-        {members.length > 0 && (
-          <FeatureCard
-            icon={<FaceRetouchingNaturalRounded />}
-            title="Điểm danh bằng khuôn mặt"
-            description="Mở camera và đưa vào khuôn mặt từng người. Người chưa nhận ra thì chọn tên một lần, lần sau tự nhận ra."
-            actions={
+          >
+            {session.selfCheckInOpen ? (
+              <QuickAction hint="Trình chiếu mã QR để mọi người quét và chọn tên mình">
+                <LinkButton href={`/groups/${group.id}/sessions/${session.id}/qr`} variant="contained" startIcon={<QrCode2Rounded />}>
+                  Hiện mã QR
+                </LinkButton>
+              </QuickAction>
+            ) : (
+              <QuickAction hint="Mở tự điểm danh: mọi người tự quét mã QR và chọn tên mình">
+                <form action={openSelfCheckInAction}>
+                  <input type="hidden" name="sessionId" value={session.id} />
+                  <SubmitButton pendingText="Đang mở..." startIcon={<QrCode2Rounded />}>
+                    Mở QR
+                  </SubmitButton>
+                </form>
+              </QuickAction>
+            )}
+            <QuickAction hint="Mở camera, đưa vào khuôn mặt từng người. Người chưa nhận ra thì chọn tên một lần, lần sau tự nhận ra">
               <LinkButton
                 href={`/groups/${group.id}/sessions/${session.id}/face`}
-                variant="contained"
+                variant={session.selfCheckInOpen ? "outlined" : "contained"}
                 startIcon={<FaceRetouchingNaturalRounded />}
               >
-                Mở camera
+                Khuôn mặt
               </LinkButton>
-            }
-          />
+            </QuickAction>
+          </QuickActions>
         )}
 
         {members.length === 0 ? (
