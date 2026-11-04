@@ -65,6 +65,31 @@ Web **không nối DB**; mọi dữ liệu đi qua API. Phiên đăng nhập h�
 - Thư viện CommonJS (mongoose, qrcode) phải nạp kiểu mặc định (`import mongoose from "mongoose"`).
 - Biến môi trường: xem `apps/api/.env.example`.
 
+## Quy tắc viết code
+
+Áp dụng cho **mọi thay đổi** (người hay AI viết đều vậy):
+
+**Tổng quát, dùng lại được**
+- Trước khi viết mới, tìm xem đã có thành phần dùng chung chưa: `packages/ui` (giao diện: `SearchField`, `useSearch`,
+  `SearchList`, `NameWithCode`, `FeatureCard`, `FullscreenPanel`, `BottomSheetDialog`, `ConfirmDialog`, `PagedList`...),
+  `packages/shared` (schema API, trạng thái, định dạng, tìm kiếm), `apps/api/src/core` (service, `rate.ts`...).
+- Đoạn code giống nhau xuất hiện từ lần thứ 2 → tách thành component/hook/hàm dùng chung (dùng cho cả web và CMS thì đặt ở `packages/ui`).
+- Chia nhỏ: một file làm một việc; component dài (khoảng trên 200 dòng) thì tách phần con, logic (tải dữ liệu, camera...) thì tách hook.
+- Kiểu chữ/màu lặp lại → đưa vào theme (`packages/ui/src/theme.ts`) hoặc `brand.ts`, không viết lại `sx` ở từng chỗ.
+- Server action gọi API dùng `apiAction` / `apiActionOk`; schema API khai báo một lần ở `packages/shared/src/api.ts`.
+
+**Performance**
+- API: để MongoDB đếm/gom (`countDocuments`, `aggregate` `$group`), không tải cả danh sách chỉ để đếm; chỉ `select` trường cần dùng; `lean()`.
+- Truy vấn mới có lọc/sắp xếp thường xuyên → thêm index (khai báo trong model, trước khi tạo model; sắp xếp tiếng Việt dùng cùng `VI_COLLATION`).
+- Không gọi API/DB lặp lại cùng một dữ liệu trong một lượt tải trang; các lời gọi độc lập chạy song song (`Promise.all`).
+- Giao diện: danh sách dài thì từng dòng là component `memo` với hàm callback ổn định (`useCallback`);
+  tính trước dữ liệu nặng bằng `useMemo` (vd. chuỗi tìm kiếm chuẩn hóa sẵn qua `useSearch`).
+- Thư viện nặng (vd. face-api) nạp động (`import()`) đúng trang cần; file tĩnh lớn không đổi thì cho trình duyệt lưu đệm lâu (`next.config.mjs` `headers`).
+
+**Kiểm tra**
+- Phép tính quan trọng (tỷ lệ chuyên cần...) tách thành hàm thuần và có kiểm thử (`npm test -w @check-attendance/api`).
+- Trước khi đẩy code: typecheck API, build web và CMS như CI; thay đổi giao diện thì chạy thử trên trình duyệt (cả khổ điện thoại).
+
 ## Phiên bản
 
 Mỗi phần có **phiên bản riêng** (semver `X.Y.Z`), ghi ở trường `version` trong `package.json` của phần đó và **tăng thủ công trong mỗi PR**:
