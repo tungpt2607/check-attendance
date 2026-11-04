@@ -4,7 +4,7 @@
 import mongoose, { type Types } from "mongoose";
 import { connectDB, isValidId } from "../../lib/db.js";
 import { Group, type GroupRecord } from "../groups/group.model.js";
-import { Member, type MemberRecord } from "../members/member.model.js";
+import { Member } from "../members/member.model.js";
 import {
   AttendanceRecord,
   AttendanceSession,
@@ -13,48 +13,27 @@ import {
   type RecordSource,
 } from "./attendance.model.js";
 import { hasCheckInTime, type AttendanceStatus } from "./attendance.statuses.js";
+import { emptyRate, finish, rateOf, ratesByKey, type Rate } from "./rate.js";
 
-export type Rate = {
-  counts: Partial<Record<AttendanceStatus, number>>;
-  /** Số lượt đã có kết quả */
-  recorded: number;
-  /** 0..1; null nếu chưa có kết quả nào */
-  rate: number | null;
-};
+export type { Rate };
 
-function emptyRate(): Rate {
-  return { counts: {}, recorded: 0, rate: null };
-}
-
-function addStatus(r: Rate, status: AttendanceStatus) {
-  r.counts[status] = (r.counts[status] ?? 0) + 1;
-  r.recorded++;
-}
-
-function finish(r: Rate): Rate {
-  const attended = (r.counts.present ?? 0) + (r.counts.late ?? 0);
-  r.rate = r.recorded > 0 ? attended / r.recorded : null;
-  return r;
-}
+type CountRow<K extends string> = { _id: Record<K, Types.ObjectId> & { st: AttendanceStatus }; n: number };
 
 /** Tỷ lệ chuyên cần của từng thành viên trong một nhóm (chỉ các buổi của chính nhóm đó) */
 export async function getMemberRates(groupId: string): Promise<Map<string, Rate>> {
-  const result = new Map<string, Rate>();
-  if (!isValidId(groupId)) return result;
+  if (!isValidId(groupId)) return new Map();
   await connectDB();
   const sessionIds = await AttendanceSession.distinct("_id", { groupId: new mongoose.Types.ObjectId(groupId) });
-  if (sessionIds.length === 0) return result;
-  const records = await AttendanceRecord.find({ sessionId: { $in: sessionIds } })
-    .select("memberId status")
-    .lean<Pick<AttendanceRecordRecord, "memberId" | "status">[]>();
-  for (const rec of records) {
-    const key = String(rec.memberId);
-    const r = result.get(key) ?? emptyRate();
-    addStatus(r, rec.status);
-    result.set(key, r);
-  }
-  for (const r of result.values()) finish(r);
-  return result;
+  if (sessionIds.length === 0) return new Map();
+  // MongoDB đếm sẵn theo (thành viên, trạng thái): không tải từng bản ghi về
+  const rows = await AttendanceRecord.aggregate<CountRow<"m">>([
+    { $match: { sessionId: { $in: sessionIds } } },
+    { $group: { _id: { m: "$memberId", st: "$status" }, n: { $sum: 1 } } },
+  ]);
+  return ratesByKey(
+    rows.map((r) => ({ member: String(r._id.m), status: r._id.st, n: r.n })),
+    (r) => [r.member],
+  );
 }
 
 export type BranchStat = Rate & { memberCount: number; sessionCount: number };
@@ -79,30 +58,40 @@ export async function getBranchStats(rootIds: string[]): Promise<Map<string, Bra
   const rootsOf = new Map<string, string[]>();
   for (const g of groups) {
     const id = String(g._id);
-    const list = [id, ...(g.ancestors ?? []).map(String)].filter((x) => rootSet.has(x));
-    rootsOf.set(id, list);
+    rootsOf.set(id, [id, ...(g.ancestors ?? []).map(String)].filter((x) => rootSet.has(x)));
   }
   for (const r of roots) result.set(r, { ...emptyRate(), memberCount: 0, sessionCount: 0 });
 
   const groupIds = groups.map((g) => g._id);
-  const [members, sessions] = await Promise.all([
-    Member.find({ groupId: { $in: groupIds } }).select("groupId").lean<Pick<MemberRecord, "groupId">[]>(),
+  // Số thành viên mỗi nhóm do MongoDB đếm; buổi chỉ lấy _id + groupId để biết bản ghi thuộc nhóm nào
+  const [memberCounts, sessions] = await Promise.all([
+    Member.aggregate<{ _id: Types.ObjectId; n: number }>([
+      { $match: { groupId: { $in: groupIds } } },
+      { $group: { _id: "$groupId", n: { $sum: 1 } } },
+    ]),
     AttendanceSession.find({ groupId: { $in: groupIds } }).select("_id groupId").lean<Pick<AttendanceSessionRecord, "_id" | "groupId">[]>(),
   ]);
-  for (const m of members) for (const r of rootsOf.get(String(m.groupId)) ?? []) result.get(r)!.memberCount++;
+  for (const m of memberCounts) for (const r of rootsOf.get(String(m._id)) ?? []) result.get(r)!.memberCount += m.n;
   const sessionGroup = new Map(sessions.map((s) => [String(s._id), String(s.groupId)]));
   for (const s of sessions) for (const r of rootsOf.get(String(s.groupId)) ?? []) result.get(r)!.sessionCount++;
 
   if (sessions.length > 0) {
-    const records = await AttendanceRecord.find({ sessionId: { $in: sessions.map((s) => s._id) } })
-      .select("sessionId status")
-      .lean<Pick<AttendanceRecordRecord, "sessionId" | "status">[]>();
-    for (const rec of records) {
-      const g = sessionGroup.get(String(rec.sessionId));
-      for (const r of (g && rootsOf.get(g)) || []) addStatus(result.get(r)!, rec.status);
-    }
+    // MongoDB đếm sẵn theo (buổi, trạng thái)
+    const rows = await AttendanceRecord.aggregate<CountRow<"s">>([
+      { $match: { sessionId: { $in: sessions.map((s) => s._id) } } },
+      { $group: { _id: { s: "$sessionId", st: "$status" }, n: { $sum: 1 } } },
+    ]);
+    ratesByKey(
+      rows.map((r) => ({ session: String(r._id.s), status: r._id.st, n: r.n })),
+      (r) => {
+        const g = sessionGroup.get(r.session);
+        return (g && rootsOf.get(g)) || [];
+      },
+      result,
+    );
+  } else {
+    for (const r of result.values()) finish(r);
   }
-  for (const r of result.values()) finish(r);
   return result;
 }
 
@@ -127,10 +116,8 @@ export async function getMemberHistory(memberId: string, groupId: string): Promi
     AttendanceRecord.find({ memberId: new mongoose.Types.ObjectId(memberId) }).lean<AttendanceRecordRecord[]>(),
   ]);
   const bySession = new Map(records.map((r) => [String(r.sessionId), r]));
-  const rate = emptyRate();
   const items = sessions.map((s) => {
     const r = bySession.get(String(s._id));
-    if (r) addStatus(rate, r.status);
     return {
       sessionId: String(s._id),
       title: s.title,
@@ -141,5 +128,5 @@ export async function getMemberHistory(memberId: string, groupId: string): Promi
       checkedInAt: hasCheckInTime(r?.source) ? (r?.checkedInAt ?? null) : null,
     };
   });
-  return { items, rate: finish(rate) };
+  return { items, rate: rateOf(items.map((it) => it.status)) };
 }

@@ -19,7 +19,7 @@ import {
 import { z } from "@hono/zod-openapi";
 import { requireUser } from "../auth.js";
 import { buildShareLink } from "../core/lib/share.js";
-import { listSessionsWithCounts } from "../core/modules/attendance/attendance.service.js";
+import { countSessions, listSessionsWithCounts } from "../core/modules/attendance/attendance.service.js";
 import { getBranchStats, getMemberRates } from "../core/modules/attendance/stats.service.js";
 import {
   createGroup,
@@ -38,7 +38,7 @@ import {
   countPendingRequests,
   listPendingRequests,
 } from "../core/modules/invites/invite.service.js";
-import { addMembersFromText, listMembers } from "../core/modules/members/member.service.js";
+import { addMembersFromText, countMembers, listMembers } from "../core/modules/members/member.service.js";
 import { getAccountsByIds } from "../core/modules/users/user.service.js";
 import { AUTH, createApp, fail, IdParam, iso, jsonBody, NO_CONTENT, ok } from "../http.js";
 import { ownedGroupOr404 } from "./owned.js";
@@ -115,23 +115,24 @@ export const groups = createApp()
     async (c) => {
       const user = requireUser(c);
       const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
-      const [ancestors, children, members, sessions, invite, requests] = await Promise.all([
+      // Chỉ đếm (không tải danh sách): danh sách thành viên/buổi/yêu cầu có API riêng
+      const [ancestors, children, memberCount, sessionCount, inviteActive, pending] = await Promise.all([
         getAncestors(group, user.userId),
         getChildGroups(group.id, user.userId),
-        listMembers(group.id),
-        listSessionsWithCounts(group.id),
-        getActiveGroupInvite(group.id),
-        listPendingRequests(group.id),
+        countMembers(group.id),
+        countSessions(group.id),
+        getGroupsWithActiveInvite([group.id]),
+        countPendingRequests([group.id]),
       ]);
       const branch = await getBranchStats([group.id, ...children.map((ch) => ch.id)]);
       return c.json(
         {
           ...group,
           ancestors: ancestors.map((a) => ({ id: a.id, name: a.name })),
-          memberCount: members.length,
-          sessionCount: sessions.length,
-          pendingRequestCount: requests.length,
-          inviteActive: !!invite,
+          memberCount,
+          sessionCount,
+          pendingRequestCount: pending.get(group.id) ?? 0,
+          inviteActive: inviteActive.has(group.id),
           branchStats: branch.get(group.id) ?? null,
           children: children.map((ch) => ({ id: ch.id, name: ch.name, stats: branch.get(ch.id) ?? null })),
         },

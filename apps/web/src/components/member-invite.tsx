@@ -40,7 +40,7 @@ export function MemberInviteDialog({ memberId, name, groupName, open, onClose }:
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ fontSize: 18, fontWeight: 600, pb: 0.5 }}>Mời liên kết tài khoản</DialogTitle>
+      <DialogTitle sx={{ pb: 0.5 }}>Mời liên kết tài khoản</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Gửi link này cho <b>{name}</b>. Người nhận đăng nhập (hoặc đăng ký) rồi xác nhận là được liên kết ngay.

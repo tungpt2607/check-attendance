@@ -48,7 +48,7 @@ export function DialogForm({
           toast(successMessage);
         }}
       >
-        <DialogTitle sx={{ fontSize: 18, fontWeight: 600 }}>{title}</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {children}

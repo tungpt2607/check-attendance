@@ -6,4 +6,4 @@ import { SESSION_COOKIE } from "./auth-token";
 
 export { ApiError, enc, ignoreApiError } from "@check-attendance/ui/api-client";
 
-export const { api, apiOrNull } = createApiClient({ cookieName: SESSION_COOKIE, deadSessionPath: "/logout" });
+export const { api, apiOrNull, apiAction, apiActionOk } = createApiClient({ cookieName: SESSION_COOKIE, deadSessionPath: "/logout" });

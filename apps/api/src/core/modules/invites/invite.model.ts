@@ -44,6 +44,9 @@ const inviteSchema = new Schema<InviteRecord>(
   { timestamps: true },
 );
 
+// Link tham gia đang bật của nhóm (getActiveGroupInvite, getGroupsWithActiveInvite)
+inviteSchema.index({ groupId: 1, kind: 1, revoked: 1, createdAt: -1 });
+
 export const Invite: Model<InviteRecord> =
   (models.Invite as Model<InviteRecord>) || model<InviteRecord>("Invite", inviteSchema);
 

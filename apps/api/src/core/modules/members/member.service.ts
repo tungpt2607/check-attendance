@@ -31,6 +31,12 @@ export async function listMembers(groupId: string): Promise<MemberDTO[]> {
   return list.map(toDTO);
 }
 
+/** Số thành viên của nhóm (không tải cả danh sách) */
+export async function countMembers(groupId: string): Promise<number> {
+  await connectDB();
+  return Member.countDocuments({ groupId });
+}
+
 /**
  * Thêm nhiều thành viên một lúc. Mỗi dòng một người, dạng "Tên" hoặc "Mã, Tên"
  * hoặc "Mã<TAB>Tên" (dán từ Excel).

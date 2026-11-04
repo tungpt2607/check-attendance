@@ -79,7 +79,7 @@ export function ActionButton({
       </Button>
       {confirm && (
         <Dialog open={asking} onClose={() => setAsking(false)} maxWidth="xs" fullWidth>
-          <DialogTitle sx={{ fontSize: 18, fontWeight: 600 }}>Xác nhận</DialogTitle>
+          <DialogTitle>Xác nhận</DialogTitle>
           <DialogContent>
             <DialogContentText component="div">{confirm}</DialogContentText>
           </DialogContent>

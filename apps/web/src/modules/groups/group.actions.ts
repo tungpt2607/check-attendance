@@ -3,7 +3,7 @@
 // Thao tác với nhóm: gọi backend API (API kiểm tra quyền chủ nhóm).
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { api, ApiError, enc, ignoreApiError } from "@/lib/api";
+import { apiActionOk } from "@/lib/api";
 import { requireUser } from "@/lib/session";
 import { fetchGroup } from "./group.api";
 
@@ -13,11 +13,7 @@ export async function createGroupAction(formData: FormData) {
   const parentId = String(formData.get("parentId") ?? "") || null;
   if (!name) return;
 
-  try {
-    await api("/v1/groups", { method: "POST", body: { name, parentId } });
-  } catch (err) {
-    return ignoreApiError(err);
-  }
+  if (!(await apiActionOk("/v1/groups", { method: "POST", body: { name, parentId } }))) return;
   revalidatePath("/groups");
   if (parentId) revalidatePath(`/groups/${parentId}`);
 }
@@ -28,11 +24,7 @@ export async function renameGroupAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name || !groupId) return;
 
-  try {
-    await api(`/v1/groups/${encodeURIComponent(groupId)}`, { method: "PATCH", body: { name } });
-  } catch (err) {
-    return ignoreApiError(err);
-  }
+  if (!(await apiActionOk(`/v1/groups/${encodeURIComponent(groupId)}`, { method: "PATCH", body: { name } }))) return;
   revalidatePath("/groups");
   revalidatePath(`/groups/${groupId}`);
 }
@@ -43,11 +35,7 @@ export async function deleteGroupAction(formData: FormData) {
   const group = groupId ? await fetchGroup(groupId) : null;
   if (!group) return;
 
-  try {
-    await api(`/v1/groups/${encodeURIComponent(group.id)}`, { method: "DELETE" });
-  } catch (err) {
-    return ignoreApiError(err);
-  }
+  if (!(await apiActionOk(`/v1/groups/${encodeURIComponent(group.id)}`, { method: "DELETE" }))) return;
   revalidatePath("/groups");
   redirect(group.parentId ? `/groups/${group.parentId}` : "/groups");
 }

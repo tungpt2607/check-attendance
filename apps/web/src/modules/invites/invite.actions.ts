@@ -4,7 +4,7 @@
 // A. Link mời riêng (chủ nhóm tạo, người nhận xác nhận) · B. Link chung (người dùng xin nhận tên, chủ nhóm duyệt)
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { api, ApiError, enc, ignoreApiError } from "@/lib/api";
+import { api, apiAction, apiActionOk, ApiError, enc } from "@/lib/api";
 import type { ShareLink } from "@check-attendance/shared/api";
 import { requireUser } from "@/lib/session";
 
@@ -47,11 +47,7 @@ export async function unlinkMemberAction(formData: FormData) {
   await requireUser();
   const memberId = String(formData.get("memberId") ?? "");
   if (!memberId) return;
-  try {
-    await api(`/v1/members/${enc(memberId)}/link`, { method: "DELETE" });
-  } catch (err) {
-    return ignoreApiError(err);
-  }
+  if (!(await apiActionOk(`/v1/members/${enc(memberId)}/link`, { method: "DELETE" }))) return;
   revalidatePath("/groups", "layout");
 }
 
@@ -73,11 +69,7 @@ export async function createGroupInviteAction(groupId: string): Promise<ShareLin
 
 export async function disableGroupInviteAction(groupId: string): Promise<void> {
   await requireUser();
-  try {
-    await api(`/v1/groups/${enc(groupId)}/invite`, { method: "DELETE" });
-  } catch (err) {
-    return ignoreApiError(err);
-  }
+  if (!(await apiActionOk(`/v1/groups/${enc(groupId)}/invite`, { method: "DELETE" }))) return;
   revalidatePath(`/groups/${groupId}`);
   revalidatePath("/groups");
 }
@@ -99,11 +91,8 @@ export async function requestLinkAction(formData: FormData) {
 export async function cancelLinkRequestAction(formData: FormData) {
   await requireUser();
   const token = String(formData.get("token") ?? "");
-  try {
-    await api(`/v1/join/${enc(token)}/request`, { method: "DELETE" });
-  } catch (err) {
-    ignoreApiError(err);
-  }
+  // Đã hủy hoặc đã được duyệt từ trước: vẫn quay về trang tham gia
+  await apiAction(`/v1/join/${enc(token)}/request`, { method: "DELETE" });
   revalidatePath("/groups", "layout");
   redirect(`/join/${token}`);
 }
@@ -112,22 +101,14 @@ export async function cancelLinkRequestAction(formData: FormData) {
 export async function approveRequestAction(formData: FormData) {
   await requireUser();
   const requestId = String(formData.get("requestId") ?? "");
-  try {
-    await api(`/v1/requests/${enc(requestId)}/approve`, { method: "POST" });
-  } catch (err) {
-    return ignoreApiError(err);
-  }
+  if (!(await apiActionOk(`/v1/requests/${enc(requestId)}/approve`, { method: "POST" }))) return;
   revalidatePath("/groups", "layout");
 }
 
 export async function rejectRequestAction(formData: FormData) {
   await requireUser();
   const requestId = String(formData.get("requestId") ?? "");
-  try {
-    await api(`/v1/requests/${enc(requestId)}/reject`, { method: "POST" });
-  } catch (err) {
-    return ignoreApiError(err);
-  }
+  if (!(await apiActionOk(`/v1/requests/${enc(requestId)}/reject`, { method: "POST" }))) return;
   revalidatePath("/groups", "layout");
 }
 

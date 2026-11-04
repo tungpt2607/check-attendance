@@ -65,6 +65,31 @@ Web **không nối DB**; mọi dữ liệu đi qua API. Phiên đăng nhập h�
 - Thư viện CommonJS (mongoose, qrcode) phải nạp kiểu mặc định (`import mongoose from "mongoose"`).
 - Biến môi trường: xem `apps/api/.env.example`.
 
+## Quy tắc viết code
+
+Áp dụng cho **mọi thay đổi** (người hay AI viết đều vậy):
+
+**Tổng quát, dùng lại được**
+- Trước khi viết mới, tìm xem đã có thành phần dùng chung chưa: `packages/ui` (giao diện: `SearchField`, `useSearch`,
+  `SearchList`, `NameWithCode`, `FeatureCard`, `FullscreenPanel`, `BottomSheetDialog`, `ConfirmDialog`, `PagedList`...),
+  `packages/shared` (schema API, trạng thái, định dạng, tìm kiếm), `apps/api/src/core` (service, `rate.ts`...).
+- Đoạn code giống nhau xuất hiện từ lần thứ 2 → tách thành component/hook/hàm dùng chung (dùng cho cả web và CMS thì đặt ở `packages/ui`).
+- Chia nhỏ: một file làm một việc; component dài (khoảng trên 200 dòng) thì tách phần con, logic (tải dữ liệu, camera...) thì tách hook.
+- Kiểu chữ/màu lặp lại → đưa vào theme (`packages/ui/src/theme.ts`) hoặc `brand.ts`, không viết lại `sx` ở từng chỗ.
+- Server action gọi API dùng `apiAction` / `apiActionOk`; schema API khai báo một lần ở `packages/shared/src/api.ts`.
+
+**Performance**
+- API: để MongoDB đếm/gom (`countDocuments`, `aggregate` `$group`), không tải cả danh sách chỉ để đếm; chỉ `select` trường cần dùng; `lean()`.
+- Truy vấn mới có lọc/sắp xếp thường xuyên → thêm index (khai báo trong model, trước khi tạo model; sắp xếp tiếng Việt dùng cùng `VI_COLLATION`).
+- Không gọi API/DB lặp lại cùng một dữ liệu trong một lượt tải trang; các lời gọi độc lập chạy song song (`Promise.all`).
+- Giao diện: danh sách dài thì từng dòng là component `memo` với hàm callback ổn định (`useCallback`);
+  tính trước dữ liệu nặng bằng `useMemo` (vd. chuỗi tìm kiếm chuẩn hóa sẵn qua `useSearch`).
+- Thư viện nặng (vd. face-api) nạp động (`import()`) đúng trang cần; file tĩnh lớn không đổi thì cho trình duyệt lưu đệm lâu (`next.config.mjs` `headers`).
+
+**Kiểm tra**
+- Phép tính quan trọng (tỷ lệ chuyên cần...) tách thành hàm thuần và có kiểm thử (`npm test -w @check-attendance/api`).
+- Trước khi đẩy code: typecheck API, build web và CMS như CI; thay đổi giao diện thì chạy thử trên trình duyệt (cả khổ điện thoại).
+
 ## Phiên bản
 
 Mỗi phần có **phiên bản riêng** (semver `X.Y.Z`), ghi ở trường `version` trong `package.json` của phần đó và **tăng thủ công trong mỗi PR**:
@@ -83,8 +108,22 @@ Mỗi phần có **phiên bản riêng** (semver `X.Y.Z`), ghi ở trường `ve
 
 ## Kiểm tra tự động (CI)
 
-GitHub Actions (`.github/workflows/ci.yml`) chạy mỗi lần đẩy code: kiểm tra kiểu API và gói dùng chung, build web.
-Lỗi hiện ở tab **Actions** trên GitHub (và trong chú thích của lần chạy).
+GitHub Actions (`.github/workflows/ci.yml`) chạy mỗi lần đẩy code. Lỗi hiện ở tab **Actions** trên GitHub (và trong chú thích của lần chạy).
+
+| Bước | Lệnh | Kiểm tra gì |
+|---|---|---|
+| Phiên bản (chỉ PR) | `node scripts/check-versions.mjs origin/main` | Phần có thay đổi đã tăng phiên bản |
+| Kiểu dữ liệu | `npm run typecheck -w @check-attendance/api` | TypeScript của API, gói dùng chung |
+| Kiểm thử API | `npm test -w @check-attendance/api` | Phép tính (`test/rate.test.ts`) và **API với MongoDB thật** (`test/api.int.test.ts`) |
+| Build | `npm run build -w @check-attendance/web` / `cms` | Web và CMS build được |
+| Đầu-cuối | `npm run test:e2e` | **Trình duyệt thật** (`e2e/`): đăng ký, trang nhóm, bảng điểm danh, tự điểm danh QR, điểm danh bằng khuôn mặt với camera giả |
+
+- CI chạy kèm một **MongoDB riêng cho kiểm thử** (không phải database của web); mỗi lần chạy dùng database mới và xóa khi xong.
+- Trên máy: kiểm thử tích hợp và đầu-cuối cần MongoDB: đặt `MONGODB_TEST_URI=mongodb://localhost:27017/`
+  (không có thì kiểm thử tích hợp tự bỏ qua). Đầu-cuối cần thêm: build web với `NEXT_PUBLIC_API_URL=http://localhost:8787`,
+  `ffmpeg` (tạo video camera giả từ `e2e/fixtures/*.jpg`), `npx -w @check-attendance/e2e playwright install chromium`.
+- API chạy như máy chủ Node thường (không cần Vercel): `npx tsx apps/api/scripts/serve.ts`.
+- Kiểm thử đầu-cuối lỗi: CI lưu ảnh chụp + trace ở mục **Artifacts** của lần chạy (`playwright-report`).
 
 ## Dữ liệu
 
@@ -113,7 +152,8 @@ Lỗi hiện ở tab **Actions** trên GitHub (và trong chú thích của lần
   - `DELETE /v1/members/:id/face`: chủ nhóm xóa khuôn mặt lưu riêng của thành viên (trang thành viên)
 - Khi so khớp, mỗi thành viên dùng khuôn mặt của tài khoản đã liên kết nếu có, không thì khuôn mặt lưu riêng ở thành viên.
 - Xóa thành viên/nhóm thì khuôn mặt lưu riêng của thành viên bị xóa theo; khuôn mặt của tài khoản thuộc về người dùng.
-- Đổi model: đổi `FACE_MODEL` trong `face.service.ts` (vector của model cũ không được so nữa).
+- Đổi model: đổi `FACE_MODEL` trong `face.service.ts` (vector của model cũ không được so nữa) và đặt file model vào **thư mục mới**
+  (vd. `public/models/face-v2`, sửa `MODEL_URL`), vì `/models/*` được trình duyệt lưu đệm 1 năm (`next.config.mjs`).
 - Dữ liệu khuôn mặt là dữ liệu cá nhân nhạy cảm: cần thông báo và có sự đồng ý của người được quét trước khi dùng.
 
 ## Giao diện

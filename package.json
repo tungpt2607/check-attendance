@@ -3,10 +3,12 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "e2e"
   ],
   "scripts": {
     "dev:web": "npm run dev -w @check-attendance/web",
-    "build:web": "npm run build -w @check-attendance/web"
+    "build:web": "npm run build -w @check-attendance/web",
+    "test:e2e": "npm test -w @check-attendance/e2e"
   }
 }

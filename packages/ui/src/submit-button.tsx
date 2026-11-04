@@ -104,7 +104,7 @@ export function SubmitButton({
 
       {confirm && (
         <Dialog open={asking} onClose={() => setAsking(false)} maxWidth="xs" fullWidth>
-          <DialogTitle sx={{ fontSize: 18, fontWeight: 600 }}>Xác nhận</DialogTitle>
+          <DialogTitle>Xác nhận</DialogTitle>
           <DialogContent>
             <DialogContentText>{confirm}</DialogContentText>
           </DialogContent>
