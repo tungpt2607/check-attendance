@@ -4,11 +4,12 @@ import { api, expect, groupWithSession, loginAs, newOwner, sessionRows } from ".
 
 test("đăng ký qua giao diện rồi vào trang nhóm; menu tài khoản hiện phiên bản", async ({ page }) => {
   await page.goto("/register");
-  await page.getByLabel("Họ tên").fill("Người mới");
-  await page.getByLabel("Email").fill(`ui_${Date.now()}@test.local`);
-  await page.getByLabel("Mật khẩu", { exact: true }).fill("matkhau123");
-  await page.getByLabel("Nhập lại mật khẩu").fill("matkhau123");
-  await page.getByRole("button", { name: /Tạo tài khoản|Đăng ký/ }).click();
+  // Ô bắt buộc có dấu * sau nhãn: chọn theo id cho chắc
+  await page.locator("#name").fill("Người mới");
+  await page.locator("#email").fill(`ui_${Date.now()}@test.local`);
+  await page.locator("#password").fill("matkhau123");
+  await page.locator("#confirm").fill("matkhau123");
+  await page.getByRole("button", { name: "Đăng ký", exact: true }).click();
   await expect(page).toHaveURL(/\/groups/);
   await page.locator("header button").last().click();
   await expect(page.getByText(/Phiên bản \d+\.\d+\.\d+ · API \d+\.\d+\.\d+/)).toBeVisible();
@@ -62,7 +63,8 @@ test("tự điểm danh bằng QR: thành viên quét mã, chọn tên, xác nh�
   // Nút không bị tràn chữ/icon trên màn hình hẹp
   expect(await confirm.evaluate((b) => b.scrollWidth <= b.clientWidth)).toBe(true);
   await confirm.click();
-  await expect(p.getByText("Điểm danh thành công")).toBeVisible();
+  // Ghi xong, web đặt cookie "điện thoại này đã điểm danh" và trang tự làm mới thành "Bạn đã điểm danh"
+  await expect(p.getByText(/Điểm danh thành công|Bạn đã điểm danh/)).toBeVisible();
   await phone.close();
 
   const rows = await sessionRows(owner.token, g.sessionId);
