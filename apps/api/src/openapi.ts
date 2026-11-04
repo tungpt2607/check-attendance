@@ -1,9 +1,10 @@
 // Tài liệu API: đặc tả OpenAPI sinh tự động từ các route (createRoute + schema zod ở @check-attendance/shared/api).
 // Thêm API mới bằng .openapi(createRoute(...)) là tự có trong /docs.
+import { API_VERSION } from "./version.js";
 
 export const DOC_INFO = {
   title: "Điểm danh API",
-  version: "1.1.0",
+  version: API_VERSION,
   description:
     "API dùng chung cho web người dùng, CMS quản trị và app. Đăng nhập qua /v1/auth/login để nhận token, " +
     "rồi gửi kèm header `Authorization: Bearer <token>`. Lỗi luôn có dạng `{ error: { code, message } }` " +

@@ -1,4 +1,5 @@
-# Kiểm tra tự động mỗi lần đẩy code: kiểu dữ liệu (TypeScript) của API, build web và CMS.
+# Kiểm tra tự động mỗi lần đẩy code: kiểu dữ liệu (TypeScript) của API, build web và CMS;
+# với pull request: phần nào có thay đổi phải tăng phiên bản (scripts/check-versions.mjs).
 # Kết quả xem ở tab Actions trên GitHub (Claude đọc được qua `gh run view`).
 name: CI
 
@@ -11,9 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # cần lịch sử nhánh gốc để so phiên bản
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Kiểm tra đã tăng phiên bản (chỉ với pull request)
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-versions.mjs origin/${{ github.base_ref }}
       - name: Cài thư viện (npm workspaces)
         run: npm install --no-audit --no-fund
       - name: Build gói dùng chung (ra JavaScript, như trên Vercel)

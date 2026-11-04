@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import { AvatarForm, EmailNotificationsSwitch, NameForm, PasswordForm } from "@/components/account-forms";
 import { FaceDataCard } from "@/components/face-data-card";
 import { PageHeader, SectionTitle } from "@check-attendance/ui/page-header";
@@ -10,6 +11,7 @@ import { SubmitButton } from "@check-attendance/ui/submit-button";
 import { api } from "@/lib/api";
 import { getFeatures } from "@/lib/features";
 import { requireAccount } from "@/lib/session";
+import { getApiVersion, versionLabel } from "@/lib/versions";
 import type { FaceStatus, Preferences } from "@check-attendance/shared/api";
 import { formatDate } from "@check-attendance/shared/format";
 import { logoutAction } from "@/modules/auth/auth.actions";
@@ -19,12 +21,13 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Tài khoản · Điểm danh" };
 
 export default async function AccountPage() {
-  const [user, prefs, features, face] = await Promise.all([
+  const [user, prefs, features, face, apiVersion] = await Promise.all([
     requireAccount(),
     api<Preferences>("/v1/me/preferences"),
     getFeatures(),
     // API cũ chưa có /me/face (web và API deploy riêng): ẩn thẻ khuôn mặt thay vì hỏng cả trang
     api<FaceStatus>("/v1/me/face").catch(() => null),
+    getApiVersion(),
   ]);
 
   return (
@@ -82,6 +85,10 @@ export default async function AccountPage() {
             Đăng xuất
           </SubmitButton>
         </form>
+
+        <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center" }}>
+          {versionLabel(apiVersion)}
+        </Typography>
       </Stack>
     </Box>
   );

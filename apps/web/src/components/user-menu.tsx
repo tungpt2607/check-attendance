@@ -18,10 +18,17 @@ import { logoutAction } from "@/modules/auth/auth.actions";
 import { brand } from "@check-attendance/ui/brand";
 import { Avatar } from "@check-attendance/ui/avatar";
 
-type Props = { userId: string; name: string; email: string; avatarVersion: number | null };
+type Props = {
+  userId: string;
+  name: string;
+  email: string;
+  avatarVersion: number | null;
+  /** Phiên bản web/API đang chạy, hiện ở cuối menu */
+  version: string;
+};
 
 /** Ảnh đại diện trên thanh tiêu đề: bấm mở menu tài khoản */
-export function UserMenu({ userId, name, email, avatarVersion }: Props) {
+export function UserMenu({ userId, name, email, avatarVersion, version }: Props) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [pending, startTransition] = useTransition();
   const close = () => setAnchor(null);
@@ -107,6 +114,10 @@ export function UserMenu({ userId, name, email, avatarVersion }: Props) {
           </ListItemIcon>
           <ListItemText>Đăng xuất</ListItemText>
         </MenuItem>
+        <Divider />
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ px: 2, pt: 0.5, pb: 0.25 }}>
+          {version}
+        </Typography>
       </Menu>
     </>
   );

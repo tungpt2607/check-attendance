@@ -4,7 +4,7 @@ Web điểm danh theo nhóm nhiều cấp. Next.js (App Router) + Material UI + 
 
 **Địa chỉ:** https://check-attendance-pi.vercel.app
 
-## Chức năng (v0.1)
+## Chức năng
 
 - Đăng ký, đăng nhập (email + mật khẩu)
 - Mỗi người dùng tự tạo nhóm điểm danh; nhóm có thể chia nhiều cấp (nhóm con)
@@ -64,6 +64,22 @@ Web **không nối DB**; mọi dữ liệu đi qua API. Phiên đăng nhập h�
 - `src/core/`: models + services (Mongoose). `src/http.ts`: createApp, fail/notFound, tiện ích mô tả route.
 - Thư viện CommonJS (mongoose, qrcode) phải nạp kiểu mặc định (`import mongoose from "mongoose"`).
 - Biến môi trường: xem `apps/api/.env.example`.
+
+## Phiên bản
+
+Mỗi phần có **phiên bản riêng** (semver `X.Y.Z`), ghi ở trường `version` trong `package.json` của phần đó và **tăng thủ công trong mỗi PR**:
+
+| Phần | File | Hiển thị ở |
+|---|---|---|
+| Web người dùng | `apps/web/package.json` | Menu tài khoản (bấm avatar) và cuối trang Tài khoản: "Phiên bản 1.0.0 · API 1.0.0" |
+| CMS quản trị | `apps/cms/package.json` | Cuối thanh bên của CMS |
+| API | `apps/api/package.json` | `/health`, `/docs`, và cạnh phiên bản web |
+
+- Tăng số nào: sửa lỗi → số cuối (`1.0.0` → `1.0.1`); tính năng mới → số giữa (`1.0.1` → `1.1.0`); thay đổi lớn → số đầu (`2.0.0`).
+- Chỉ tăng phần **có thay đổi**. Sửa `packages/shared` → tăng cả web, CMS, API; sửa `packages/ui` → tăng web và CMS. Chỉ sửa tài liệu `*.md` thì không cần.
+- CI kiểm tra mỗi PR (`scripts/check-versions.mjs`): phần có thay đổi mà chưa tăng phiên bản thì báo đỏ. Chạy thử trên máy: `node scripts/check-versions.mjs origin/main`.
+- Merge vào `main`: workflow `.github/workflows/release.yml` tự tạo tag `web-v1.0.1`, `cms-v…`, `api-v…` và GitHub Release (ghi chú = các commit chạm vào phần đó kể từ tag trước) cho phần có phiên bản mới.
+- Web và CMS đọc phiên bản lúc build (`next.config.mjs` → `NEXT_PUBLIC_APP_VERSION`); API đọc qua `apps/api/src/version.ts`.
 
 ## Kiểm tra tự động (CI)
 
