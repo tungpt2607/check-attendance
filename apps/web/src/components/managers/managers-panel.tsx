@@ -17,12 +17,12 @@ import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { Fragment, useState } from "react";
 import type { GroupManagerRow, GroupManagers, ShareLink } from "@check-attendance/shared/api";
 import type { GroupPermission } from "@check-attendance/shared/permissions";
 import { ActionMenu } from "@check-attendance/ui/action-menu";
+import { EmailAutocomplete, type EmailSuggestion } from "@check-attendance/ui/email-autocomplete";
 import { ZoomableAvatar } from "@check-attendance/ui/avatar-zoom";
 import { AppLink } from "@check-attendance/ui/links";
 import { SectionTitle } from "@check-attendance/ui/page-header";
@@ -37,10 +37,15 @@ import {
 import { ShareLinkBox } from "../share-link";
 import { PermissionChips, PermissionPicker } from "./permission-picker";
 
-type Props = { groupId: string; groupName: string; data: GroupManagers; myUserId: string };
+type Props = {
+  groupId: string;
+  groupName: string;
+  data: GroupManagers;
+  myUserId: string;
+  /** Gợi ý email: thành viên đã liên kết tài khoản trong nhóm */
+  suggestions: EmailSuggestion[];
+};
 
-/** Nhãn luôn nằm trên viền ô (nhãn "bay" lên khi chạm bị lệch trên Safari iPhone, giống form đăng nhập) */
-const FIXED_LABEL = { inputLabel: { shrink: true } } as const;
 
 type Account = GroupManagerRow["account"];
 
@@ -63,7 +68,7 @@ function PersonRow({ account, below, menu }: { account: Account; below?: React.R
   );
 }
 
-export function ManagersPanel({ groupId, groupName, data, myUserId }: Props) {
+export function ManagersPanel({ groupId, groupName, data, myUserId, suggestions }: Props) {
   const isOwner = data.access.role === "owner";
   const [dialog, setDialog] = useState<
     { kind: "add" } | { kind: "edit"; row: GroupManagerRow } | { kind: "remove"; row: GroupManagerRow } | { kind: "transfer" } | null
@@ -170,7 +175,7 @@ export function ManagersPanel({ groupId, groupName, data, myUserId }: Props) {
         </Card>
       )}
 
-      {dialog?.kind === "add" && <AddManagerDialog groupId={groupId} groupName={groupName} onClose={close} />}
+      {dialog?.kind === "add" && <AddManagerDialog groupId={groupId} groupName={groupName} suggestions={suggestions} onClose={close} />}
       {dialog?.kind === "edit" && <EditManagerDialog groupId={groupId} row={dialog.row} onClose={close} />}
       {dialog?.kind === "remove" && (
         <TaskDialog
@@ -193,12 +198,22 @@ export function ManagersPanel({ groupId, groupName, data, myUserId }: Props) {
           </Typography>
         </TaskDialog>
       )}
-      {dialog?.kind === "transfer" && <TransferDialog groupId={groupId} groupName={groupName} onClose={close} />}
+      {dialog?.kind === "transfer" && <TransferDialog groupId={groupId} groupName={groupName} suggestions={suggestions} onClose={close} />}
     </Stack>
   );
 }
 
-function AddManagerDialog({ groupId, groupName, onClose }: { groupId: string; groupName: string; onClose: () => void }) {
+function AddManagerDialog({
+  groupId,
+  groupName,
+  suggestions,
+  onClose,
+}: {
+  groupId: string;
+  groupName: string;
+  suggestions: EmailSuggestion[];
+  onClose: () => void;
+}) {
   const [tab, setTab] = useState<"email" | "link">("email");
   const [email, setEmail] = useState("");
   const [permissions, setPermissions] = useState<GroupPermission[]>(["attendance"]);
@@ -241,14 +256,12 @@ function AddManagerDialog({ groupId, groupName, onClose }: { groupId: string; gr
             <Tab value="link" label="Bằng link mời" />
           </Tabs>
           {tab === "email" ? (
-            <TextField
+            <EmailAutocomplete
               label="Email tài khoản"
-              placeholder="ten@vidu.com"
-              slotProps={FIXED_LABEL}
-              type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              helperText="Người này cần đã có tài khoản. Chưa có thì dùng link mời."
+              onChange={setEmail}
+              suggestions={suggestions}
+              helperText="Gõ tên hoặc email thành viên trong nhóm. Người chưa có tài khoản thì dùng link mời."
             />
           ) : (
             <Typography variant="body2" color="text.secondary">
@@ -282,7 +295,17 @@ function EditManagerDialog({ groupId, row, onClose }: { groupId: string; row: Gr
   );
 }
 
-function TransferDialog({ groupId, groupName, onClose }: { groupId: string; groupName: string; onClose: () => void }) {
+function TransferDialog({
+  groupId,
+  groupName,
+  suggestions,
+  onClose,
+}: {
+  groupId: string;
+  groupName: string;
+  suggestions: EmailSuggestion[];
+  onClose: () => void;
+}) {
   const [email, setEmail] = useState("");
   return (
     <TaskDialog
@@ -300,14 +323,7 @@ function TransferDialog({ groupId, groupName, onClose }: { groupId: string; grou
           Người nhận trở thành chủ nhóm <b>{groupName}</b> (và các nhóm con của bạn bên trong). Bạn ở lại làm người quản lý với mọi quyền,
           nhưng không còn thêm/bớt quản lý hay xóa nhóm được nữa.
         </Typography>
-        <TextField
-          label="Email chủ nhóm mới"
-          placeholder="ten@vidu.com"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          slotProps={FIXED_LABEL}
-        />
+        <EmailAutocomplete label="Email chủ nhóm mới" value={email} onChange={setEmail} suggestions={suggestions} />
       </Stack>
     </TaskDialog>
   );
