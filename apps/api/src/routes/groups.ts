@@ -17,6 +17,7 @@ import {
   SessionSchema,
 } from "@check-attendance/shared/api";
 import { z } from "@hono/zod-openapi";
+import { can } from "@check-attendance/shared/permissions";
 import { requireUser } from "../auth.js";
 import { buildShareLink } from "../core/lib/share.js";
 import { countSessions, listSessionsWithCounts } from "../core/modules/attendance/attendance.service.js";
@@ -294,15 +295,16 @@ export const groups = createApp()
       method: "get",
       path: "/groups/{id}/invite",
       tags: TAG,
-      summary: "Link tham gia nhóm đang bật (null nếu tắt)",
+      summary: "Link tham gia nhóm đang bật (null nếu tắt, hoặc người xem không có quyền Liên kết tài khoản)",
       security: AUTH,
       request: { params: IdParam },
       responses: { 200: ok(InviteLinkSchema) },
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await groupOr404(c.req.valid("param").id, user.userId, "links");
-      const invite = await getActiveGroupInvite(group.id);
+      // Quản lý nào cũng gọi được (trang nhóm luôn gọi), nhưng chỉ người có quyền Liên kết tài khoản mới thấy link
+      const group = await groupOr404(c.req.valid("param").id, user.userId);
+      const invite = can(group.access, "links") ? await getActiveGroupInvite(group.id) : null;
       return c.json({ link: invite ? await buildShareLink(`/join/${invite.token}`, null) : null }, 200);
     },
   )

@@ -39,6 +39,16 @@ describe("Người quản lý nhóm (MongoDB thật)", { skip: skipWithoutDb }, 
     assert.equal(list.body.groups.find((x: any) => x.id === g)?.access.role, "manager");
     assert.equal((await call("GET", `/v1/sessions/${s}`, { token: mgr.token })).body.access.role, "manager");
 
+    // Trang nhóm luôn gọi các API xem này: quản lý không có quyền Liên kết tài khoản vẫn mở được trang (không thấy link)
+    await call("POST", `/v1/groups/${g}/invite`, { token: owner.token });
+    for (const path of [`/v1/groups/${g}/members`, `/v1/groups/${g}/sessions`, `/v1/groups/${g}/requests`, `/v1/groups/${g}/managers`]) {
+      assert.equal(await status("GET", path, mgr.token), 200, path);
+    }
+    const invite = await call("GET", `/v1/groups/${g}/invite`, { token: mgr.token });
+    assert.equal(invite.status, 200);
+    assert.equal(invite.body.link, null);
+    assert.notEqual((await call("GET", `/v1/groups/${g}/invite`, { token: owner.token })).body.link, null);
+
     // Có quyền Điểm danh
     assert.equal(await status("PUT", `/v1/sessions/${s}/records`, mgr.token, { records: [{ memberId: an, status: "present" }] }), 200);
     assert.equal(await status("POST", `/v1/sessions/${s}/self-checkin/open`, mgr.token), 200);
