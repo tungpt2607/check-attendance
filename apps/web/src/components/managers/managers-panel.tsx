@@ -215,6 +215,7 @@ function AddManagerDialog({ groupId, groupName, onClose }: { groupId: string; gr
       open
       onClose={onClose}
       title="Thêm người quản lý"
+      fullScreenOnMobile
       confirmLabel={tab === "email" ? "Thêm" : "Tạo link mời"}
       hideConfirm={!!link}
       closeLabel={link ? "Xong" : "Hủy"}
@@ -242,7 +243,6 @@ function AddManagerDialog({ groupId, groupName, onClose }: { groupId: string; gr
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              autoFocus
               helperText="Người này cần đã có tài khoản. Chưa có thì dùng link mời."
             />
           ) : (
@@ -267,6 +267,7 @@ function EditManagerDialog({ groupId, row, onClose }: { groupId: string; row: Gr
       open
       onClose={onClose}
       title={`Quyền của ${row.account.name}`}
+      fullScreenOnMobile
       confirmLabel="Lưu"
       successMessage="Đã lưu quyền"
       onConfirm={() => updateManagerAction(groupId, row.account.id, permissions)}
@@ -294,7 +295,7 @@ function TransferDialog({ groupId, groupName, onClose }: { groupId: string; grou
           Người nhận trở thành chủ nhóm <b>{groupName}</b> (và các nhóm con của bạn bên trong). Bạn ở lại làm người quản lý với mọi quyền,
           nhưng không còn thêm/bớt quản lý hay xóa nhóm được nữa.
         </Typography>
-        <TextField label="Email chủ nhóm mới" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
+        <TextField label="Email chủ nhóm mới" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
       </Stack>
     </TaskDialog>
   );

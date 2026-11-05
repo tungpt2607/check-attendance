@@ -10,6 +10,8 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import type { Theme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "./toaster";
 
@@ -32,6 +34,8 @@ type Props = {
   /** Ẩn nút xác nhận (hộp thoại chỉ để xem, vd. hiện link vừa tạo) */
   hideConfirm?: boolean;
   closeLabel?: string;
+  /** Nội dung dài (vd. danh sách quyền): trên điện thoại hiện toàn màn hình, nút luôn ở đáy */
+  fullScreenOnMobile?: boolean;
 };
 
 export function TaskDialog({
@@ -47,7 +51,9 @@ export function TaskDialog({
   successMessage,
   hideConfirm = false,
   closeLabel = "Hủy",
+  fullScreenOnMobile = false,
 }: Props) {
+  const isPhone = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -72,9 +78,12 @@ export function TaskDialog({
   };
 
   return (
-    <Dialog open={open} onClose={close} maxWidth="xs" fullWidth>
+    // scroll="paper": nội dung cuộn bên trong, tiêu đề và nút luôn thấy (không lệch chỗ chạm khi bàn phím điện thoại bật)
+    <Dialog open={open} onClose={close} maxWidth="xs" fullWidth scroll="paper" fullScreen={fullScreenOnMobile && isPhone}
+      slotProps={{ paper: { sx: fullScreenOnMobile && isPhone ? { borderRadius: 0 } : undefined } }}
+    >
       <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         {children}
         {error && (
           <Alert severity="error" sx={{ mt: 2 }}>
@@ -82,7 +91,7 @@ export function TaskDialog({
           </Alert>
         )}
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
+      <DialogActions sx={{ px: 3, py: 1.5, pb: "max(12px, env(safe-area-inset-bottom))" }}>
         <Button color="inherit" onClick={close} disabled={pending}>
           {closeLabel}
         </Button>
