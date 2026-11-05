@@ -15,6 +15,7 @@
     "./bottom-sheet-dialog": "./src/bottom-sheet-dialog.tsx",
     "./brand": "./src/brand.ts",
     "./confirm-dialog": "./src/confirm-dialog.tsx",
+    "./email-autocomplete": "./src/email-autocomplete.tsx",
     "./feature-card": "./src/feature-card.tsx",
     "./fullscreen-panel": "./src/fullscreen-panel.tsx",
     "./links": "./src/links.tsx",

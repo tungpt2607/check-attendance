@@ -21,7 +21,7 @@ test("chủ nhóm thêm quản lý theo email; quản lý chỉ thấy việc đ
   await o.page.getByRole("menuitem", { name: "Người quản lý" }).click();
   await expect(o.page).toHaveURL(new RegExp(`/groups/${g.groupId}/managers`));
   await o.page.getByRole("button", { name: "Thêm quản lý" }).click();
-  await o.page.getByLabel("Email tài khoản").fill(mgr.email);
+  await o.page.getByRole("combobox", { name: "Email tài khoản" }).fill(mgr.email);
   await o.page.getByRole("button", { name: "Thêm", exact: true }).click();
   await expect(o.page.getByText("Cô giáo")).toBeVisible();
   // Nhãn quyền (chữ "Điểm danh" cũng có ở logo trên thanh tiêu đề nên tìm trong nhãn)
@@ -93,7 +93,7 @@ test("chuyển quyền chủ nhóm qua giao diện", async ({ browser }) => {
   const o = await as(browser, owner.token);
   await o.page.goto(`/groups/${g.groupId}/managers`);
   await o.page.getByRole("button", { name: "Chuyển chủ nhóm" }).click();
-  await o.page.getByLabel("Email chủ nhóm mới").fill(next.email);
+  await o.page.getByRole("combobox", { name: "Email chủ nhóm mới" }).fill(next.email);
   await o.page.getByRole("button", { name: "Chuyển", exact: true }).click();
   await expect(o.page.getByText("Chủ mới")).toBeVisible();
   // Chủ cũ ở lại làm quản lý: không còn nút thêm quản lý
