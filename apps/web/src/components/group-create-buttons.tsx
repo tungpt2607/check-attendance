@@ -39,7 +39,7 @@ export function AddMembersButton({ groupId }: { groupId: string }) {
           multiline
           minRows={5}
           required
-          autoFocus
+         
           placeholder={"Mỗi dòng một người, ví dụ:\nNguyễn Văn An\nHS002, Trần Thị Bình"}
           helperText="Có thể dán từ Excel: cột Mã và cột Tên."
         />
@@ -67,7 +67,7 @@ export function CreateSubgroupButton({ parentId }: { parentId: string }) {
         submitIcon={<AddRounded />}
       >
         <input type="hidden" name="parentId" value={parentId} />
-        <TextField name="name" label="Tên nhóm con" required autoFocus />
+        <TextField name="name" label="Tên nhóm con" required />
       </DialogForm>
     </>
   );

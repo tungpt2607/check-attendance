@@ -51,10 +51,13 @@ jobs:
         env:
           AUTH_SECRET: ci-only-not-a-real-secret
       - name: Cài trình duyệt và ffmpeg cho kiểm thử đầu-cuối
+        # Thường ~1 phút; máy chủ tải gói bị treo thì dừng sớm thay vì chờ tới giới hạn 6 giờ của GitHub
+        timeout-minutes: 8
         run: |
           npx -w @check-attendance/e2e playwright install --with-deps chromium
           command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
       - name: Kiểm thử đầu-cuối (trình duyệt + API + MongoDB + camera giả)
+        timeout-minutes: 15
         run: npm run test:e2e
       - name: Lưu báo cáo kiểm thử đầu-cuối khi lỗi (ảnh chụp, trace)
         if: failure()

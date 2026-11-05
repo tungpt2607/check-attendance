@@ -73,7 +73,7 @@ export function RenameGroupDialog({ groupId, name, open, onClose }: Open & { gro
   return (
     <DialogForm title="Đổi tên nhóm" open={open} onClose={onClose} action={renameGroupAction} successMessage="Đã đổi tên nhóm">
       <input type="hidden" name="groupId" value={groupId} />
-      <TextField name="name" label="Tên nhóm" defaultValue={name} required autoFocus />
+      <TextField name="name" label="Tên nhóm" defaultValue={name} required />
     </DialogForm>
   );
 }
@@ -82,7 +82,7 @@ export function EditMemberDialog({ memberId, name, code, open, onClose }: Open &
   return (
     <DialogForm title="Sửa thành viên" open={open} onClose={onClose} action={updateMemberAction} successMessage="Đã lưu thông tin thành viên">
       <input type="hidden" name="memberId" value={memberId} />
-      <TextField name="name" label="Họ tên" defaultValue={name} required autoFocus />
+      <TextField name="name" label="Họ tên" defaultValue={name} required />
       <TextField name="code" label="Mã số (tùy chọn)" defaultValue={code} />
     </DialogForm>
   );
@@ -92,7 +92,7 @@ export function EditSessionDialog({ sessionId, title, date, open, onClose }: Ope
   return (
     <DialogForm title="Sửa buổi điểm danh" open={open} onClose={onClose} action={updateSessionAction} successMessage="Đã lưu thông tin buổi">
       <input type="hidden" name="sessionId" value={sessionId} />
-      <TextField name="title" label="Tên buổi" defaultValue={title} required autoFocus />
+      <TextField name="title" label="Tên buổi" defaultValue={title} required />
       <TextField name="date" label="Ngày" type="date" defaultValue={date} required slotProps={{ inputLabel: { shrink: true } }} />
     </DialogForm>
   );
