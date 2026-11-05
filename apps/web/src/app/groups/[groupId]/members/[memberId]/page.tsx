@@ -23,6 +23,7 @@ import { requireUser } from "@/lib/session";
 import { apiOrNull } from "@/lib/api";
 import type { MemberDetail } from "@check-attendance/shared/api";
 import { deleteMemberFaceAction } from "@/modules/members/member.actions";
+import { can } from "@check-attendance/shared/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,7 @@ export default async function MemberStatsPage({ params }: Props) {
             groupName={group.name}
             linkedEmail={acc ? acc.email : null}
             onDetailPage
+            access={member.access}
           />
         }
       />
@@ -83,7 +85,7 @@ export default async function MemberStatsPage({ params }: Props) {
                 ? "Đã lưu khuôn mặt để điểm danh bằng camera."
                 : "Chưa có. Lần đầu điểm danh bằng khuôn mặt, chọn tên người này để lưu."
           }
-          canDelete={member.face === "member"}
+          canDelete={member.face === "member" && can(member.access, "members")}
           action={deleteMemberFaceAction}
           fields={{ memberId: member.id, groupId: group.id }}
           confirmMessage={`Xóa dữ liệu khuôn mặt của ${member.name}? Lần sau điểm danh bằng khuôn mặt sẽ phải chọn tên lại.`}

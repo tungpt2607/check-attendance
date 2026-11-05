@@ -31,6 +31,7 @@
     "./session-token": "./src/session-token.ts",
     "./skeleton": "./src/skeleton.tsx",
     "./submit-button": "./src/submit-button.tsx",
+    "./task-dialog": "./src/task-dialog.tsx",
     "./theme": "./src/theme.ts",
     "./toaster": "./src/toaster.tsx",
     "./use-fast-tap": "./src/use-fast-tap.ts",

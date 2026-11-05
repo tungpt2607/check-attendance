@@ -12,6 +12,7 @@ Web điểm danh theo nhóm nhiều cấp. Next.js (App Router) + Material UI + 
 - Tạo buổi điểm danh, chấm Có mặt / Muộn / Vắng kèm ghi chú, xem lại lịch sử
 - Tự điểm danh bằng mã QR động
 - Điểm danh bằng khuôn mặt: chủ nhóm mở camera trên điện thoại, đi quét từng người (xem mục bên dưới)
+- Người quản lý nhóm: chủ nhóm thêm người giúp quản lý và chọn quyền cho từng người (xem mục bên dưới)
 
 ## Cấu trúc (monorepo)
 
@@ -130,11 +131,23 @@ GitHub Actions (`.github/workflows/ci.yml`) chạy mỗi lần đẩy code. Lỗ
 | Collection | Ý nghĩa |
 |---|---|
 | `users` | Tài khoản đăng nhập |
-| `groups` | Nhóm; `parentId` trỏ nhóm cha, `ancestors` lưu đường dẫn từ gốc |
+| `groups` | Nhóm; `parentId` trỏ nhóm cha, `ancestors` lưu đường dẫn từ gốc; `ownerId` chủ nhóm; `managers` người quản lý kèm quyền |
 | `members` | Người trong nhóm; `userId` để trống ở bản đầu, sau này liên kết tài khoản |
 | `attendancesessions` | Buổi điểm danh; `method` để sau này thêm QR, GPS... |
 | `attendancerecords` | Kết quả của từng thành viên trong một buổi; `source`: `manual` (chủ nhóm chấm), `self` (tự quét QR), `face` (quét khuôn mặt) |
 | `faceprofiles` | Dữ liệu khuôn mặt: chỉ vector đặc trưng 128 số, **không lưu ảnh**. Thuộc về một tài khoản (`userId`, dùng chung mọi nhóm) hoặc một thành viên chưa liên kết (`memberId`, tối đa 5 mẫu) |
+
+## Người quản lý nhóm
+
+- Chủ nhóm (menu ⋮ của nhóm → **Người quản lý**) thêm người quản lý **theo email** (tài khoản đã có) hoặc **bằng link mời**
+  (`/manage/<mã>`, dùng 1 lần, hết hạn 7 ngày; người chưa có tài khoản đăng ký rồi nhận lời), và **chọn quyền cho từng người**.
+- Quyền (`packages/shared/src/permissions.ts`): Điểm danh, Buổi điểm danh, Thành viên, Liên kết tài khoản, Nhóm con.
+  Quản lý nào cũng **xem** được nhóm. Chỉ chủ nhóm: xóa nhóm, thêm/bớt quản lý, chuyển quyền chủ nhóm.
+- Quyền áp dụng cho nhóm đó **và mọi nhóm con** bên trong. Nhóm con do quản lý tạo vẫn thuộc chủ nhóm.
+- **Chuyển quyền chủ nhóm**: chủ mới có mọi quyền với nhóm (và các nhóm con cùng chủ); chủ cũ ở lại làm quản lý với mọi quyền.
+- Kiểm tra quyền ở một chỗ: `apps/api/src/routes/owned.ts` (`groupOr404/memberOr404/sessionOr404(id, userId, quyền)`):
+  không có quyền xem → 404, thiếu quyền thao tác → 403. API mới của nhóm phải đi qua đây và ghi rõ quyền cần.
+- Web nhận `access` (vai trò + quyền) trong dữ liệu nhóm/buổi/thành viên, dùng `can(access, "quyền")` để ẩn nút không được phép.
 
 ## Điểm danh bằng khuôn mặt
 

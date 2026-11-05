@@ -18,6 +18,7 @@ import { apiOrNull } from "@/lib/api";
 import type { SessionDetail } from "@check-attendance/shared/api";
 import { closeSelfCheckInAction, openSelfCheckInAction } from "@/modules/attendance/attendance.actions";
 import { DEFAULT_STATUS } from "@/modules/attendance/attendance.statuses";
+import { can } from "@check-attendance/shared/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,7 @@ export default async function AttendanceSessionPage({ params }: Props) {
         back={{ href: `/groups/${group.id}`, label: group.name }}
         actions={
           <SessionHeaderMenu
+            canEdit={can(session.access, "sessions")}
             sessionId={session.id}
             title={session.title}
             date={dateInputValue(session.date)}
@@ -65,7 +67,7 @@ export default async function AttendanceSessionPage({ params }: Props) {
 
       <Stack spacing={2}>
         {/* Các cách điểm danh: gọn trong một hàng để bảng điểm danh hiện ngay phía trên màn hình */}
-        {members.length > 0 && (
+        {members.length > 0 && can(session.access, "attendance") && (
           <QuickActions
             label="Cách điểm danh"
             highlighted={session.selfCheckInOpen}
@@ -116,7 +118,7 @@ export default async function AttendanceSessionPage({ params }: Props) {
             </CardContent>
           </Card>
         ) : (
-          <AttendanceSheet key={sheetKey} sessionId={session.id} rows={rows} isNew={isNew} />
+          <AttendanceSheet key={sheetKey} sessionId={session.id} rows={rows} isNew={isNew} readOnly={!can(session.access, "attendance")} />
         )}
       </Stack>
     </>

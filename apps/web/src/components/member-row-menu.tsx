@@ -12,6 +12,7 @@ import { ActionMenu } from "@check-attendance/ui/action-menu";
 import { ConfirmDialog } from "@check-attendance/ui/confirm-dialog";
 import { EditMemberDialog } from "./edit-dialogs";
 import { MemberInviteDialog } from "./member-invite";
+import { can, type GroupAccess } from "@check-attendance/shared/permissions";
 
 /** Menu "⋮" ở mỗi dòng thành viên: Mời liên kết / Hủy liên kết, Sửa, Xóa */
 export function MemberRowMenu({
@@ -21,6 +22,7 @@ export function MemberRowMenu({
   groupName,
   linkedEmail,
   onDetailPage = false,
+  access,
 }: {
   memberId: string;
   name: string;
@@ -30,6 +32,8 @@ export function MemberRowMenu({
   linkedEmail: string | null;
   /** Đang ở trang thống kê của thành viên: xóa xong thì quay về nhóm */
   onDetailPage?: boolean;
+  /** Quyền của người xem: chỉ hiện thao tác được phép */
+  access: GroupAccess;
 }) {
   const [open, setOpen] = useState<"invite" | "unlink" | "edit" | "delete" | null>(null);
   const close = () => setOpen(null);
@@ -40,10 +44,10 @@ export function MemberRowMenu({
         size="small"
         label={`Thao tác với ${name}`}
         actions={[
-          { label: "Mời liên kết tài khoản", icon: <PersonAddAltRounded fontSize="small" />, onClick: () => setOpen("invite"), hidden: linked },
-          { label: "Hủy liên kết", icon: <LinkOffRounded fontSize="small" />, onClick: () => setOpen("unlink"), hidden: !linked },
-          { label: "Sửa", icon: <EditOutlined fontSize="small" />, onClick: () => setOpen("edit") },
-          { label: "Xóa", icon: <DeleteOutline fontSize="small" />, onClick: () => setOpen("delete"), danger: true },
+          { label: "Mời liên kết tài khoản", icon: <PersonAddAltRounded fontSize="small" />, onClick: () => setOpen("invite"), hidden: linked || !can(access, "links") },
+          { label: "Hủy liên kết", icon: <LinkOffRounded fontSize="small" />, onClick: () => setOpen("unlink"), hidden: !linked || !can(access, "links") },
+          { label: "Sửa", icon: <EditOutlined fontSize="small" />, onClick: () => setOpen("edit"), hidden: !can(access, "members") },
+          { label: "Xóa", icon: <DeleteOutline fontSize="small" />, onClick: () => setOpen("delete"), danger: true, hidden: !can(access, "members") },
         ]}
       />
       {!linked && <MemberInviteDialog memberId={memberId} name={name} groupName={groupName} open={open === "invite"} onClose={close} />}

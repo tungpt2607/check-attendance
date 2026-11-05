@@ -22,9 +22,10 @@ import { RateBadge } from "@/components/rate";
 import { SubmitButton } from "@check-attendance/ui/submit-button";
 import { approveRequestAction, rejectRequestAction } from "@/modules/invites/invite.actions";
 import { brand } from "@check-attendance/ui/brand";
+import { can, type GroupAccess } from "@check-attendance/shared/permissions";
 
 /** Yêu cầu liên kết tài khoản chờ chủ nhóm duyệt (qua link tham gia nhóm) */
-function PendingRequests({ requests }: { requests: LinkRequestRow[] }) {
+function PendingRequests({ requests, canDecide }: { requests: LinkRequestRow[]; canDecide: boolean }) {
   return (
     <Card sx={{ borderColor: brand.orange }}>
       <CardContent sx={{ p: 2.5 }}>
@@ -45,20 +46,22 @@ function PendingRequests({ requests }: { requests: LinkRequestRow[] }) {
                     </Typography>
                   </Box>
                 </Box>
-                <Stack direction="row" spacing={1}>
-                  <form action={rejectRequestAction}>
-                    <input type="hidden" name="requestId" value={r.id} />
-                    <SubmitButton variant="ghost" pendingText="..." startIcon={<CloseRounded />} successMessage="Đã từ chối">
-                      Từ chối
-                    </SubmitButton>
-                  </form>
-                  <form action={approveRequestAction}>
-                    <input type="hidden" name="requestId" value={r.id} />
-                    <SubmitButton pendingText="..." startIcon={<CheckRounded />} successMessage="Đã duyệt">
-                      Duyệt
-                    </SubmitButton>
-                  </form>
-                </Stack>
+                {canDecide && (
+                  <Stack direction="row" spacing={1}>
+                    <form action={rejectRequestAction}>
+                      <input type="hidden" name="requestId" value={r.id} />
+                      <SubmitButton variant="ghost" pendingText="..." startIcon={<CloseRounded />} successMessage="Đã từ chối">
+                        Từ chối
+                      </SubmitButton>
+                    </form>
+                    <form action={approveRequestAction}>
+                      <input type="hidden" name="requestId" value={r.id} />
+                      <SubmitButton pendingText="..." startIcon={<CheckRounded />} successMessage="Đã duyệt">
+                        Duyệt
+                      </SubmitButton>
+                    </form>
+                  </Stack>
+                )}
               </ListItem>
             );
           })}
@@ -69,6 +72,8 @@ function PendingRequests({ requests }: { requests: LinkRequestRow[] }) {
 }
 
 type Props = {
+  /** Quyền của người xem (ẩn nút không có quyền) */
+  access: GroupAccess;
   group: { id: string; name: string };
   /** Đã xếp theo lựa chọn (tên hoặc chuyên cần) */
   members: MemberRow[];
@@ -76,14 +81,14 @@ type Props = {
   sort: MemberSort;
 };
 
-export function MembersTab({ group, members, requests, sort }: Props) {
+export function MembersTab({ group, members, requests, sort, access }: Props) {
   return (
     <Stack spacing={2}>
-      {requests.length > 0 && <PendingRequests requests={requests} />}
+      {requests.length > 0 && <PendingRequests requests={requests} canDecide={can(access, "links")} />}
 
       <Card>
         <CardContent sx={{ p: 2.5 }}>
-          <SectionTitle extra={<AddMembersButton groupId={group.id} />}>Thành viên ({members.length})</SectionTitle>
+          <SectionTitle extra={can(access, "members") && <AddMembersButton groupId={group.id} />}>Thành viên ({members.length})</SectionTitle>
           {members.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               Chưa có thành viên.
@@ -116,6 +121,7 @@ export function MembersTab({ group, members, requests, sort }: Props) {
                               code={m.code}
                               groupName={group.name}
                               linkedEmail={acc ? acc.email : null}
+                              access={access}
                             />
                           </Stack>
                         }
