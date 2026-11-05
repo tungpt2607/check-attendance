@@ -11,12 +11,13 @@ import { CreateSubgroupButton } from "@/components/group-create-buttons";
 import { ListLink } from "@check-attendance/ui/links";
 import { SectionTitle } from "@check-attendance/ui/page-header";
 import { RateBadge } from "@/components/rate";
+import { can, type GroupAccess } from "@check-attendance/shared/permissions";
 
-export function SubgroupsTab({ groupId, subgroups }: { groupId: string; subgroups: GroupDetail["children"] }) {
+export function SubgroupsTab({ groupId, subgroups, access }: { groupId: string; subgroups: GroupDetail["children"]; access: GroupAccess }) {
   return (
     <Card>
       <CardContent sx={{ p: 2.5 }}>
-        <SectionTitle extra={<CreateSubgroupButton parentId={groupId} />}>Nhóm con ({subgroups.length})</SectionTitle>
+        <SectionTitle extra={can(access, "subgroups") && <CreateSubgroupButton parentId={groupId} />}>Nhóm con ({subgroups.length})</SectionTitle>
         {subgroups.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             Chưa có nhóm con.

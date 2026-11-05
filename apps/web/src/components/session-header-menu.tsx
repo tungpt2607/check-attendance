@@ -10,7 +10,13 @@ import { ConfirmDialog } from "@check-attendance/ui/confirm-dialog";
 import { EditSessionDialog } from "./edit-dialogs";
 
 /** Menu "⋮" ở tiêu đề trang buổi điểm danh: Sửa buổi, Xóa buổi */
-export function SessionHeaderMenu({ sessionId, title, date }: { sessionId: string; title: string; date: string }) {
+export function SessionHeaderMenu({ sessionId, title, date, canEdit }: { sessionId: string; title: string; date: string; canEdit: boolean }) {
+  // Không có quyền "Buổi điểm danh": không hiện menu
+  if (!canEdit) return null;
+  return <SessionMenu sessionId={sessionId} title={title} date={date} />;
+}
+
+function SessionMenu({ sessionId, title, date }: { sessionId: string; title: string; date: string }) {
   const [open, setOpen] = useState<"edit" | "delete" | null>(null);
   const close = () => setOpen(null);
   return (

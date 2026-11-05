@@ -4,6 +4,7 @@
 // Ngày giờ luôn là chuỗi ISO 8601; ngày điểm danh gửi lên dạng YYYY-MM-DD.
 import { z } from "zod";
 import { NOTIFICATION_RESOLUTIONS, NOTIFICATION_SUBJECTS, NOTIFICATION_TYPES } from "@check-attendance/shared/notifications";
+import { GROUP_PERMISSIONS } from "@check-attendance/shared/permissions";
 import { RECORD_SOURCES, STATUS_VALUES } from "@check-attendance/shared/statuses";
 
 // ---------- Dùng chung ----------
@@ -105,6 +106,11 @@ export const UpdatePreferencesInput = z.object({
 
 // ---------- Nhóm ----------
 
+export const PermissionSchema = z.enum(GROUP_PERMISSIONS).describe("Quyền của người quản lý (packages/shared/src/permissions.ts)");
+export const GroupAccessSchema = z
+  .object({ role: z.enum(["owner", "manager"]), permissions: z.array(PermissionSchema) })
+  .describe("Quyền của người đang xem với nhóm (chủ nhóm có mọi quyền)");
+
 const GroupName = z.string().trim().min(1, "Vui lòng nhập tên nhóm.").max(120, "Tên nhóm quá dài.");
 
 export const GroupSchema = z.object({
@@ -123,6 +129,7 @@ export const GroupListItemSchema = z.object({
   memberCount: z.number().int(),
   inviteActive: z.boolean().describe("Đang bật link tham gia nhóm"),
   pendingRequestCount: z.number().int().describe("Số yêu cầu liên kết đang chờ duyệt"),
+  access: GroupAccessSchema,
 });
 export const GroupListSchema = z.object({ groups: z.array(GroupListItemSchema) });
 
@@ -133,6 +140,7 @@ export const GroupDetailSchema = GroupSchema.extend({
   pendingRequestCount: z.number().int(),
   inviteActive: z.boolean(),
   branchStats: BranchStatSchema.nullable().describe("Chuyên cần chung của nhóm này và mọi nhóm con bên trong"),
+  access: GroupAccessSchema,
   children: z.array(z.object({ id: Id, name: z.string(), stats: BranchStatSchema.nullable() })),
 });
 
@@ -150,6 +158,40 @@ export const LinkRequestSchema = z.object({
   createdAt: IsoDateTime,
 });
 export const LinkRequestListSchema = z.object({ requests: z.array(LinkRequestSchema) });
+
+// ---------- Người quản lý nhóm ----------
+
+const Permissions = z.array(PermissionSchema).describe("Các quyền chủ nhóm cấp (có thể rỗng: chỉ xem)");
+
+export const GroupManagerSchema = z.object({
+  account: PublicAccountSchema,
+  permissions: z.array(PermissionSchema),
+  addedAt: IsoDateTime,
+  /** Được thêm ở nhóm cha (quyền áp dụng xuống nhóm này); chỉ sửa/gỡ được ở nhóm cha đó */
+  fromGroup: z.object({ id: Id, name: z.string() }).nullable(),
+});
+export const GroupManagersSchema = z.object({
+  owner: PublicAccountSchema.nullable(),
+  managers: z.array(GroupManagerSchema),
+  access: GroupAccessSchema,
+});
+export const AddManagerInput = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email("Email không hợp lệ.")),
+  permissions: Permissions,
+});
+export const UpdateManagerInput = z.object({ permissions: Permissions });
+export const ManagerInviteInput = z.object({ permissions: Permissions });
+export const ManagerInviteInfoSchema = z.object({
+  groupId: Id,
+  groupName: z.string(),
+  invitedBy: z.string().describe("Tên người mời"),
+  permissions: z.array(PermissionSchema),
+  expiresAt: IsoDateTime.nullable(),
+});
+export const ManagerAcceptedSchema = z.object({ groupId: Id });
+export const TransferOwnerInput = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email("Email không hợp lệ.")),
+});
 
 // ---------- Thành viên ----------
 
@@ -189,6 +231,7 @@ export const MemberDetailSchema = z.object({
   name: z.string(),
   code: z.string(),
   linkedAccount: PublicAccountSchema.nullable(),
+  access: GroupAccessSchema,
   face: z
     .enum(["account", "member"])
     .nullable()
@@ -227,6 +270,7 @@ export const SessionRowSchema = z.object({
 });
 export const SessionDetailSchema = SessionSchema.extend({
   groupName: z.string(),
+  access: GroupAccessSchema,
   defaultStatus: StatusSchema,
   rows: z.array(SessionRowSchema),
 });
@@ -418,6 +462,9 @@ export type Features = z.infer<typeof FeaturesSchema>;
 export type AuthResult = z.infer<typeof AuthResultSchema>;
 export type GroupListItem = z.infer<typeof GroupListItemSchema>;
 export type GroupDetail = z.infer<typeof GroupDetailSchema>;
+export type GroupManagers = z.infer<typeof GroupManagersSchema>;
+export type GroupManagerRow = z.infer<typeof GroupManagerSchema>;
+export type ManagerInviteInfo = z.infer<typeof ManagerInviteInfoSchema>;
 export type LinkRequestRow = z.infer<typeof LinkRequestSchema>;
 export type NotificationItem = z.infer<typeof NotificationSchema>;
 export type NotificationList = z.infer<typeof NotificationListSchema>;

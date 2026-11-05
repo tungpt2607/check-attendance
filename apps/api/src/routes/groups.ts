@@ -17,6 +17,7 @@ import {
   SessionSchema,
 } from "@check-attendance/shared/api";
 import { z } from "@hono/zod-openapi";
+import { can } from "@check-attendance/shared/permissions";
 import { requireUser } from "../auth.js";
 import { buildShareLink } from "../core/lib/share.js";
 import { countSessions, listSessionsWithCounts } from "../core/modules/attendance/attendance.service.js";
@@ -26,7 +27,7 @@ import {
   deleteGroup,
   getAncestors,
   getChildGroups,
-  getOwnedGroupTree,
+  getManagedGroupTree,
   renameGroup,
   type GroupTreeNode,
 } from "../core/modules/groups/group.service.js";
@@ -41,7 +42,7 @@ import {
 import { addMembersFromText, countMembers, listMembers } from "../core/modules/members/member.service.js";
 import { getAccountsByIds } from "../core/modules/users/user.service.js";
 import { AUTH, createApp, fail, IdParam, iso, jsonBody, NO_CONTENT, ok } from "../http.js";
-import { ownedGroupOr404 } from "./owned.js";
+import { groupOr404 } from "./owned.js";
 import { createSessionIn, sessionOut } from "./sessions.js";
 
 const TAG = ["Nhóm"];
@@ -65,7 +66,7 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const list = flatten(await getOwnedGroupTree(user.userId));
+      const list = flatten(await getManagedGroupTree(user.userId));
       const ids = list.map((g) => g.id);
       const [on, pending] = await Promise.all([getGroupsWithActiveInvite(ids), countPendingRequests(ids)]);
       return c.json(
@@ -77,6 +78,7 @@ export const groups = createApp()
             memberCount: g.memberCount,
             inviteActive: on.has(g.id),
             pendingRequestCount: pending.get(g.id) ?? 0,
+            access: g.access,
           })),
         },
         200,
@@ -97,7 +99,7 @@ export const groups = createApp()
     async (c) => {
       const user = requireUser(c);
       const { name, parentId } = c.req.valid("json");
-      if (parentId) await ownedGroupOr404(parentId, user.userId);
+      if (parentId) await groupOr404(parentId, user.userId, "subgroups");
       return c.json(await createGroup({ name, parentId: parentId ?? null, ownerId: user.userId }), 201);
     },
   )
@@ -114,11 +116,11 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
+      const group = await groupOr404(c.req.valid("param").id, user.userId);
       // Chỉ đếm (không tải danh sách): danh sách thành viên/buổi/yêu cầu có API riêng
       const [ancestors, children, memberCount, sessionCount, inviteActive, pending] = await Promise.all([
         getAncestors(group, user.userId),
-        getChildGroups(group.id, user.userId),
+        getChildGroups(group.id),
         countMembers(group.id),
         countSessions(group.id),
         getGroupsWithActiveInvite([group.id]),
@@ -153,9 +155,9 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
+      const group = await groupOr404(c.req.valid("param").id, user.userId, "subgroups");
       const { name } = c.req.valid("json");
-      await renameGroup(group.id, user.userId, name);
+      await renameGroup(group.id, name);
       return c.json({ ...group, name }, 200);
     },
   )
@@ -172,8 +174,8 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
-      if (!(await deleteGroup(group.id, user.userId))) fail(409, "has_children", "Hãy xóa các nhóm con bên trong trước.");
+      const group = await groupOr404(c.req.valid("param").id, user.userId, "owner");
+      if (!(await deleteGroup(group.id))) fail(409, "has_children", "Hãy xóa các nhóm con bên trong trước.");
       return c.body(null, 204);
     },
   )
@@ -195,7 +197,7 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
+      const group = await groupOr404(c.req.valid("param").id, user.userId);
       const [members, rates] = await Promise.all([listMembers(group.id), getMemberRates(group.id)]);
       const accounts = await getAccountsByIds(members.map((m) => m.linkedUserId).filter((x): x is string => !!x));
       let list = members.map((m) => ({
@@ -230,7 +232,7 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
+      const group = await groupOr404(c.req.valid("param").id, user.userId, "members");
       const body = c.req.valid("json");
       // Dòng "Mã<Tab>Tên" hoặc "Tên"; bỏ dấu phẩy/xuống dòng trong tên để không bị tách nhầm
       const clean = (v: string) => v.replace(/[\t,\r\n]+/g, " ").trim();
@@ -263,7 +265,7 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
+      const group = await groupOr404(c.req.valid("param").id, user.userId);
       const sessions = await listSessionsWithCounts(group.id);
       return c.json({ sessions: sessions.map((s) => ({ ...sessionOut(s), counts: s.counts })) }, 200);
     },
@@ -281,7 +283,7 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
+      const group = await groupOr404(c.req.valid("param").id, user.userId, "sessions");
       return c.json(sessionOut(await createSessionIn(group.id, user.userId, c.req.valid("json"))), 201);
     },
   )
@@ -293,15 +295,16 @@ export const groups = createApp()
       method: "get",
       path: "/groups/{id}/invite",
       tags: TAG,
-      summary: "Link tham gia nhóm đang bật (null nếu tắt)",
+      summary: "Link tham gia nhóm đang bật (null nếu tắt, hoặc người xem không có quyền Liên kết tài khoản)",
       security: AUTH,
       request: { params: IdParam },
       responses: { 200: ok(InviteLinkSchema) },
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
-      const invite = await getActiveGroupInvite(group.id);
+      // Quản lý nào cũng gọi được (trang nhóm luôn gọi), nhưng chỉ người có quyền Liên kết tài khoản mới thấy link
+      const group = await groupOr404(c.req.valid("param").id, user.userId);
+      const invite = can(group.access, "links") ? await getActiveGroupInvite(group.id) : null;
       return c.json({ link: invite ? await buildShareLink(`/join/${invite.token}`, null) : null }, 200);
     },
   )
@@ -318,7 +321,7 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
+      const group = await groupOr404(c.req.valid("param").id, user.userId, "links");
       const token = await createGroupInvite(group.id, user.userId);
       return c.json({ link: await buildShareLink(`/join/${token}`, null) }, 201);
     },
@@ -336,7 +339,7 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
+      const group = await groupOr404(c.req.valid("param").id, user.userId, "links");
       await disableGroupInvite(group.id);
       return c.body(null, 204);
     },
@@ -354,7 +357,7 @@ export const groups = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const group = await ownedGroupOr404(c.req.valid("param").id, user.userId);
+      const group = await groupOr404(c.req.valid("param").id, user.userId);
       const [requests, members] = await Promise.all([listPendingRequests(group.id), listMembers(group.id)]);
       const accounts = await getAccountsByIds(requests.map((r) => String(r.userId)));
       const names = new Map(members.map((m) => [m.id, m.name]));

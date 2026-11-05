@@ -35,10 +35,16 @@ export type SheetRow = {
   checkIn: { source: "self" | "face"; time: string } | null;
 };
 
-type Props = { sessionId: string; rows: SheetRow[]; isNew: boolean };
+type Props = {
+  sessionId: string;
+  rows: SheetRow[];
+  isNew: boolean;
+  /** Không có quyền điểm danh: chỉ xem kết quả */
+  readOnly?: boolean;
+};
 
 /** Bảng điểm danh: tìm kiếm không dấu, lọc theo trạng thái, chọn Có mặt/Muộn/Vắng cho từng người. */
-export function AttendanceSheet({ sessionId, rows, isNew }: Props) {
+export function AttendanceSheet({ sessionId, rows, isNew, readOnly = false }: Props) {
   const [statuses, setStatuses] = useState<Record<string, AttendanceStatus>>(() =>
     Object.fromEntries(rows.map((r) => [r.id, r.status])),
   );
@@ -61,7 +67,7 @@ export function AttendanceSheet({ sessionId, rows, isNew }: Props) {
       <form action={saveAttendanceAction}>
       <input type="hidden" name="sessionId" value={sessionId} />
 
-      {isNew && (
+      {isNew && !readOnly && (
         <Alert severity="info" icon={false} sx={{ borderRadius: 0, borderTopLeftRadius: 14, borderTopRightRadius: 14 }}>
           Mặc định tất cả <b>Vắng</b>. Chọn <b>Có mặt</b> hoặc <b>Muộn</b> cho những người đã đến rồi bấm Lưu.
         </Alert>
@@ -107,29 +113,31 @@ export function AttendanceSheet({ sessionId, rows, isNew }: Props) {
 
       <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
         {rows.map((r, i) => (
-          <AttendanceRow key={r.id} row={r} index={i} value={statuses[r.id]} visible={isVisible(r)} onChange={setStatus} />
+          <AttendanceRow key={r.id} row={r} index={i} value={statuses[r.id]} visible={isVisible(r)} onChange={setStatus} readOnly={readOnly} />
         ))}
       </Box>
 
-      {/* Nút lưu luôn hiện ở đáy màn hình */}
-      <Box
-        sx={{
-          position: "sticky",
-          bottom: 0,
-          display: "flex",
-          justifyContent: "flex-end",
-          px: 2,
-          py: 1.5,
-          bgcolor: "rgba(255,255,255,0.96)",
-          backdropFilter: "blur(8px)",
-          borderBottomLeftRadius: 14,
-          borderBottomRightRadius: 14,
-        }}
-      >
-        <SubmitButton pendingText="Đang lưu..." startIcon={<SaveRounded />} successMessage="Đã lưu điểm danh">
-          Lưu điểm danh
-        </SubmitButton>
-      </Box>
+      {/* Nút lưu luôn hiện ở đáy màn hình (không có quyền điểm danh thì chỉ xem, không có nút) */}
+      {!readOnly && (
+        <Box
+          sx={{
+            position: "sticky",
+            bottom: 0,
+            display: "flex",
+            justifyContent: "flex-end",
+            px: 2,
+            py: 1.5,
+            bgcolor: "rgba(255,255,255,0.96)",
+            backdropFilter: "blur(8px)",
+            borderBottomLeftRadius: 14,
+            borderBottomRightRadius: 14,
+          }}
+        >
+          <SubmitButton pendingText="Đang lưu..." startIcon={<SaveRounded />} successMessage="Đã lưu điểm danh">
+            Lưu điểm danh
+          </SubmitButton>
+        </Box>
+      )}
       </form>
     </Card>
   );
@@ -141,13 +149,14 @@ type RowProps = {
   value: AttendanceStatus;
   visible: boolean;
   onChange: (id: string, value: AttendanceStatus) => void;
+  readOnly: boolean;
 };
 
 /**
  * Một dòng của bảng. memo: chọn trạng thái cho một người chỉ vẽ lại dòng của người đó (nhóm đông vẫn mượt).
  * Dòng bị lọc chỉ ẩn đi, vẫn nằm trong form nên khi Lưu không mất dữ liệu.
  */
-const AttendanceRow = memo(function AttendanceRow({ row: r, index, value, visible, onChange }: RowProps) {
+const AttendanceRow = memo(function AttendanceRow({ row: r, index, value, visible, onChange, readOnly }: RowProps) {
   return (
     <Box
       component="li"
@@ -185,6 +194,7 @@ const AttendanceRow = memo(function AttendanceRow({ row: r, index, value, visibl
         <ToggleButtonGroup
           size="small"
           exclusive
+          disabled={readOnly}
           value={value}
           onChange={(_e, v: AttendanceStatus | null) => v && onChange(r.id, v)}
           aria-label={`Trạng thái của ${r.name}`}
@@ -199,7 +209,13 @@ const AttendanceRow = memo(function AttendanceRow({ row: r, index, value, visibl
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
-        <TextField name={`note_${r.id}`} defaultValue={r.note} placeholder="Ghi chú" sx={{ width: { xs: "100%", sm: 150 } }} />
+        <TextField
+          name={`note_${r.id}`}
+          defaultValue={r.note}
+          placeholder="Ghi chú"
+          disabled={readOnly}
+          sx={{ width: { xs: "100%", sm: 150 } }}
+        />
       </Stack>
     </Box>
   );

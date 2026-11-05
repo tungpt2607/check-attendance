@@ -9,6 +9,12 @@ export const NOTIFICATION_TYPES = [
   "link_request.approved",
   /** Yêu cầu nhận tên bị từ chối → người xin */
   "link_request.rejected",
+  /** Chủ nhóm thêm một người làm quản lý (bằng email) → người được thêm */
+  "group_manager.added",
+  /** Có người nhận lời mời làm quản lý → chủ nhóm */
+  "group_manager.joined",
+  /** Chủ nhóm chuyển quyền chủ nhóm → chủ mới */
+  "group.ownership_transferred",
   /** Quản trị viên gửi thông báo tới mọi người (CMS) */
   "system.announcement",
 ] as const;
@@ -52,7 +58,7 @@ export type NotificationLike = {
 export type TextPart = { text: string; bold?: boolean };
 
 /** Biểu tượng (mỗi nơi hiển thị tự đổi tên này ra hình của mình) */
-export type NotificationIcon = "person_add" | "check" | "close" | "campaign";
+export type NotificationIcon = "person_add" | "check" | "close" | "campaign" | "manager";
 
 /** Thao tác ngay trên thông báo (khi đối tượng chưa được xử lý) */
 export type NotificationActions = "approve_reject";
@@ -92,6 +98,26 @@ export const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> =
     tone: "error",
     text: (n) => [t("Yêu cầu nhận tên "), b(n.data.memberName, "(đã xóa)"), t(" trong nhóm "), b(n.data.groupName, "(đã xóa)"), t(" không được duyệt")],
     href: () => null,
+  },
+  "group_manager.added": {
+    icon: "manager",
+    tone: "primary",
+    text: (n) => [b(n.actor?.name, "Chủ nhóm"), t(" đã thêm bạn làm người quản lý nhóm "), b(n.data.groupName, "(đã xóa)")],
+    href: (n) => (n.groupId ? `/groups/${n.groupId}` : null),
+    email: { subject: (n) => `Bạn là người quản lý nhóm ${n.data.groupName || ""}`.trim() },
+  },
+  "group_manager.joined": {
+    icon: "manager",
+    tone: "success",
+    text: (n) => [b(n.actor?.name, "Một tài khoản"), t(" đã nhận lời làm người quản lý nhóm "), b(n.data.groupName, "(đã xóa)")],
+    href: (n) => (n.groupId ? `/groups/${n.groupId}/managers` : null),
+  },
+  "group.ownership_transferred": {
+    icon: "manager",
+    tone: "primary",
+    text: (n) => [b(n.actor?.name, "Chủ nhóm cũ"), t(" đã chuyển cho bạn quyền chủ nhóm "), b(n.data.groupName, "(đã xóa)")],
+    href: (n) => (n.groupId ? `/groups/${n.groupId}` : null),
+    email: { subject: (n) => `Bạn là chủ nhóm ${n.data.groupName || ""}`.trim() },
   },
   "system.announcement": {
     icon: "campaign",

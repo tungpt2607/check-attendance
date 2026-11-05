@@ -44,7 +44,7 @@ import { findFaceMatch, saveFaceForMember } from "../core/modules/faces/face.ser
 import { getGroupName } from "../core/modules/groups/group.service.js";
 import { getMember, listMembers } from "../core/modules/members/member.service.js";
 import { AUTH, createApp, fail, IdParam, iso, jsonBody, NO_CONTENT, ok, OPTIONAL_AUTH, SessionIdParam } from "../http.js";
-import { ownedSessionOr404 } from "./owned.js";
+import { sessionOr404 } from "./owned.js";
 
 const TAG = ["Điểm danh"];
 const CHECKIN_TAG = ["Tự điểm danh"];
@@ -84,7 +84,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId);
       const [members, records, groupName] = await Promise.all([
         listMembers(session.groupId),
         getSessionRecords(session.id),
@@ -94,6 +94,7 @@ export const sessions = createApp()
         {
           ...sessionOut(session),
           groupName: groupName ?? "",
+          access: session.access,
           defaultStatus: DEFAULT_STATUS,
           rows: members.map((m) => {
             const r = records.get(m.id);
@@ -126,7 +127,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId, "sessions");
       const body = c.req.valid("json");
       const title = body.title || session.title;
       const date = body.date === undefined ? session.date : parseDateInput(body.date);
@@ -148,7 +149,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId, "sessions");
       await deleteAttendanceSession(session.id);
       return c.body(null, 204);
     },
@@ -166,7 +167,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId, "attendance");
       const memberIds = new Set((await listMembers(session.groupId)).map((m) => m.id));
       const entries = c.req.valid("json").records.map((r) => {
         if (!memberIds.has(r.memberId)) fail(422, "validation", `Thành viên ${r.memberId} không thuộc nhóm.`);
@@ -191,7 +192,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId, "attendance");
       const members = await listMembers(session.groupId);
       await openSelfCheckIn(session.id, members.map((m) => m.id), user.userId);
       return c.json(sessionOut({ ...session, selfCheckInOpen: true }), 200);
@@ -210,7 +211,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId, "attendance");
       await closeSelfCheckIn(session.id);
       return c.json(sessionOut({ ...session, selfCheckInOpen: false }), 200);
     },
@@ -228,7 +229,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId, "attendance");
       const secret = await getCheckInSecret(session.id);
       if (!secret) return c.json({ open: false as const }, 200);
       const url = `${webUrl()}/c/${encodeShortCode(session.id, createCheckInToken(session.id, secret))}`;
@@ -266,7 +267,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId, "attendance");
       const members = await listMembers(session.groupId);
       const match = await findFaceMatch(members, c.req.valid("json").descriptor);
       if (!match) return c.json({ result: "unknown" as const }, 200);
@@ -293,7 +294,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId, "attendance");
       const { memberId, descriptor } = c.req.valid("json");
       const member = await getMember(memberId);
       if (!member || member.groupId !== session.groupId) return fail(404, "not_found", "Không tìm thấy thành viên này trong nhóm.");
@@ -324,7 +325,7 @@ export const sessions = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const session = await ownedSessionOr404(c.req.valid("param").id, user.userId);
+      const session = await sessionOr404(c.req.valid("param").id, user.userId, "attendance");
       const { memberId, previousStatus } = c.req.valid("json");
       await undoFaceCheckIn(session.id, memberId, previousStatus);
       return c.body(null, 204);

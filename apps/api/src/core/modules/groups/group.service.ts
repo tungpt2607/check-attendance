@@ -5,6 +5,8 @@ import { FaceProfile } from "../faces/face.model.js";
 import { Member } from "../members/member.model.js";
 import { AttendanceRecord, AttendanceSession } from "../attendance/attendance.model.js";
 import { resolveSubject } from "../notifications/notification.service.js";
+import type { GroupAccess } from "@check-attendance/shared/permissions";
+import { accessFromChain, directlyAccessibleGroupIds } from "./access.service.js";
 import { Group, type GroupRecord } from "./group.model.js";
 
 export type GroupDTO = {
@@ -15,7 +17,7 @@ export type GroupDTO = {
   ancestorIds: string[];
 };
 
-export type GroupTreeNode = GroupDTO & { memberCount: number; children: GroupTreeNode[] };
+export type GroupTreeNode = GroupDTO & { memberCount: number; access: GroupAccess; children: GroupTreeNode[] };
 
 function toDTO(g: GroupRecord): GroupDTO {
   return {
@@ -27,13 +29,7 @@ function toDTO(g: GroupRecord): GroupDTO {
   };
 }
 
-/** Lấy một nhóm, chỉ khi người dùng là chủ nhóm. */
-export async function getOwnedGroup(groupId: string, userId: string): Promise<GroupDTO | null> {
-  if (!isValidId(groupId)) return null;
-  await connectDB();
-  const g = await Group.findOne({ _id: groupId, ownerId: userId }).lean<GroupRecord>();
-  return g ? toDTO(g) : null;
-}
+export { toDTO as groupToDTO };
 
 /** Chỉ lấy tên nhóm, không kiểm tra quyền (dùng cho trang tự điểm danh công khai). */
 export async function getGroupName(groupId: string): Promise<string | null> {
@@ -44,30 +40,47 @@ export async function getGroupName(groupId: string): Promise<string | null> {
 }
 
 /**
- * Những người quản lý nhóm (nhận thông báo, duyệt yêu cầu...). Hiện chỉ có chủ nhóm;
- * sau này có đồng quản lý thì chỉ cần sửa ở đây.
+ * Những người nhận thông báo về yêu cầu liên kết của nhóm: chủ nhóm và người quản lý có quyền "Liên kết tài khoản"
+ * ở nhóm này hoặc nhóm cha.
  */
 export async function getGroupManagerIds(groupId: string): Promise<string[]> {
   if (!isValidId(groupId)) return [];
   await connectDB();
-  const g = await Group.findById(groupId).select("ownerId").lean<Pick<GroupRecord, "ownerId">>();
-  return g ? [String(g.ownerId)] : [];
+  const g = await Group.findById(groupId).select("ownerId ancestors managers").lean<GroupRecord>();
+  if (!g) return [];
+  const chain = g.ancestors?.length
+    ? [...(await Group.find({ _id: { $in: g.ancestors } }).select("ownerId managers").lean<GroupRecord[]>()), g]
+    : [g];
+  const ids = new Set<string>(chain.map((x) => String(x.ownerId)));
+  for (const x of chain) for (const m of x.managers ?? []) if (m.permissions.includes("links")) ids.add(String(m.userId));
+  return [...ids];
 }
 
-/** Toàn bộ nhóm của người dùng, dựng thành cây. */
-export async function getOwnedGroupTree(userId: string): Promise<GroupTreeNode[]> {
+/**
+ * Mọi nhóm người dùng làm chủ hoặc quản lý (kể cả nhóm con bên trong), dựng thành cây.
+ * Nhóm gốc của cây là nhóm cao nhất người dùng có quyền.
+ */
+export async function getManagedGroupTree(userId: string): Promise<GroupTreeNode[]> {
   await connectDB();
-  const groups = await Group.find({ ownerId: userId }).collation(VI_COLLATION).sort({ name: 1 }).lean<GroupRecord[]>();
+  const direct = await directlyAccessibleGroupIds(userId);
+  if (direct.length === 0) return [];
+  const groups = await Group.find({ $or: [{ _id: { $in: direct } }, { ancestors: { $in: direct } }] })
+    .collation(VI_COLLATION)
+    .sort({ name: 1 })
+    .lean<GroupRecord[]>();
   const counts = await Member.aggregate<{ _id: Types.ObjectId; n: number }>([
     { $match: { groupId: { $in: groups.map((g) => g._id) } } },
     { $group: { _id: "$groupId", n: { $sum: 1 } } },
   ]);
   const countMap = new Map(counts.map((c) => [String(c._id), c.n]));
+  const byId = new Map(groups.map((g) => [String(g._id), g]));
 
   const nodes = new Map<string, GroupTreeNode>();
   for (const g of groups) {
+    const chain = [...(g.ancestors ?? []).map((a) => byId.get(String(a))).filter((x): x is GroupRecord => !!x), g];
+    const access = accessFromChain(chain, userId) ?? { role: "manager" as const, permissions: [] };
     const dto = toDTO(g);
-    nodes.set(dto.id, { ...dto, memberCount: countMap.get(dto.id) ?? 0, children: [] });
+    nodes.set(dto.id, { ...dto, memberCount: countMap.get(dto.id) ?? 0, access, children: [] });
   }
   const roots: GroupTreeNode[] = [];
   for (const node of nodes.values()) {
@@ -78,19 +91,23 @@ export async function getOwnedGroupTree(userId: string): Promise<GroupTreeNode[]
   return roots;
 }
 
-export async function getChildGroups(groupId: string, userId: string): Promise<GroupDTO[]> {
+/** Nhóm con trực tiếp (người có quyền với nhóm cha thì có quyền với nhóm con) */
+export async function getChildGroups(groupId: string): Promise<GroupDTO[]> {
   await connectDB();
-  const list = await Group.find({ parentId: groupId, ownerId: userId }).collation(VI_COLLATION).sort({ name: 1 }).lean<GroupRecord[]>();
+  const list = await Group.find({ parentId: groupId }).collation(VI_COLLATION).sort({ name: 1 }).lean<GroupRecord[]>();
   return list.map(toDTO);
 }
 
-/** Đường dẫn từ nhóm gốc đến nhóm cha (để hiển thị breadcrumb). */
+/** Đường dẫn từ nhóm gốc đến nhóm cha (breadcrumb): chỉ những nhóm cha người dùng có quyền xem */
 export async function getAncestors(group: GroupDTO, userId: string): Promise<GroupDTO[]> {
   if (group.ancestorIds.length === 0) return [];
   await connectDB();
-  const list = await Group.find({ _id: { $in: group.ancestorIds }, ownerId: userId }).lean<GroupRecord[]>();
-  const byId = new Map(list.map((g) => [String(g._id), toDTO(g)]));
-  return group.ancestorIds.map((id) => byId.get(id)).filter((g): g is GroupDTO => !!g);
+  const list = await Group.find({ _id: { $in: group.ancestorIds } }).lean<GroupRecord[]>();
+  const byId = new Map(list.map((g) => [String(g._id), g]));
+  const chain = group.ancestorIds.map((id) => byId.get(id)).filter((g): g is GroupRecord => !!g);
+  // Từ nhóm cao nhất mà người dùng là chủ/quản lý trở xuống
+  const top = chain.findIndex((g) => String(g.ownerId) === userId || (g.managers ?? []).some((m) => String(m.userId) === userId));
+  return top < 0 ? [] : chain.slice(top).map(toDTO);
 }
 
 export async function createGroup(input: {
@@ -103,11 +120,14 @@ export async function createGroup(input: {
   let parentId: Types.ObjectId | null = null;
   let ancestors: Types.ObjectId[] = [];
 
+  let ownerId = new mongoose.Types.ObjectId(input.ownerId);
   if (input.parentId) {
-    const parent = await Group.findOne({ _id: input.parentId, ownerId: input.ownerId }).lean<GroupRecord>();
+    // Nơi gọi đã kiểm tra quyền tạo nhóm con; nhóm con luôn thuộc chủ của nhóm cha (kể cả khi người quản lý tạo)
+    const parent = await Group.findById(input.parentId).lean<GroupRecord>();
     if (!parent) throw new Error("Không tìm thấy nhóm cha.");
     parentId = parent._id;
     ancestors = [...(parent.ancestors ?? []), parent._id];
+    ownerId = parent.ownerId;
   }
 
   const created = await Group.create({
@@ -115,23 +135,23 @@ export async function createGroup(input: {
     description: input.description?.trim() || undefined,
     parentId,
     ancestors,
-    ownerId: new mongoose.Types.ObjectId(input.ownerId),
+    ownerId,
   });
   return toDTO(created);
 }
 
-export async function renameGroup(groupId: string, userId: string, name: string) {
+/** Nơi gọi đã kiểm tra quyền */
+export async function renameGroup(groupId: string, name: string) {
   await connectDB();
-  await Group.updateOne({ _id: groupId, ownerId: userId }, { $set: { name: name.trim() } });
+  await Group.updateOne({ _id: groupId }, { $set: { name: name.trim() } });
 }
 
-/** Xóa nhóm (chỉ khi không còn nhóm con), kèm thành viên và dữ liệu điểm danh. */
-export async function deleteGroup(groupId: string, userId: string): Promise<boolean> {
-  const group = await getOwnedGroup(groupId, userId);
-  if (!group) return false;
+/** Xóa nhóm (chỉ khi không còn nhóm con), kèm thành viên và dữ liệu điểm danh. Nơi gọi đã kiểm tra quyền chủ nhóm. */
+export async function deleteGroup(groupId: string): Promise<boolean> {
+  await connectDB();
   const childCount = await Group.countDocuments({ parentId: groupId });
   if (childCount > 0) return false;
-  await purgeGroups([group.id]);
+  await purgeGroups([groupId]);
   return true;
 }
 

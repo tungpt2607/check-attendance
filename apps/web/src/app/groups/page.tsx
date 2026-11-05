@@ -5,6 +5,7 @@ import HowToRegOutlined from "@mui/icons-material/HowToRegOutlined";
 import LinkRounded from "@mui/icons-material/LinkRounded";
 import PersonAddAlt1Outlined from "@mui/icons-material/PersonAddAlt1Outlined";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import List from "@mui/material/List";
@@ -41,7 +42,15 @@ function GroupTree({ nodes, depth = 0 }: { nodes: GroupTreeItem[]; depth?: numbe
           <ListLink href={`/groups/${node.id}`} sx={{ borderRadius: 2, px: 1, py: 1 }}>
             <FolderOutlined fontSize="small" sx={{ color: depth === 0 ? brand.tealDark : "text.disabled", mr: 1.5 }} />
             <ListItemText
-              primary={node.name}
+              primary={
+                <>
+                  {node.name}
+                  {/* Nhóm người khác làm chủ, mình được thêm làm quản lý (chỉ ghi ở cấp cao nhất; nhóm con kế thừa) */}
+                  {depth === 0 && node.access.role === "manager" && (
+                    <Chip component="span" size="small" label="Quản lý" sx={{ ml: 1, height: 20, fontSize: 12, verticalAlign: "middle" }} />
+                  )}
+                </>
+              }
               secondary={
                 <>
                   {`${node.memberCount} thành viên${node.children.length > 0 ? ` · ${node.children.length} nhóm con` : ""}`}

@@ -14,11 +14,13 @@ import {
   RequestStatusSchema,
   UpdateMemberInput,
 } from "@check-attendance/shared/api";
+import { can } from "@check-attendance/shared/permissions";
 import { requireUser } from "../auth.js";
 import { buildShareLink } from "../core/lib/share.js";
 import { getMemberHistory } from "../core/modules/attendance/stats.service.js";
 import { deleteMemberFace, getMemberFaceSource } from "../core/modules/faces/face.service.js";
-import { getGroupName, getOwnedGroup } from "../core/modules/groups/group.service.js";
+import { getGroupWithAccess } from "../core/modules/groups/access.service.js";
+import { getGroupName } from "../core/modules/groups/group.service.js";
 import {
   approveRequest,
   cancelPendingRequest,
@@ -37,7 +39,7 @@ import { deleteMember, getMember, listMembers, updateMember } from "../core/modu
 import { getMyHistory, getRosterForMember, listMembershipsOfUser } from "../core/modules/members/membership.service.js";
 import { getAccountsByIds } from "../core/modules/users/user.service.js";
 import { AUTH, createApp, fail, IdParam, iso, jsonBody, MemberIdParam, NO_CONTENT, notFound, ok, TokenParam } from "../http.js";
-import { ownedMemberOr404 } from "./owned.js";
+import { memberOr404 } from "./owned.js";
 
 const MEMBER_TAG = ["Thành viên"];
 const LINK_TAG = ["Liên kết tài khoản"];
@@ -66,7 +68,7 @@ async function inviteOr410(token: string, kind: "member" | "group") {
 /** Yêu cầu liên kết thuộc nhóm của người dùng hiện tại, còn đang chờ */
 async function ownedPendingRequest(requestId: string, userId: string) {
   const req = await getLinkRequest(requestId);
-  if (!req || req.status !== "pending" || !(await getOwnedGroup(String(req.groupId), userId))) {
+  if (!req || req.status !== "pending" || !can((await getGroupWithAccess(String(req.groupId), userId))?.access, "links")) {
     return notFound("yêu cầu đang chờ duyệt");
   }
   return req;
@@ -85,7 +87,7 @@ export const members = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const m = await ownedMemberOr404(c.req.valid("param").id, user.userId);
+      const m = await memberOr404(c.req.valid("param").id, user.userId);
       const [{ items, rate }, accounts, groupName, face] = await Promise.all([
         getMemberHistory(m.id, m.groupId),
         getAccountsByIds(m.linkedUserId ? [m.linkedUserId] : []),
@@ -100,6 +102,7 @@ export const members = createApp()
           name: m.name,
           code: m.code,
           linkedAccount: m.linkedUserId ? (accounts.get(m.linkedUserId) ?? null) : null,
+          access: m.access,
           face,
           stats: rate,
           history: items.map((it) => ({ ...it, date: iso(it.date), checkedInAt: iso(it.checkedInAt) })),
@@ -121,7 +124,7 @@ export const members = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const m = await ownedMemberOr404(c.req.valid("param").id, user.userId);
+      const m = await memberOr404(c.req.valid("param").id, user.userId, "members");
       const body = c.req.valid("json");
       const code = body.code ?? m.code;
       await updateMember(m.id, { name: body.name, code });
@@ -141,7 +144,7 @@ export const members = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const m = await ownedMemberOr404(c.req.valid("param").id, user.userId);
+      const m = await memberOr404(c.req.valid("param").id, user.userId, "members");
       await deleteMember(m.id);
       return c.body(null, 204);
     },
@@ -159,7 +162,7 @@ export const members = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const m = await ownedMemberOr404(c.req.valid("param").id, user.userId);
+      const m = await memberOr404(c.req.valid("param").id, user.userId, "members");
       await deleteMemberFace(m.id);
       return c.body(null, 204);
     },
@@ -179,7 +182,7 @@ export const members = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const m = await ownedMemberOr404(c.req.valid("param").id, user.userId);
+      const m = await memberOr404(c.req.valid("param").id, user.userId, "links");
       if (m.linkedUserId) fail(409, "already_linked", "Thành viên này đã liên kết tài khoản.");
       const { token, expiresAt } = await createMemberInvite(m.groupId, m.id, user.userId);
       return c.json({ link: await buildShareLink(`/invite/${token}`, expiresAt) }, 201);
@@ -198,7 +201,7 @@ export const members = createApp()
     }),
     async (c) => {
       const user = requireUser(c);
-      const m = await ownedMemberOr404(c.req.valid("param").id, user.userId);
+      const m = await memberOr404(c.req.valid("param").id, user.userId, "links");
       await unlinkMember(m.id);
       return c.body(null, 204);
     },

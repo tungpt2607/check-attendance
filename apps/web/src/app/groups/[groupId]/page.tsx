@@ -52,19 +52,20 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
         branchRate={children.length > 0 ? (group.branchStats?.rate ?? null) : undefined}
         canDelete={children.length === 0}
         inviteLink={link}
+        access={group.access}
       />
 
       <GroupTabs
         initial={tab}
         tabs={[
-          { key: "sessions", label: "Điểm danh", content: <SessionsTab groupId={group.id} memberCount={members.length} sessions={sessions} /> },
+          { key: "sessions", label: "Điểm danh", content: <SessionsTab groupId={group.id} memberCount={members.length} sessions={sessions} access={group.access} /> },
           {
             key: "members",
             label: "Thành viên",
             badge: requests.length,
-            content: <MembersTab group={group} members={members} requests={requests} sort={sort} />,
+            content: <MembersTab group={group} members={members} requests={requests} sort={sort} access={group.access} />,
           },
-          { key: "subgroups", label: "Nhóm con", content: <SubgroupsTab groupId={group.id} subgroups={children} /> },
+          { key: "subgroups", label: "Nhóm con", content: <SubgroupsTab groupId={group.id} subgroups={children} access={group.access} /> },
         ]}
       />
     </>

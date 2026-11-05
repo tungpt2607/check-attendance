@@ -19,10 +19,11 @@ import { StatusCounts } from "@/components/status-chip";
 import { SubmitButton } from "@check-attendance/ui/submit-button";
 import { createSessionAction } from "@/modules/attendance/attendance.actions";
 import { brand } from "@check-attendance/ui/brand";
+import { can, type GroupAccess } from "@check-attendance/shared/permissions";
 
-type Props = { groupId: string; memberCount: number; sessions: SessionSummary[] };
+type Props = { groupId: string; memberCount: number; sessions: SessionSummary[]; access: GroupAccess };
 
-export function SessionsTab({ groupId, memberCount, sessions }: Props) {
+export function SessionsTab({ groupId, memberCount, sessions, access }: Props) {
   return (
     <Card>
       <CardContent sx={{ p: 2.5 }}>
@@ -31,7 +32,7 @@ export function SessionsTab({ groupId, memberCount, sessions }: Props) {
           <Typography variant="body2" color="text.secondary">
             Thêm thành viên trước khi điểm danh.
           </Typography>
-        ) : (
+        ) : !can(access, "sessions") ? null : (
           <form action={createSessionAction}>
             <input type="hidden" name="groupId" value={groupId} />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
