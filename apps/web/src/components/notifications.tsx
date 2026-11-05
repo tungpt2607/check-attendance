@@ -9,6 +9,7 @@ import CheckCircleOutlineRounded from "@mui/icons-material/CheckCircleOutlineRou
 import CheckRounded from "@mui/icons-material/CheckRounded";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import HighlightOffRounded from "@mui/icons-material/HighlightOffRounded";
+import ManageAccountsRounded from "@mui/icons-material/ManageAccountsRounded";
 import PersonAddAlt1Rounded from "@mui/icons-material/PersonAddAlt1Rounded";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -53,6 +54,7 @@ const ICONS: Record<NotificationIcon, SvgIconComponent> = {
   check: CheckCircleOutlineRounded,
   close: HighlightOffRounded,
   campaign: CampaignOutlined,
+  manager: ManageAccountsRounded,
 };
 
 const TONES: Record<NotificationConfig["tone"], { fg: string; bg: string }> = {

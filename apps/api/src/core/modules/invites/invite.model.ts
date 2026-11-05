@@ -1,14 +1,17 @@
 // mongoose là thư viện CommonJS: trong ES Module của Node phải nạp mặc định rồi mới lấy từng phần
 import mongoose, { type Model, type Types } from "mongoose";
 
+import { GROUP_PERMISSIONS, type GroupPermission } from "@check-attendance/shared/permissions";
+
 const { Schema, model, models } = mongoose;
 
 /**
  * Lời mời liên kết tài khoản với thành viên.
  * - member: link riêng cho 1 thành viên, dùng 1 lần, có hạn, nhận là liên kết ngay
  * - group: link chung cho cả nhóm, người nhận chọn tên rồi chờ chủ nhóm duyệt
+ * - manager: mời làm người quản lý nhóm (dùng 1 lần, có hạn), kèm các quyền chủ nhóm đã chọn
  */
-export const INVITE_KINDS = ["member", "group"] as const;
+export const INVITE_KINDS = ["member", "group", "manager"] as const;
 export type InviteKind = (typeof INVITE_KINDS)[number];
 
 export interface InviteRecord {
@@ -25,6 +28,8 @@ export interface InviteRecord {
   usedBy: Types.ObjectId | null;
   /** Bị thu hồi (tạo link mới hoặc tắt link) */
   revoked: boolean;
+  /** Chỉ có với lời mời quản lý: quyền sẽ được cấp khi nhận */
+  permissions?: GroupPermission[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +45,7 @@ const inviteSchema = new Schema<InviteRecord>(
     usedAt: { type: Date, default: null },
     usedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     revoked: { type: Boolean, default: false },
+    permissions: { type: [String], enum: [...GROUP_PERMISSIONS], default: undefined },
   },
   { timestamps: true },
 );

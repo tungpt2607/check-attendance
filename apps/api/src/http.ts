@@ -57,6 +57,7 @@ const ObjectIdStr = z.string().regex(/^[a-f0-9]{24}$/i);
 export const IdParam = z.object({ id: ObjectIdStr });
 export const SessionIdParam = z.object({ sessionId: ObjectIdStr });
 export const MemberIdParam = z.object({ memberId: ObjectIdStr });
+export const GroupUserParam = z.object({ id: ObjectIdStr, userId: ObjectIdStr });
 export const TokenParam = z.object({ token: z.string().min(1).max(64) });
 
 /** Date → chuỗi ISO (schema API dùng chuỗi) */
