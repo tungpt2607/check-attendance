@@ -155,8 +155,13 @@ GitHub Actions (`.github/workflows/ci.yml`) chạy mỗi lần đẩy code. Lỗ
 - Model nhận diện ([`@vladmandic/face-api`](https://github.com/vladmandic/face-api)) chạy **trên trình duyệt**; file model để trong
   `apps/web/public/models/face` (tiny_face_detector, face_landmark_68, face_recognition, khoảng 7MB, tải một lần rồi trình duyệt lưu đệm).
   Ảnh camera không gửi đi; chỉ gửi 128 con số lên API.
-- API so khớp phía máy chủ (`src/core/modules/faces/face.service.ts`, ngưỡng `MATCH_THRESHOLD`), vector của người khác không bao giờ trả ra ngoài:
-  - `POST /v1/sessions/:id/face/scan`: nhận ra thì ghi Có mặt ngay; không thì trả `unknown`
+- API so khớp phía máy chủ (`src/core/modules/faces/match.ts`), vector của người khác không bao giờ trả ra ngoài.
+  Model face-api huấn luyện chủ yếu trên khuôn mặt phương Tây: khuôn mặt châu Á của người khác nhau thường gần nhau hơn, nên:
+  - khoảng cách < 0.4 **và** người giống thứ hai xa hơn ít nhất 0.08 → **tự ghi** Có mặt
+  - 0.4–0.5, hoặc hai người na ná nhau → `uncertain`: **không ghi**, web hỏi "Có phải X?" (Đúng → `assign`, thêm mẫu)
+  - ≥ 0.5 → `unknown` (chưa nhận ra → chọn tên)
+  - Web gộp (lấy trung bình) 3 khung hình đứng yên rồi mới gửi, bộ dò chạy ở kích thước 416 cho mốc khuôn mặt chuẩn hơn.
+  - `POST /v1/sessions/:id/face/scan`: chắc chắn thì ghi Có mặt ngay; lưng chừng thì `uncertain`; không nhận ra thì `unknown`
   - `POST /v1/sessions/:id/face/assign`: chủ nhóm chọn tên cho khuôn mặt chưa nhận ra → ghi Có mặt và lưu khuôn mặt:
     thành viên đã liên kết tài khoản → lưu vào tài khoản nếu tài khoản **chưa có** khuôn mặt (có rồi thì giữ nguyên);
     chưa liên kết → thêm mẫu cho thành viên

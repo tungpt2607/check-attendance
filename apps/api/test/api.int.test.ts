@@ -181,6 +181,18 @@ describe("API với MongoDB thật", { skip: skipWithoutDb }, () => {
     row = (await call("GET", `/v1/sessions/${s2}`, { token })).body.rows.find((r: any) => r.memberId === g.member.An);
     assert.equal(row.status, null, "hoàn tác: về như chưa có kết quả");
 
+    // Giống lưng chừng (0.45): KHÔNG tự ghi, trả "uncertain" để chủ nhóm xác nhận
+    const s3 = await sessionIn(token, g.id, "2026-11-07");
+    const near = faceOf(1).map((x, i) => (i === 5 ? x + 0.45 : x));
+    const unsure = await call("POST", `/v1/sessions/${s3}/face/scan`, { token, body: { descriptor: near } });
+    assert.equal(unsure.body.result, "uncertain");
+    assert.equal(unsure.body.memberId, g.member.An);
+    assert.equal((await call("GET", `/v1/sessions/${s3}`, { token })).body.rows.find((r: any) => r.memberId === g.member.An).status, null);
+    // Chủ nhóm bấm "Đúng" → assign ghi Có mặt
+    const ok3 = await call("POST", `/v1/sessions/${s3}/face/assign`, { token, body: { memberId: g.member.An, descriptor: near } });
+    assert.equal(ok3.status, 200);
+    assert.equal((await call("GET", `/v1/sessions/${s3}`, { token })).body.rows.find((r: any) => r.memberId === g.member.An).status, "present");
+
     // Xóa thành viên thì khuôn mặt lưu riêng của thành viên cũng mất
     assert.equal((await call("DELETE", `/v1/members/${g.member.An}`, { token })).status, 204);
     assert.equal((await call("POST", `/v1/sessions/${s2}/face/scan`, { token, body: { descriptor: faceOf(1) } })).body.result, "unknown");

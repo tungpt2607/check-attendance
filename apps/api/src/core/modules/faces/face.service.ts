@@ -4,15 +4,10 @@ import mongoose from "mongoose";
 import { connectDB, isValidId } from "../../lib/db.js";
 import type { MemberDTO } from "../members/member.service.js";
 import { FaceProfile, type FaceProfileRecord } from "./face.model.js";
+import { decideMatch, type MatchDecision } from "./match.js";
 
 /** Model đang dùng ở web (apps/web/public/models/face). Đổi model thì đổi tên này: vector cũ không còn được so. */
 export const FACE_MODEL = "face-api/face_recognition_model";
-
-/**
- * Ngưỡng khoảng cách (Euclid) để coi là cùng một người.
- * face-api gợi ý 0.6; dùng 0.5 cho chặt hơn vì kết quả được ghi ngay không cần xác nhận.
- */
-export const MATCH_THRESHOLD = 0.5;
 
 /** Số mẫu tối đa lưu cho một thành viên chưa liên kết (thêm mẫu khi chủ nhóm chọn tên thủ công) */
 const MAX_MEMBER_SAMPLES = 5;
@@ -50,19 +45,19 @@ async function loadFaces(members: MemberDTO[]): Promise<Map<string, { from: "acc
   return out;
 }
 
-/** Thành viên có khuôn mặt giống nhất (dưới ngưỡng), hoặc null */
-export async function findFaceMatch(members: MemberDTO[], descriptor: number[]): Promise<{ member: MemberDTO; distance: number } | null> {
+/** So khớp: chắc chắn (tự ghi), lưng chừng (hỏi lại) hoặc không nhận ra. Xem match.ts */
+export async function findFaceMatch(members: MemberDTO[], descriptor: number[]): Promise<MatchDecision<MemberDTO>> {
   const faces = await loadFaces(members);
-  let best: { member: MemberDTO; distance: number } | null = null;
+  const candidates: { item: MemberDTO; distance: number }[] = [];
   for (const m of members) {
     const face = faces.get(m.id);
     if (!face) continue;
-    for (const sample of face.descriptors) {
-      const d = distance(sample, descriptor);
-      if (!best || d < best.distance) best = { member: m, distance: d };
-    }
+    // Mẫu gần nhất của người này
+    let d = Infinity;
+    for (const sample of face.descriptors) d = Math.min(d, distance(sample, descriptor));
+    candidates.push({ item: m, distance: d });
   }
-  return best && best.distance < MATCH_THRESHOLD ? best : null;
+  return decideMatch(candidates);
 }
 
 /** Thành viên này đang có khuôn mặt để nhận diện chưa (của tài khoản hay của riêng thành viên) */

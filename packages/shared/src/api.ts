@@ -344,6 +344,9 @@ export const FaceScanResultSchema = z.discriminatedUnion("result", [
     distance: z.number().describe("Khoảng cách tới khuôn mặt đã lưu (càng nhỏ càng giống)"),
   }),
   z.object({ result: z.literal("already"), memberId: Id, name: z.string(), distance: z.number() }),
+  z
+    .object({ result: z.literal("uncertain"), memberId: Id, name: z.string(), distance: z.number() })
+    .describe("Giống nhưng chưa chắc: CHƯA ghi; chủ nhóm xác nhận thì gọi /face/assign"),
   z.object({ result: z.literal("unknown") }),
 ]);
 
