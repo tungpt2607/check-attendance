@@ -260,7 +260,7 @@ export const sessions = createApp()
       method: "post",
       path: "/sessions/{id}/face/scan",
       tags: FACE_TAG,
-      summary: "Gửi vector khuôn mặt vừa quét: nhận ra thành viên thì ghi Có mặt ngay; không nhận ra thì trả unknown",
+      summary: "Gửi vector khuôn mặt vừa quét: chắc chắn thì ghi Có mặt ngay; lưng chừng thì trả uncertain (chưa ghi, chờ xác nhận); không nhận ra thì unknown",
       security: AUTH,
       request: { params: IdParam, ...jsonBody(FaceScanInput) },
       responses: { 200: ok(FaceScanResultSchema) },
@@ -270,8 +270,10 @@ export const sessions = createApp()
       const session = await sessionOr404(c.req.valid("param").id, user.userId, "attendance");
       const members = await listMembers(session.groupId);
       const match = await findFaceMatch(members, c.req.valid("json").descriptor);
-      if (!match) return c.json({ result: "unknown" as const }, 200);
-      const { member, distance } = match;
+      if (match.kind === "none") return c.json({ result: "unknown" as const }, 200);
+      const { item: member, distance } = match;
+      // Lưng chừng: không ghi, để chủ nhóm xác nhận (Đúng → /face/assign)
+      if (match.kind === "uncertain") return c.json({ result: "uncertain" as const, memberId: member.id, name: member.name, distance }, 200);
       const recorded = await recordFaceCheckIn(session.id, member.id, user.userId);
       if (recorded === "already") return c.json({ result: "already" as const, memberId: member.id, name: member.name, distance }, 200);
       return c.json(

@@ -1,7 +1,7 @@
 "use client";
 
 // Vòng dò khuôn mặt trên khung hình camera: kiểm tra chất lượng rồi mới báo một khuôn mặt "đủ tốt" để gửi đi.
-// - đủ gần (chiếm đủ bề ngang khung hình), đủ rõ (độ tin cậy), đứng yên (2 khung liên tiếp giống nhau)
+// - đủ gần (chiếm đủ bề ngang khung hình), đủ rõ (độ tin cậy), đứng yên (3 khung liên tiếp giống nhau, gửi trung bình)
 // - bỏ qua người vừa quét xong vẫn còn đứng trước camera
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { brand } from "@check-attendance/ui/brand";
@@ -13,8 +13,19 @@ const SCAN_INTERVAL_MS = 250;
 const MIN_SCORE = 0.6;
 /** Khuôn mặt phải chiếm ít nhất ngần này bề ngang khung hình (đủ gần để nhận diện chính xác) */
 const MIN_FACE_RATIO = 0.18;
-/** Hai khung hình liên tiếp phải giống nhau ngần này mới gửi đi (tránh ảnh nhòe khi đang di chuyển) */
+/** Các khung hình liên tiếp phải giống nhau ngần này mới gộp lại (tránh ảnh nhòe khi đang di chuyển) */
 const STABLE_DISTANCE = 0.4;
+/** Gộp (lấy trung bình) ngần này khung hình đứng yên rồi mới gửi: vector ổn định hơn một khung lẻ, ít nhận nhầm hơn */
+const FRAMES_PER_SCAN = 3;
+/** Kích thước ảnh đưa vào bộ dò: lớn hơn thì mốc khuôn mặt chuẩn hơn (vector chính xác hơn), chậm hơn chút */
+const DETECTOR_INPUT_SIZE = 416;
+
+/** Trung bình cộng các vector */
+function average(list: Float32Array[]): Float32Array {
+  const out = new Float32Array(list[0]!.length);
+  for (const v of list) for (let i = 0; i < out.length; i++) out[i]! += v[i]! / list.length;
+  return out;
+}
 
 export const HINT_IDLE = "Hướng camera vào khuôn mặt từng người";
 
@@ -41,8 +52,8 @@ export function useFaceDetection({ faceapi, videoRef, overlayRef, active, isRece
     if (!active || !faceapi) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;
-    /** Khung hình trước (để kiểm tra khuôn mặt đã đứng yên) */
-    let prev: Float32Array | null = null;
+    /** Các khung hình đứng yên liên tiếp của cùng một khuôn mặt */
+    let frames: Float32Array[] = [];
 
     const draw = (box: FaceBox | null, ok: boolean) => {
       const canvas = overlayRef.current;
@@ -68,13 +79,13 @@ export function useFaceDetection({ faceapi, videoRef, overlayRef, active, isRece
       }
       try {
         const found = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: DETECTOR_INPUT_SIZE, scoreThreshold: 0.5 }))
           .withFaceLandmarks()
           .withFaceDescriptor();
         if (stopped) return;
         if (!found) {
           draw(null, false);
-          prev = null;
+          frames = [];
           setHint(HINT_IDLE);
         } else {
           const box = found.detection.box;
@@ -84,19 +95,22 @@ export function useFaceDetection({ faceapi, videoRef, overlayRef, active, isRece
           draw(box, bigEnough && clear && !seen);
           if (seen) {
             setHint("Đã quét người này. Chuyển sang người tiếp theo");
-            prev = null;
+            frames = [];
           } else if (!bigEnough) {
             setHint("Đưa camera lại gần hơn");
-            prev = null;
+            frames = [];
           } else if (!clear) {
             setHint("Giữ yên, nhìn thẳng vào camera");
-            prev = null;
-          } else if (prev && faceDistance(prev, found.descriptor) < STABLE_DISTANCE) {
-            draw(null, false);
-            callbacks.current.onFace(found.descriptor, box);
-            return;
+            frames = [];
           } else {
-            prev = found.descriptor;
+            // Khác hẳn khung trước (đổi người / nhòe): bắt đầu gộp lại từ đầu
+            if (frames.length && faceDistance(average(frames), found.descriptor) >= STABLE_DISTANCE) frames = [];
+            frames.push(found.descriptor);
+            if (frames.length >= FRAMES_PER_SCAN) {
+              draw(null, false);
+              callbacks.current.onFace(average(frames), box);
+              return;
+            }
             setHint("Giữ yên...");
           }
         }

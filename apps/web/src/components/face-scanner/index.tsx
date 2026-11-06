@@ -3,7 +3,7 @@
 // Điểm danh bằng khuôn mặt: chủ nhóm cầm điện thoại đi quét từng người.
 // - Model nhận diện chạy ngay trên trình duyệt (face-model.ts), ảnh camera không gửi đi đâu.
 // - Mỗi khuôn mặt được biến thành 128 con số; chỉ dãy số này gửi lên API để so khớp.
-// - Nhận ra thành viên: ghi Có mặt ngay (có nút "Sai người" để hoàn tác).
+// - Nhận ra chắc chắn: ghi Có mặt ngay (có nút "Sai người" để hoàn tác). Giống nhưng chưa chắc: hỏi "Có phải X?".
 // - Không nhận ra: hiện danh sách tên để chủ nhóm chọn; khi đó khuôn mặt được lưu lại cho lần sau.
 //
 // File này chỉ điều phối các bước; từng phần nằm riêng:
@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LinkButton } from "@check-attendance/ui/links";
 import { assignFaceAction, scanFaceAction, undoFaceAction } from "@/modules/attendance/face.actions";
 import { CameraBusy, CameraError, CameraPill, CameraView, cameraButtonSx } from "./camera-view";
+import { ConfirmCard } from "./confirm-card";
 import { captureFace, faceDistance, loadFaceApi, type FaceApiModule } from "./face-model";
 import { MemberPicker } from "./member-picker";
 import { ResultCard } from "./result-card";
@@ -39,6 +40,8 @@ type Step =
   | { name: "scanning" }
   | { name: "sending" }
   | { name: "result"; result: ScanResult }
+  /** Giống nhưng chưa chắc: hỏi "Có phải X?" (chưa ghi gì) */
+  | { name: "confirm"; member: FaceMember; descriptor: number[]; snapshot: Snapshot }
   | { name: "picking"; descriptor: number[]; snapshot: Snapshot; reason: "unknown" | "wrong" };
 
 type Props = {
@@ -140,6 +143,10 @@ export function FaceScanner({ groupId, sessionId, members, backHref }: Props) {
       showResult({ kind: "checked_in", memberId: res.memberId, name: res.name, previousStatus: res.previousStatus, snapshot, descriptor: list });
     } else if (res.result === "already") {
       showResult({ kind: "already", name: res.name, snapshot });
+    } else if (res.result === "uncertain") {
+      const member = members.find((m) => m.id === res.memberId);
+      if (member) setStep({ name: "confirm", member, descriptor: list, snapshot });
+      else pick(list, snapshot, "unknown");
     } else {
       pick(list, snapshot, "unknown");
     }
@@ -204,6 +211,14 @@ export function FaceScanner({ groupId, sessionId, members, backHref }: Props) {
           <CameraPill placement="bottom">{hint}</CameraPill>
         ) : step.name === "result" ? (
           <ResultCard result={step.result} onWrong={wrongPerson} onNext={resume} />
+        ) : step.name === "confirm" ? (
+          <ConfirmCard
+            name={step.member.name}
+            snapshot={step.snapshot}
+            // Đúng: ghi Có mặt và lưu thêm mẫu khuôn mặt (lần sau nhận chắc hơn)
+            onYes={() => assign(step.member, step.descriptor, step.snapshot)}
+            onNo={() => pick(step.descriptor, step.snapshot, "unknown")}
+          />
         ) : null}
       </CameraView>
 
