@@ -35,7 +35,8 @@ test("chưa nhận ra → chọn tên; buổi sau tự nhận ra; Sai người; 
   await expect(page.getByText("An Nguyễn")).toBeVisible();
   await page.getByRole("button", { name: "Sai người" }).click();
   await expect(page.getByText("Người này là ai?")).toBeVisible();
-  expect((await sessionRows(owner.token, s2))["An Nguyễn"].status).toBeNull();
+  // Hoàn tác: về như trước lượt quét (Vắng, vì lượt ghi đầu tiên đã ghi sẵn Vắng cho mọi người)
+  expect((await sessionRows(owner.token, s2))["An Nguyễn"].status).toBe("absent");
   await page.getByRole("button", { name: /Chi Lê/ }).click();
   await expect(page.getByText(/Đã ghi Có mặt\. Đã lưu khuôn mặt/)).toBeVisible();
   await browser.close();

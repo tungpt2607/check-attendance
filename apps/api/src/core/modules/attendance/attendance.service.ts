@@ -134,16 +134,17 @@ export async function saveSessionRecords(
   );
 }
 
-/** Mở tự điểm danh: tạo khóa QR mới, ghi sẵn trạng thái mặc định cho người chưa có kết quả. */
-export async function openSelfCheckIn(sessionId: string, memberIds: string[], openedBy: string) {
+/**
+ * Ghi sẵn trạng thái mặc định (Vắng) cho thành viên chưa có kết quả trong buổi, để số Có mặt/Vắng luôn đủ người
+ * ngay khi bắt đầu điểm danh bằng QR hay khuôn mặt (không phải chờ chủ nhóm bấm Lưu).
+ * Đã đủ kết quả thì bỏ qua (chỉ một lần đếm, không ghi gì).
+ */
+export async function fillDefaultRecords(sessionId: string, memberIds: string[], markedBy: string) {
+  if (memberIds.length === 0) return;
   await connectDB();
   const sid = new mongoose.Types.ObjectId(sessionId);
-  await AttendanceSession.updateOne(
-    { _id: sid },
-    { $set: { selfCheckIn: { open: true, secret: newCheckInSecret(), openedAt: new Date() } } },
-  );
-  if (memberIds.length === 0) return;
-  const uid = new mongoose.Types.ObjectId(openedBy);
+  if ((await AttendanceRecord.countDocuments({ sessionId: sid })) >= memberIds.length) return;
+  const uid = new mongoose.Types.ObjectId(markedBy);
   await AttendanceRecord.bulkWrite(
     memberIds.map((id) => ({
       updateOne: {
@@ -152,7 +153,18 @@ export async function openSelfCheckIn(sessionId: string, memberIds: string[], op
         upsert: true,
       },
     })),
+    { ordered: false },
   );
+}
+
+/** Mở tự điểm danh: tạo khóa QR mới, ghi sẵn trạng thái mặc định cho người chưa có kết quả. */
+export async function openSelfCheckIn(sessionId: string, memberIds: string[], openedBy: string) {
+  await connectDB();
+  await AttendanceSession.updateOne(
+    { _id: new mongoose.Types.ObjectId(sessionId) },
+    { $set: { selfCheckIn: { open: true, secret: newCheckInSecret(), openedAt: new Date() } } },
+  );
+  await fillDefaultRecords(sessionId, memberIds, openedBy);
 }
 
 export async function closeSelfCheckIn(sessionId: string) {

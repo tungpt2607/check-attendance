@@ -27,6 +27,7 @@ import {
   closeSelfCheckIn,
   countCheckedIn,
   createAttendanceSession,
+  fillDefaultRecords,
   deleteAttendanceSession,
   getAttendanceSession,
   getCheckInSecret,
@@ -274,6 +275,8 @@ export const sessions = createApp()
       const { item: member, distance } = match;
       // Lưng chừng: không ghi, để chủ nhóm xác nhận (Đúng → /face/assign)
       if (match.kind === "uncertain") return c.json({ result: "uncertain" as const, memberId: member.id, name: member.name, distance }, 200);
+      // Ghi sẵn "Vắng" cho người chưa quét (như mở QR), để số Có mặt/Vắng đúng ngay không cần bấm Lưu
+      await fillDefaultRecords(session.id, members.map((x) => x.id), user.userId);
       const recorded = await recordFaceCheckIn(session.id, member.id, user.userId);
       if (recorded === "already") return c.json({ result: "already" as const, memberId: member.id, name: member.name, distance }, 200);
       return c.json(
@@ -300,6 +303,8 @@ export const sessions = createApp()
       const { memberId, descriptor } = c.req.valid("json");
       const member = await getMember(memberId);
       if (!member || member.groupId !== session.groupId) return fail(404, "not_found", "Không tìm thấy thành viên này trong nhóm.");
+      // Ghi sẵn "Vắng" cho người chưa quét (như mở QR), để số Có mặt/Vắng đúng ngay không cần bấm Lưu
+      await fillDefaultRecords(session.id, (await listMembers(session.groupId)).map((x) => x.id), user.userId);
       const recorded = await recordFaceCheckIn(session.id, member.id, user.userId);
       const faceSaved = await saveFaceForMember(member, descriptor, user.userId);
       return c.json(
