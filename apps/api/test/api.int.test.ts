@@ -171,15 +171,21 @@ describe("API với MongoDB thật", { skip: skipWithoutDb }, () => {
     const matched = await call("POST", `/v1/sessions/${s2}/face/scan`, { token, body: { descriptor: faceOf(1, 0.02) } });
     assert.equal(matched.body.result, "checked_in");
     assert.equal(matched.body.memberId, g.member.An);
-    assert.equal(matched.body.previousStatus, null);
-    let row = (await call("GET", `/v1/sessions/${s2}`, { token })).body.rows.find((r: any) => r.memberId === g.member.An);
+    // Lượt ghi đầu tiên của buổi ghi sẵn "Vắng" cho mọi người chưa quét (như mở QR), nên trạng thái trước của An là Vắng
+    assert.equal(matched.body.previousStatus, "absent");
+    let rows = (await call("GET", `/v1/sessions/${s2}`, { token })).body.rows;
+    let row = rows.find((r: any) => r.memberId === g.member.An);
     assert.equal(row.status, "present");
     assert.equal(row.source, "face");
+    assert.equal(rows.find((r: any) => r.memberId === g.member["Bình"]).status, "absent", "người chưa quét: Vắng");
+    // Số đếm trên danh sách buổi đúng ngay, không cần bấm Lưu
+    const list = (await call("GET", `/v1/groups/${g.id}/sessions`, { token })).body.sessions;
+    assert.deepEqual(list.find((x: any) => x.id === s2).counts, { present: 1, absent: 1 });
 
-    const undo = await call("POST", `/v1/sessions/${s2}/face/undo`, { token, body: { memberId: g.member.An, previousStatus: null } });
+    const undo = await call("POST", `/v1/sessions/${s2}/face/undo`, { token, body: { memberId: g.member.An, previousStatus: matched.body.previousStatus } });
     assert.equal(undo.status, 204);
     row = (await call("GET", `/v1/sessions/${s2}`, { token })).body.rows.find((r: any) => r.memberId === g.member.An);
-    assert.equal(row.status, null, "hoàn tác: về như chưa có kết quả");
+    assert.equal(row.status, "absent", "hoàn tác: về như trước lượt quét");
 
     // Giống lưng chừng (0.45): KHÔNG tự ghi, trả "uncertain" để chủ nhóm xác nhận
     const s3 = await sessionIn(token, g.id, "2026-11-07");
